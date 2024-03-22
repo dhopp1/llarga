@@ -1,0 +1,6 @@
+name,llm_url,llm_path
+llama-2-7b,https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf,models/llama-2-7b-chat.Q5_K_M.gguf
+llama-2-13b,https://huggingface.co/TheBloke/Llama-2-13B-chat-GGUF/resolve/main/llama-2-13b-chat.Q5_K_M.gguf,models/llama-2-13b-chat.Q5_K_M.gguf
+mistral-7b,https://huggingface.co/TheBloke/Mistral-7B-Claude-Chat-GGUF/resolve/main/mistral-7b-claude-chat.Q5_K_M.gguf,models/mistral-7b-claude-chat.Q5_K_M.gguf
+mistral-docsgpt,https://huggingface.co/TheBloke/docsgpt-7B-mistral-GGUF/resolve/main/docsgpt-7b-mistral.Q5_K_M.gguf,models/docsgpt-7b-mistral.Q5_K_M.gguf
+deepseek-coder-7b,https://huggingface.co/TheBloke/deepseek-coder-6.7B-instruct-GGUF/resolve/main/deepseek-coder-6.7b-instruct.Q5_K_M.gguf,models/deepseek-coder-6.7b-instruct.Q5_K_M.gguf

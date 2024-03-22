@@ -1,0 +1,9 @@
+name,text_path,metadata_path
+imf,corpora/imf/,corpora/metadata_imf.csv
+unctad_mandates,corpora/unctad_mandates/,corpora/metadata_unctad_mandates.csv
+oda,corpora/oda/,corpora/metadata_oda.csv
+gdp,corpora/gdp/,corpora/metadata_gdp.csv
+telegram,corpora/telegram/,corpora/metadata_telegram.csv
+temporary,corpora/temporary/,corpora/metadata_temporary.csv
+test1,corpora/test1/,corpora/metadata_test1.csv
+test2,corpora/test2/,corpora/metadata_test2.csv
