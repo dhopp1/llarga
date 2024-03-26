@@ -44,6 +44,7 @@ secondaryBackgroundColor="#F0F2F6"
 
 - *Note*: Don't upload data .csv files, only a `metadata.csv` file. In the future I will build in an automatic way of parsing and handling these based off the `Chunk size` parameter. For now, you can preprocess your CSVs into .txt files by using the `local_rag_llm.db_setup.convert_csv` function from the [local\_rag\_llm](https://github.com/dhopp1/local_rag_llm/) library.
 - You can persist your corpus if it is large by typing a name other than `temporary` to the `Uploaded corpus name` box. This name will then appear as an option under the `Which corpus` dropdown. It should be lower case with no spaces or special characters, use underscores for spaces.
+- Then hit the `Process corpus` button. This will both process the corpus and then reinitialize the model on this corpus, wait for both to finish.
 
 ## Example image
 ![Example image](metadata/example_screen.png)
