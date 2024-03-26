@@ -43,3 +43,7 @@ secondaryBackgroundColor="#F0F2F6"
 	6. Upload a .zip file containing many documents as well as a metadata file. Put all your documents into a directory called `corpus/`, then put a file called `metadata.csv` at the same level as the `corpus/` directory (not _in_ directory), then zip the directory and CSV together. The CSV needs to have at least a column named `filename` with the filename of the documents. Upload that file into the `Upload your own documents` box.
 
 - *Note*: Don't upload data .csv files, only a `metadata.csv` file. In the future I will build in an automatic way of parsing and handling these based off the `Chunk size` parameter. For now, you can preprocess your CSVs into .txt files by using the `local_rag_llm.db_setup.convert_csv` function from the [local\_rag\_llm](https://github.com/dhopp1/local_rag_llm/) library.
+- You can persist your corpus if it is large by typing a name other than `temporary` to the `Uploaded corpus name` box. This name will then appear as an option under the `Which corpus` dropdown. It should be lower case with no spaces or special characters, use underscores for spaces.
+
+## Example image
+![Example image](metadata/example_screen.png)
