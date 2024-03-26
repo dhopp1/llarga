@@ -2,7 +2,9 @@
 A streamlit app for interfacing with a local LLM.
 
 ## Set up
-- Install required libraries
+- Install required libraries. The LLM and RAG system relies on two key libraries you should set up and make sure are working independently:
+	- [nlp_pipeline](https://github.com/dhopp1/nlp_pipeline) for the processing of documents
+	- [local\_rag\_llm](https://github.com/dhopp1/local_rag_llm) for the LLM itself
 - Download the LLM (in .gguf format) you would like to use and put it in the `models/` directory.
 - Update the `metadata/llm_list.csv` file with the URL and local path of the model (`mistral-docsgpt` is recommended for RAG)
 - If you would like to prepopulate a corpus outside of the app, add its name to the `metadata/corpora_list.csv` file in the `name` the file, the directory to the .txt files in the `text_path` column, and the path to the metadata file in the `metadata_path` column. The metadata file can contain anything, but must at least include a `text_id` column (unique identifier starting from 1) and a `file_path` column, containing the absolute path of all the text files in the corpus.
