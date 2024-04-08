@@ -3,4 +3,5 @@ local-rag-llm
 pandas
 streamlit
 streamlit-server-state
+torch
 zipfile
