@@ -23,8 +23,10 @@ backgroundColor="#FFFFFF"
 secondaryBackgroundColor="#F0F2F6"
 ```
 
-- Currently, the app supports only one concurrent user. The default behavior is to lock out other users while the app is in use. Other users will be locked out for 3 minutes from the last query run. You can change this length of time by changing this line: `st.session_state["available"] = (datetime.now() - st.session_state["last_used"]).total_seconds() > 180` in the `app.py` file.
-- If a user has not run a query in 3 minutes, another user will be able to log on and the original user will be booted off.
+- The app will dynamically calculate the maximum number of users, which is automatically determined by the RAM of your GPU or Apple silicon Mac and the models you are using. On CPU, it will be limited to 1 concurrent user, though you can change this by editing the `calc_max_users()` function in the `helper/user_management.py` file.
+- Users' sessions will be reserved for 3 minutes by default after each interaction they have. If it is left idle longer than that, they become boot eligible if another user tries to log on. The user can change the inactive reserve period by editing the `Lockout duration` dropdown selection.
+- A user can guarantee access by setting an `override` password in `.streamlit/secrets.toml`, which if entered instead of the normal password will boot the user who last used the application longest ago regardless of their reservation period.
+- Add additional users by editing the `metadata/user_list.csv` file.
 
 ## Changing model parameters
 - Parameters are explained in the sidebar in their respective tooltips.
@@ -44,6 +46,9 @@ secondaryBackgroundColor="#F0F2F6"
 
 - You can persist your corpus if it is large by typing a name other than `temporary` to the `Uploaded corpus name` box. This name will then appear as an option under the `Which corpus` dropdown. It should be lower case with no spaces or special characters, use underscores for spaces.
 - Then hit the `Process corpus` button. This will both process the corpus and then reinitialize the model on this corpus, wait for both to finish.
+- You can clear out old corpora from local files and the database by using `helper/clear_corpus.py`. E.g., run the command line in the `helper/` directory, then enter: 
+	- `python clear_corpus.py --keep corpus1,corpus1` to delete everything except corpus1 and corpus2
+	- `python clear_corpus.py --remove corpus1,corpus2` to remove only corpus1 and corpus2
 
 ## Example image
 ![Example image](metadata/example_screen.png)
