@@ -14,6 +14,7 @@ from helper.ui import (
     ui_header,
     ui_lockout_reset,
     ui_model_params,
+    ui_tab,
     ui_upload_docs,
 )
 from helper.user_management import (
@@ -24,8 +25,11 @@ from helper.user_management import (
 )
 
 
-### session initialization/login
+# tab icon and text
+ui_tab()
 
+
+### session initialization/login
 
 determine_availability()
 

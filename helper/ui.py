@@ -8,6 +8,14 @@ import streamlit as st
 from helper.user_management import clear_models, record_use, update_server_state
 
 
+def ui_tab():
+    "tab title and icon"
+    st.set_page_config(
+        page_title="Local LLM",
+        page_icon="https://www.svgrepo.com/show/375527/ai-platform.svg",
+    )
+
+
 def import_styles():
     "import styles sheet and determine avatars of users"
     with open("styles/style.css") as css:
