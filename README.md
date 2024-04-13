@@ -8,7 +8,7 @@ A streamlit app for interfacing with a local LLM.
 - Download the LLM (in .gguf format) you would like to use and put it in the `models/` directory.
 - Update the `metadata/llm_list.csv` file with the URL and local path of the model (`mistral-docsgpt` is recommended for RAG)
 - If you would like to prepopulate a corpus outside of the app, add its name to the `metadata/corpora_list.csv` file in the `name` the file, the directory to the .txt files in the `text_path` column, and the path to the metadata file in the `metadata_path` column. The metadata file can contain anything, but must at least include a `text_id` column (unique identifier starting from 1) and a `file_path` column, containing the absolute path of all the text files in the corpus.
-- In the `metadata/user_list.csv` file, put user names and emails. If the app is in use, it will tell you by who.
+- In the `metadata/user_list.csv` file, put user names and optionally emails.
 - run the app from the command line with `streamlit run app.py --server.port 8***` at whatever port you wish.
 - To get the app online quickly, you can use [ngrok](https://www.sitepoint.com/use-ngrok-test-local-site/) to expose this local port to be able to access via the internet.
 
@@ -23,16 +23,13 @@ backgroundColor="#FFFFFF"
 secondaryBackgroundColor="#F0F2F6"
 ```
 
-- The app will dynamically calculate the maximum number of users, which is automatically determined by the RAM of your GPU or Apple silicon Mac and the models you are using. On CPU, it will be limited to 1 concurrent user, though you can change this by editing the `calc_max_users()` function in the `helper/user_management.py` file.
-- Users' sessions will be reserved for 3 minutes by default after each interaction they have. If it is left idle longer than that, they become boot eligible if another user tries to log on. The user can change the inactive reserve period by editing the `Lockout duration` dropdown selection.
-- A user can guarantee access by setting an `override` password in `.streamlit/secrets.toml`, which if entered instead of the normal password will boot the user who last used the application longest ago regardless of their reservation period.
-- Add additional users by editing the `metadata/user_list.csv` file.
+- The app can support unlimited users. Simultaneous generation requests will be queued and executed in the order they are received. All users share the same LLMs, so if you want to allow users to choose between multiple LLMs, you need to have enough VRAM to load them simultaneously.
 
 ## Changing model parameters
 - Parameters are explained in the sidebar in their respective tooltips.
-- Change their values then hit the `Reinitialize model` button to reinitialize the model with those parameters.
+- Most parameters can be changed and reflected at generation time. Exceptions are `Which LLM` and `Which corpus`, which when they are changed, need the `Reinitialize model` hit afterwards.
 - The two parameters under `Vector DB parameters` require the recreation of the vector database, which may take longer if you have a very large corpus. If you change either of these, click the `Reinitialize model and remake DB` button instead.
-- Hit the `Reset model's memory` button to clear the model's short-term memory/context.
+- Hit the `Reset model's memory` button to clear the model's short-term memory/context. This is also necessary if you change the `System prompt` parameter.
 
 ## Uploading your own documents
 - The system intializes with no corpus, so you are chatting with the vanilla LLM
