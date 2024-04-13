@@ -51,7 +51,7 @@ def export_chat_history():
         # sources
         else:
             if message["content"] != "source_string:NA":
-                source_content = message["content"]
+                source_content = message["content"].split("<br>")[0]
                 source_content = (
                     source_content.replace("source_string:", "")
                     .replace("### Metadata:", "\n### Metadata:\n")
@@ -60,7 +60,7 @@ def export_chat_history():
                     .replace("# Source", f"### {[counter]} Source")
                 )
 
-                chat_history += "_**Sources**_:\n"
+                chat_history += ("_**Sources**_:\n" + "<br>" + message["content"].split("<br>")[1])
                 chat_history += "<details>\n"
                 chat_history += source_content
                 chat_history += "</details>\n\n"
@@ -366,12 +366,12 @@ def import_chat():
             )
             with st.chat_message(message["role"], avatar=avatar):
                 if "source_string" not in message["content"]:
-                    st.markdown(message["content"])
+                    st.markdown(message["content"], unsafe_allow_html=True)
                 else:
                     st.markdown(
-                        "Sources: ",
+                        "Sources: " + "<br>" + message["content"].split("string:")[1].split("<br>")[1],
                         unsafe_allow_html=True,
-                        help=message["content"].split("string:")[1],
+                        help=message["content"].split("string:")[1].split("<br>")[0],
                     )
 
         # reset model's memory
@@ -400,10 +400,11 @@ def import_chat():
 
         if prompt := st.chat_input(placeholder_text):
             # Display user message in chat message container
+            prompt_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
             with st.chat_message("user", avatar=st.session_state["user_avatar"]):
-                st.markdown(prompt)
+                st.markdown(prompt + prompt_time, unsafe_allow_html=True)
             # Add user message to chat history
-            update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "user", "content": prompt}])
+            update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "user", "content": prompt + prompt_time}])
 
             # lock the model to perform requests sequentially
             if "in_use" not in server_state:
@@ -462,6 +463,7 @@ def import_chat():
                 st.write_stream(streamed_response(response["response"]))
 
             # adding sources
+            response_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
             with st.chat_message(
                 "assistant", avatar=st.session_state["assistant_avatar"]
             ):
@@ -490,7 +492,7 @@ def import_chat():
                 else:
                     source_string = "NA"
                 st.markdown(
-                    "Sources: ", unsafe_allow_html=True, help=f"{source_string}"
+                    "Sources: " + response_time, unsafe_allow_html=True, help=f"{source_string}"
                 )
 
             # unlock the model
@@ -501,4 +503,4 @@ def import_chat():
 
             # Add assistant response to chat history
             update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "assistant", "content": response["response"].response}])
-            update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "assistant", "content": f"source_string:{source_string}"}])
+            update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "assistant", "content": f"source_string:{source_string}{response_time}"}])
