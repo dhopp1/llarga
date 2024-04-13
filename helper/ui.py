@@ -63,7 +63,7 @@ def export_chat_history():
                 chat_history += ("_**Sources**_:\n" + "<br>" + message["content"].split("<br>")[1])
                 chat_history += "<details>\n"
                 chat_history += source_content
-                chat_history += "</details>\n\n"
+                chat_history += "\n</details>\n\n"
             counter += 1
 
     return chat_history
@@ -491,6 +491,22 @@ def import_chat():
                         counter += 1
                 else:
                     source_string = "NA"
+                    
+                # adding model information
+                source_string += "\n# Model parameters\n"
+                source_string += f"""```
+Which LLM: {st.session_state["selected_llm"]}
+Which corpus: {st.session_state["selected_corpus"]}
+Similarity top K: {st.session_state["similarity_top_k"]}
+Temperature: {st.session_state["temperature"]}
+Max new tokens: {st.session_state["max_new_tokens"]}
+Context window: {st.session_state["context_window"]}
+Memory limit: {st.session_state["memory_limit"]}
+System prompt: {st.session_state["system_prompt"]}
+Chunk overlap: {st.session_state["chunk_overlap"]}
+Chunk size: {st.session_state["chunk_size"]}
+```
+                """
                 st.markdown(
                     "Sources: " + response_time, unsafe_allow_html=True, help=f"{source_string}"
                 )
