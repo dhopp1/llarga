@@ -39,7 +39,7 @@ def export_chat_history():
     chat_history = f'*{st.session_state["user_name"]}\'s chat history from {str(datetime.now().date())}*\n\n'
 
     counter = 1
-    for message in st.session_state.messages:
+    for message in server_state[f'{st.session_state["user_name"]} messages']:
         if "source_string" not in message["content"]:
             role = message["role"]
             if role == "user":
@@ -94,6 +94,14 @@ def ui_header():
         st.session_state["db_name"] = (
             st.session_state["user_name"].lower().replace(" ", "_")
         )
+        
+    # count which session of the user this is
+    if f'{st.session_state["user_name"]}_count' not in server_state:
+        update_server_state(f'{st.session_state["user_name"]}_count', 1)
+        st.session_state["count"] = 1
+    else:
+        update_server_state(f'{st.session_state["user_name"]}_count', server_state[f'{st.session_state["user_name"]}_count'] + 1)
+        st.session_state["count"] = server_state[f'{st.session_state["user_name"]}_count']
 
 
 def ui_upload_docs():
@@ -160,7 +168,7 @@ def ui_model_params():
             ]
         ),  # don't show others' temporary corpora
         index=0
-        if "selected_corpus" not in st.session_state
+        if f"""{st.session_state["db_name"]}_which_corpus""" not in server_state
         else tuple(
             ["None"]
             + sorted(
@@ -171,7 +179,7 @@ def ui_model_params():
                     or x == f"temporary_{st.session_state['db_name']}"
                 ]
             )
-        ).index(st.session_state["selected_corpus"]),
+        ).index(server_state[f'{st.session_state["db_name"]}_which_corpus'] if server_state[f'{st.session_state["db_name"]}_which_corpus'] is not None else "None"),
         help="Which corpus to contextualize on.",
     )
 
@@ -317,7 +325,7 @@ def ui_reset():
 
 def ui_export_chat_end_session():
     "UI elements, export chat end session and help contact"
-    if "messages" in st.session_state:
+    if f'{st.session_state["user_name"]} messages' in server_state:
         st.session_state["export_chat_button"] = st.sidebar.download_button(
             label="Export chat history",
             data=export_chat_history(),
@@ -329,6 +337,7 @@ def ui_export_chat_end_session():
     end_session = st.sidebar.button("End session", help="End your session.")
     if end_session:
         clear_models()
+        update_server_state(f'{st.session_state["user_name"]} messages', []) # reset user's message history
         st.session_state["password_correct"] = False
         st.rerun()
         st.stop()
@@ -345,11 +354,11 @@ def import_chat():
 
     if f'model_{st.session_state["db_name"]}' in server_state:
         # Initialize chat history
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
+        if f'{st.session_state["user_name"]} messages' not in server_state:
+            update_server_state(f'{st.session_state["user_name"]} messages', [])
 
         # Display chat messages from history on app rerun
-        for message in st.session_state.messages:
+        for message in server_state[f'{st.session_state["user_name"]} messages']:
             avatar = (
                 st.session_state["user_avatar"]
                 if message["role"] == "user"
@@ -374,139 +383,122 @@ def import_chat():
                 with no_rerun:
                     server_state[
                         f'model_{st.session_state["db_name"]}'
-                    ].chat_engine = None  # .reset()
+                    ].chat_engine = None
             with st.chat_message(
                 "assistant", avatar=st.session_state["assistant_avatar"]
             ):
                 st.markdown("Model memory reset!")
-            st.session_state.messages.append(
-                {"role": "assistant", "content": "Model memory reset!"}
-            )
+            update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "assistant", "content": "Model memory reset!"}])
 
         # Accept user input
-        if st.session_state["which_corpus"] is None:
+        if server_state[f'{st.session_state["db_name"]}_which_corpus'] is None:
             placeholder_text = (
                 f"""Query '{st.session_state["selected_llm"]}', not contextualized"""
             )
         else:
-            placeholder_text = f"""Query '{st.session_state["selected_llm"]}' contextualized on '{st.session_state["which_corpus"]}' corpus"""
+            placeholder_text = f"""Query '{st.session_state["selected_llm"]}' contextualized on '""" + server_state[f'{st.session_state["db_name"]}_which_corpus'] + """' corpus"""
 
         if prompt := st.chat_input(placeholder_text):
             # Display user message in chat message container
             with st.chat_message("user", avatar=st.session_state["user_avatar"]):
                 st.markdown(prompt)
             # Add user message to chat history
-            st.session_state.messages.append({"role": "user", "content": prompt})
+            update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "user", "content": prompt}])
 
-            if st.session_state.messages[-1]["content"].lower() == "clear":
-                clear_models()
+            # lock the model to perform requests sequentially
+            if "in_use" not in server_state:
+                update_server_state("in_use", False)
 
-                with st.chat_message(
-                    "assistant", avatar=st.session_state["assistant_avatar"]
-                ):
-                    st.markdown("Models cleared!")
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": "Models cleared!"}
-                )
+            if "exec_queue" not in server_state:
+                update_server_state("exec_queue", [st.session_state["user_name"]])
+            if len(server_state["exec_queue"]) == 0:
+                update_server_state("exec_queue", [st.session_state["user_name"]])
             else:
-                # lock the model to perform requests sequentially
-                if "in_use" not in server_state:
-                    update_server_state("in_use", False)
-
-                if "exec_queue" not in server_state:
-                    update_server_state("exec_queue", [st.session_state["user_name"]])
-                if len(server_state["exec_queue"]) == 0:
-                    update_server_state("exec_queue", [st.session_state["user_name"]])
-                else:
-                    if st.session_state["user_name"] not in server_state["exec_queue"]:
-                        # add to the queue
-                        update_server_state(
-                            "exec_queue",
-                            server_state["exec_queue"]
-                            + [st.session_state["user_name"]],
-                        )
-
-                with st.spinner("Query queued..."):
-                    t = st.empty()
-                    while (
-                        server_state["in_use"]
-                        or server_state["exec_queue"][0]
-                        != st.session_state["user_name"]
-                    ):
-                        t.markdown(
-                            f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
-                        )
-                        time.sleep(1)
-                    t.empty()
-
-                # lock the model while generating
-                update_server_state("in_use", True)
-
-                # generate response
-                response = server_state[
-                    f'model_{st.session_state["db_name"]}'
-                ].gen_response(
-                    prompt=st.session_state.messages[-1]["content"],
-                    llm=server_state[st.session_state["selected_llm"]],
-                    similarity_top_k=st.session_state["similarity_top_k"],
-                    temperature=st.session_state["temperature"],
-                    max_new_tokens=st.session_state["max_new_tokens"],
-                    context_window=st.session_state["context_window"],
-                    use_chat_engine=st.session_state["use_chat_engine"],
-                    reset_chat_engine=st.session_state["reset_chat_engine"],
-                    memory_limit=st.session_state["memory_limit"],
-                    system_prompt=st.session_state["system_prompt"],
-                    streaming=True,
-                )
-
-                # Display assistant response in chat message container
-                with st.chat_message(
-                    "assistant", avatar=st.session_state["assistant_avatar"]
-                ):
-                    st.write_stream(streamed_response(response["response"]))
-
-                # adding sources
-                with st.chat_message(
-                    "assistant", avatar=st.session_state["assistant_avatar"]
-                ):
-                    if len(response.keys()) > 1:  # only do if RAG
-                        # markdown help way
-                        source_string = ""
-                        counter = 1
-                        for j in list(
-                            pd.Series(list(response.keys()))[
-                                pd.Series(list(response.keys())) != "response"
-                            ]
-                        ):
-                            # source_string += f"**Source {counter}**:\n\n \t\t{response[j]}\n\n\n\n"
-                            metadata_dict = eval(
-                                response[j]
-                                .split("| source text:")[0]
-                                .replace("metadata: ", "")
-                            )
-                            metadata_string = ""
-                            for key, value in metadata_dict.items():
-                                if key != "is_csv":
-                                    metadata_string += f"'{key}': '{value}'\n"
-
-                            source_string += f"""# Source {counter}\n ### Metadata:\n ```{metadata_string}```\n ### Text:\n{response[j].split("| source text:")[1]}\n\n"""
-                            counter += 1
-                    else:
-                        source_string = "NA"
-                    st.markdown(
-                        "Sources: ", unsafe_allow_html=True, help=f"{source_string}"
+                if st.session_state["user_name"] not in server_state["exec_queue"]:
+                    # add to the queue
+                    update_server_state(
+                        "exec_queue",
+                        server_state["exec_queue"]
+                        + [st.session_state["user_name"]],
                     )
 
-                # unlock the model
-                update_server_state("in_use", False)
-                update_server_state(
-                    "exec_queue", server_state["exec_queue"][1:]
-                )  # take out of the queue
+            with st.spinner("Query queued..."):
+                t = st.empty()
+                while (
+                    server_state["in_use"]
+                    or server_state["exec_queue"][0]
+                    != st.session_state["user_name"]
+                ):
+                    t.markdown(
+                        f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
+                    )
+                    time.sleep(1)
+                t.empty()
 
-                # Add assistant response to chat history
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": response["response"].response}
+            # lock the model while generating
+            update_server_state("in_use", True)
+
+            # generate response
+            response = server_state[
+                f'model_{st.session_state["db_name"]}'
+            ].gen_response(
+                prompt=server_state[f'{st.session_state["user_name"]} messages'][-1]["content"],
+                llm=server_state[st.session_state["selected_llm"]],
+                similarity_top_k=st.session_state["similarity_top_k"],
+                temperature=st.session_state["temperature"],
+                max_new_tokens=st.session_state["max_new_tokens"],
+                context_window=st.session_state["context_window"],
+                use_chat_engine=st.session_state["use_chat_engine"],
+                reset_chat_engine=st.session_state["reset_chat_engine"],
+                memory_limit=st.session_state["memory_limit"],
+                system_prompt=st.session_state["system_prompt"],
+                streaming=True,
+            )
+
+            # Display assistant response in chat message container
+            with st.chat_message(
+                "assistant", avatar=st.session_state["assistant_avatar"]
+            ):
+                st.write_stream(streamed_response(response["response"]))
+
+            # adding sources
+            with st.chat_message(
+                "assistant", avatar=st.session_state["assistant_avatar"]
+            ):
+                if len(response.keys()) > 1:  # only do if RAG
+                    # markdown help way
+                    source_string = ""
+                    counter = 1
+                    for j in list(
+                        pd.Series(list(response.keys()))[
+                            pd.Series(list(response.keys())) != "response"
+                        ]
+                    ):
+                        # source_string += f"**Source {counter}**:\n\n \t\t{response[j]}\n\n\n\n"
+                        metadata_dict = eval(
+                            response[j]
+                            .split("| source text:")[0]
+                            .replace("metadata: ", "")
+                        )
+                        metadata_string = ""
+                        for key, value in metadata_dict.items():
+                            if key != "is_csv":
+                                metadata_string += f"'{key}': '{value}'\n"
+
+                        source_string += f"""# Source {counter}\n ### Metadata:\n ```{metadata_string}```\n ### Text:\n{response[j].split("| source text:")[1]}\n\n"""
+                        counter += 1
+                else:
+                    source_string = "NA"
+                st.markdown(
+                    "Sources: ", unsafe_allow_html=True, help=f"{source_string}"
                 )
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": f"source_string:{source_string}"}
-                )
+
+            # unlock the model
+            update_server_state("in_use", False)
+            update_server_state(
+                "exec_queue", server_state["exec_queue"][1:]
+            )  # take out of the queue
+
+            # Add assistant response to chat history
+            update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "assistant", "content": response["response"].response}])
+            update_server_state(f'{st.session_state["user_name"]} messages', server_state[f'{st.session_state["user_name"]} messages'] + [{"role": "assistant", "content": f"source_string:{source_string}"}])

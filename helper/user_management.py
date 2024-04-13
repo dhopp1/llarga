@@ -10,6 +10,12 @@ import streamlit as st
 from streamlit_server_state import server_state, server_state_lock, no_rerun
 
 
+def update_server_state(key, value):
+    "update the server state variable"
+    with no_rerun:
+        with server_state_lock[key]:
+            server_state[key] = value
+
 def check_password():
     """Check if a user entered the password correctly"""
     if not (st.session_state["available"]):
@@ -17,14 +23,8 @@ def check_password():
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
-        st.session_state["override"] = False
         if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
             st.session_state["password_correct"] = True
-            del st.session_state["password"]
-        # override password
-        elif hmac.compare_digest(st.session_state["password"], st.secrets["override"]):
-            st.session_state["password_correct"] = True
-            st.session_state["override"] = True
             del st.session_state["password"]
         else:
             st.session_state["password_correct"] = False
@@ -48,14 +48,8 @@ def check_password():
     )
     if "password_correct" in st.session_state:
         st.error("Password incorrect")
+
     return False
-
-
-def update_server_state(key, value):
-    "update the server state variable"
-    with no_rerun:
-        with server_state_lock[key]:
-            server_state[key] = value
 
 
 def clear_models():
@@ -81,16 +75,23 @@ def determine_availability():
     # only unable to log in if the model is currently generating and the user has not booted in already
     if "first_boot" not in st.session_state:
         st.session_state["first_boot"] = True
-        try:
-            clear_models()
-        except:
-            pass
     else:
         st.session_state["first_boot"] = False
     if server_state["in_use"] and st.session_state["first_boot"]:
         st.session_state["available"] = False
     else:
         st.session_state["available"] = True
+        
+    # boot them if they're logging in again
+    if "user_name" in st.session_state:
+        if f'{st.session_state["user_name"]}_count' in server_state and "count" in st.session_state:
+            if server_state[f'{st.session_state["user_name"]}_count'] != st.session_state["count"]:
+                #st.session_state["available"] = False
+                st.error(
+                    "You have logged in on another tab."
+                )
+                clear_models()
+                st.stop()
 
 
 def setup_local_files():

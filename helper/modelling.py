@@ -29,18 +29,18 @@ def set_static_model_params():
 
 def determine_rerun_reinitialize():
     "determine values of 'rerun_populate_db', 'clear_database', 'reinitialized_db'"
-    if "rerun_populate_db" not in st.session_state:
-        st.session_state["rerun_populate_db"] = False
-    if "clear_database" not in st.session_state:
-        st.session_state["clear_database"] = False
+    if f'{st.session_state["user_name"]}_rerun_populate_db' not in server_state:
+        update_server_state(f'{st.session_state["user_name"]}_rerun_populate_db', False)
+    if f'{st.session_state["user_name"]}_clear_database' not in server_state:
+        update_server_state(f'{st.session_state["user_name"]}_clear_database', False)
 
     # reinitialize the vector db for simultaneous access initially
-    if "reinitialized_db" not in st.session_state:
-        st.session_state["reinitialized_db"] = False
+    if f'{st.session_state["user_name"]}_reinitialized_db' not in server_state:
+        update_server_state(f'{st.session_state["user_name"]}_reinitialized_db', False)
     else:
-        st.session_state["reinitialized_db"] = True
+        update_server_state(f'{st.session_state["user_name"]}_reinitialized_db', True)
 
-    if not (st.session_state["reinitialized_db"]):
+    if not (server_state[f'{st.session_state["user_name"]}_reinitialized_db']):
         # only run if database exists
         if check_db_exists(
             user=st.session_state["db_info"].loc[0, "user"],
@@ -161,6 +161,7 @@ def load_rag_pipeline():
         or st.session_state["reinitialize_remake"]
         or st.session_state["process_corpus_button"]
     ):
+        clear_models()
         if st.session_state["process_corpus_button"]:
             if not (
                 (
@@ -187,9 +188,6 @@ def load_rag_pipeline():
                 st.session_state["selected_corpus"] = st.session_state[
                     "new_corpus_name"
                 ]
-                st.session_state.messages = (
-                    []
-                )  # clear out message history on the prior context
 
         clear_models()
 
@@ -200,21 +198,21 @@ def load_rag_pipeline():
                 or st.session_state["process_corpus_button"]
             ):
                 st.session_state["local_rerun_populate_db"] = True
-                st.session_state["clear_database_local"] = st.session_state[
-                    "clear_database"
+                st.session_state["clear_database_local"] = server_state[
+                    f'{st.session_state["user_name"]}_clear_database'
                 ]
             else:
-                st.session_state["local_rerun_populate_db"] = st.session_state[
-                    "rerun_populate_db"
+                st.session_state["local_rerun_populate_db"] = server_state[
+                    f'{st.session_state["user_name"]}_rerun_populate_db'
                 ]
-                st.session_state["clear_database_local"] = st.session_state[
-                    "clear_database"
+                st.session_state["clear_database_local"] = server_state[
+                    f'{st.session_state["user_name"]}_clear_database'
                 ]
 
             def model_initialization():
                 (
                     model,
-                    st.session_state["which_corpus"],
+                    which_corpus,
                 ) = initialize_rag_pipeline(
                     which_corpus_local=None
                     if st.session_state["selected_corpus"] == "None"
@@ -230,13 +228,14 @@ def load_rag_pipeline():
                     db_info=st.session_state["db_info"],
                 )
                 update_server_state(f'model_{st.session_state["db_name"]}', model)
+                update_server_state(f'{st.session_state["db_name"]}_which_corpus', which_corpus)
                 del model
                 gc.collect()
 
             model_initialization()
 
             # clear the progress bar
-            if st.session_state["local_rerun_populate_db"]:
+            if server_state[f'{st.session_state["user_name"]}_rerun_populate_db']:
                 try:
                     sys.stdout = sys.stdout.clear()
                     sys.stdout = old_stdout
@@ -249,7 +248,7 @@ def load_rag_pipeline():
                     user=st.session_state["db_info"].loc[0, "user"],
                     password=st.session_state["db_info"].loc[0, "password"],
                     db_name=st.session_state["master_db_name"],
-                    table_name=f"data_{st.session_state['which_corpus']}",
+                    table_name="data_" + server_state[f'{st.session_state["db_name"]}_which_corpus'] if server_state[f'{st.session_state["db_name"]}_which_corpus'] is not None else "None"
                 )
             ):
                 # close the model connection to not have simulataneous ones
@@ -266,7 +265,4 @@ def load_rag_pipeline():
                 # reinitialize the model
                 model_initialization()
 
-            st.session_state.messages = (
-                []
-            )  # clear out message history on the prior context
             st.info("Model successfully initialized!")
