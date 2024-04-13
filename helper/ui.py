@@ -391,7 +391,7 @@ def import_chat():
                 with no_rerun:
                     server_state[
                         f'model_{st.session_state["db_name"]}'
-                    ].chat_engine.reset()
+                    ].chat_engine = None  # .reset()
             with st.chat_message(
                 "assistant", avatar=st.session_state["assistant_avatar"]
             ):
@@ -403,10 +403,10 @@ def import_chat():
         # Accept user input
         if st.session_state["which_corpus"] is None:
             placeholder_text = (
-                f"""Query '{st.session_state["which_llm"]}', not contextualized"""
+                f"""Query '{st.session_state["selected_llm"]}', not contextualized"""
             )
         else:
-            placeholder_text = f"""Query '{st.session_state["which_llm"]}' contextualized on '{st.session_state["which_corpus"]}' corpus"""
+            placeholder_text = f"""Query '{st.session_state["selected_llm"]}' contextualized on '{st.session_state["which_corpus"]}' corpus"""
 
         if prompt := st.chat_input(placeholder_text):
             # Display user message in chat message container
@@ -464,10 +464,16 @@ def import_chat():
                 response = server_state[
                     f'model_{st.session_state["db_name"]}'
                 ].gen_response(
-                    st.session_state.messages[-1]["content"],
+                    prompt=st.session_state.messages[-1]["content"],
+                    llm=server_state[st.session_state["selected_llm"]],
                     similarity_top_k=st.session_state["similarity_top_k"],
+                    temperature=st.session_state["temperature"],
+                    max_new_tokens=st.session_state["max_new_tokens"],
+                    context_window=st.session_state["context_window"],
                     use_chat_engine=st.session_state["use_chat_engine"],
                     reset_chat_engine=st.session_state["reset_chat_engine"],
+                    memory_limit=st.session_state["memory_limit"],
+                    system_prompt=st.session_state["system_prompt"],
                     streaming=True,
                 )
 

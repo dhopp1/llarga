@@ -98,7 +98,6 @@ def clear_models():
             server_state[f'model_{st.session_state["db_name"]}'].close_connection()
         except:
             pass
-        del server_state[f'model_{st.session_state["db_name"]}'].llm
         del server_state[f'model_{st.session_state["db_name"]}']
         gc.collect()
 

@@ -1,10 +1,13 @@
 import streamlit as st
+from streamlit_server_state import server_state
 
 from helper.modelling import (
     determine_rerun_reinitialize,
-    load_model,
+    initialize_llm,
+    load_rag_pipeline,
     set_static_model_params,
 )
+
 from helper.ui import (
     import_chat,
     import_styles,
@@ -79,6 +82,9 @@ ui_lockout_reset()
 ### model
 
 
+# load the LLM
+initialize_llm()
+
 # static model params
 set_static_model_params()
 
@@ -86,7 +92,7 @@ set_static_model_params()
 determine_rerun_reinitialize()
 
 # loading model
-load_model()
+load_rag_pipeline()
 
 
 ### chat logic
