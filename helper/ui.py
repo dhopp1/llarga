@@ -5,7 +5,7 @@ import pandas as pd
 from streamlit_server_state import server_state, no_rerun
 import streamlit as st
 
-from helper.user_management import clear_models, record_use, update_server_state
+from helper.user_management import clear_models, update_server_state
 
 
 def ui_tab():
@@ -306,18 +306,8 @@ def ui_advanced_model_params():
     )
 
 
-def ui_lockout_reset():
-    "UI lockout dropdown and reset button"
-
-    lockout_options = [3, 10, 15, 20]
-    st.session_state["last_used_threshold"] = st.sidebar.selectbox(
-        "Lockout duration",
-        options=lockout_options,
-        index=0
-        if "last_used_threshold" not in st.session_state
-        else lockout_options.index(st.session_state["last_used_threshold"]),
-        help="How many minutes after each interaction to continue reserving your session.",
-    )
+def ui_reset():
+    "UI reset button"
 
     st.session_state["reset_memory"] = st.sidebar.button(
         "Reset model's memory",
@@ -336,16 +326,9 @@ def ui_export_chat_end_session():
         )
 
     # end session button
-    end_session = st.sidebar.button(
-        "End session", help="End your session and free your spot."
-    )
+    end_session = st.sidebar.button("End session", help="End your session.")
     if end_session:
         clear_models()
-        record_use(free_up=True)
-        update_server_state(
-            "queue",
-            [x for x in server_state["queue"] if x != st.session_state["user_name"]],
-        )
         st.session_state["password_correct"] = False
         st.rerun()
         st.stop()
@@ -458,7 +441,6 @@ def import_chat():
 
                 # lock the model while generating
                 update_server_state("in_use", True)
-                record_use(future_lock=True)
 
                 # generate response
                 response = server_state[
@@ -520,8 +502,6 @@ def import_chat():
                 update_server_state(
                     "exec_queue", server_state["exec_queue"][1:]
                 )  # take out of the queue
-
-                record_use(future_lock=False)
 
                 # Add assistant response to chat history
                 st.session_state.messages.append(

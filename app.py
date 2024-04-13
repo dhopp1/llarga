@@ -15,7 +15,7 @@ from helper.ui import (
     ui_advanced_model_params,
     ui_export_chat_end_session,
     ui_header,
-    ui_lockout_reset,
+    ui_reset,
     ui_model_params,
     ui_tab,
     ui_upload_docs,
@@ -23,7 +23,6 @@ from helper.ui import (
 from helper.user_management import (
     check_password,
     determine_availability,
-    manage_boot,
     setup_local_files,
 )
 
@@ -45,9 +44,6 @@ if not check_password():
 
 # header
 ui_header()
-
-# check if first boot of user and check if eligible to be kicked off
-manage_boot()
 
 # styles sheets
 import_styles()
@@ -75,8 +71,8 @@ ui_advanced_model_params()
 
 st.sidebar.divider()
 
-# lockout and reset memory button
-ui_lockout_reset()
+# reset memory button
+ui_reset()
 
 
 ### model

@@ -15,9 +15,7 @@ from helper.own_corpus import (
 )
 from helper.progress_bar import Logger
 from helper.user_management import (
-    calc_max_users,
     clear_models,
-    record_use,
     update_server_state,
 )
 
@@ -177,7 +175,6 @@ def load_rag_pipeline():
                 st.error("A corpus with this name already exists, choose another one.")
             else:
                 with st.spinner("Processing corpus..."):
-                    record_use(future_lock=True)
                     old_stdout = sys.stdout
                     sys.stdout = Logger(st.progress(0), st.empty())
                     st.session_state["corpora_dict"] = process_corpus(
@@ -186,7 +183,6 @@ def load_rag_pipeline():
                         own_urls=st.session_state["own_urls"],
                         uploaded_document=st.session_state["uploaded_file"],
                     )
-                    record_use(future_lock=False)
 
                 st.session_state["selected_corpus"] = st.session_state[
                     "new_corpus_name"
@@ -237,9 +233,7 @@ def load_rag_pipeline():
                 del model
                 gc.collect()
 
-            record_use(future_lock=True)
             model_initialization()
-            record_use(future_lock=False)
 
             # clear the progress bar
             if st.session_state["local_rerun_populate_db"]:
@@ -270,13 +264,9 @@ def load_rag_pipeline():
                 )
 
                 # reinitialize the model
-                record_use(future_lock=True)
                 model_initialization()
-                record_use(future_lock=False)
 
             st.session_state.messages = (
                 []
             )  # clear out message history on the prior context
             st.info("Model successfully initialized!")
-
-            update_server_state("max_users", calc_max_users(len(server_state["queue"])))
