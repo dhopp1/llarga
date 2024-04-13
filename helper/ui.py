@@ -262,7 +262,7 @@ def ui_advanced_model_params():
             value=""
             if "system_prompt" not in st.session_state
             else st.session_state["system_prompt"],
-            help="What prompt to initialize the chatbot with.",
+            help="What prompt to initialize the chatbot with. Hit the `Reset model's memory` button after changing to take effect. Has less impact with RAG queries.",
         )
 
         # params that affect the vector_db
@@ -302,7 +302,7 @@ def ui_advanced_model_params():
 
     st.session_state["reinitialize"] = st.sidebar.button(
         "Reinitialize model",
-        help="Click if you change the `Which LLM` or `Which corpus` options, or any of the advanced parameters.",
+        help="Click if you change the `Which LLM` or `Which corpus` options.",
     )
 
 
