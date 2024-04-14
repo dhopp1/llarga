@@ -1,5 +1,9 @@
 # Change Log
 
+### 0.0.3
+### Changed
+* Made model parameters persistent per user between sessions.
+
 ### 0.0.2
 ### Changed
 * Split the LLM from the user sesssion. All users share the same LLM, unlimited users.

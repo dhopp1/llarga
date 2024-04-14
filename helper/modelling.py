@@ -57,8 +57,8 @@ def determine_rerun_reinitialize():
 
 def initialize_llm():
     "initialize an LLM"
-    if "selected_llm" in st.session_state:
-        llm_name = st.session_state["selected_llm"]
+    if f'{st.session_state["user_name"]}_selected_llm' in server_state:
+        llm_name = server_state[f'{st.session_state["user_name"]}_selected_llm']
     else:
         llm_name = st.session_state["llm_dict"].loc[0, "name"].values[0]
 
@@ -69,7 +69,7 @@ def initialize_llm():
                 instantiate_llm(
                     llm_path=st.session_state["llm_dict"]
                     .loc[
-                        lambda x: x.name == st.session_state["selected_llm"], "llm_path"
+                        lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "llm_path"
                     ]
                     .values[0],
                     n_gpu_layers=100,
@@ -185,7 +185,7 @@ def load_rag_pipeline():
                         uploaded_document=st.session_state["uploaded_file"],
                     )
 
-                st.session_state["selected_corpus"] = st.session_state[
+                server_state[f'{st.session_state["user_name"]}_selected_corpus'] = st.session_state[
                     "new_corpus_name"
                 ]
 
@@ -215,10 +215,10 @@ def load_rag_pipeline():
                     which_corpus,
                 ) = initialize_rag_pipeline(
                     which_corpus_local=None
-                    if st.session_state["selected_corpus"] == "None"
-                    else st.session_state["selected_corpus"],
-                    chunk_overlap=st.session_state["chunk_overlap"],
-                    chunk_size=st.session_state["chunk_size"],
+                    if server_state[f'{st.session_state["user_name"]}_selected_corpus'] == "None"
+                    else server_state[f'{st.session_state["user_name"]}_selected_corpus'],
+                    chunk_overlap=server_state[f'{st.session_state["user_name"]}_chunk_overlap'],
+                    chunk_size=server_state[f'{st.session_state["user_name"]}_chunk_size'],
                     paragraph_separator=st.session_state["paragraph_separator"],
                     separator=st.session_state["separator"],
                     rerun_populate_db=st.session_state["local_rerun_populate_db"],

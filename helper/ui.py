@@ -151,33 +151,23 @@ def ui_model_params():
     )
 
     # which_llm
-    st.session_state["selected_llm"] = st.sidebar.selectbox(
-        "Which LLM",
-        options=st.session_state["llm_dict"].name,
-        index=tuple(st.session_state["llm_dict"].name).index("mistral-docsgpt")
-        if "selected_llm" not in st.session_state
-        else tuple(st.session_state["llm_dict"].name).index(
-            st.session_state["selected_llm"]
-        ),
-        help="Which LLM to use.",
-    )
+    with no_rerun:
+        server_state[f'{st.session_state["user_name"]}_selected_llm'] = st.sidebar.selectbox(
+            "Which LLM",
+            options=st.session_state["llm_dict"].name,
+            index=tuple(st.session_state["llm_dict"].name).index("mistral-docsgpt")
+            if f'{st.session_state["user_name"]}_selected_llm' not in server_state
+            else tuple(st.session_state["llm_dict"].name).index(
+                server_state[f'{st.session_state["user_name"]}_selected_llm']
+            ),
+            help="Which LLM to use.",
+        )
 
     # which corpus
-    st.session_state["selected_corpus"] = st.sidebar.selectbox(
-        "Which corpus",
-        options=["None"]
-        + sorted(
-            [
-                x
-                for x in list(st.session_state["corpora_dict"].name)
-                if "temporary" not in x
-                or x == f"temporary_{st.session_state['db_name']}"
-            ]
-        ),  # don't show others' temporary corpora
-        index=0
-        if f"""{st.session_state["db_name"]}_which_corpus""" not in server_state
-        else tuple(
-            ["None"]
+    with no_rerun:
+        server_state[f'{st.session_state["user_name"]}_selected_corpus'] = st.sidebar.selectbox(
+            "Which corpus",
+            options=["None"]
             + sorted(
                 [
                     x
@@ -185,14 +175,26 @@ def ui_model_params():
                     if "temporary" not in x
                     or x == f"temporary_{st.session_state['db_name']}"
                 ]
-            )
-        ).index(
-            server_state[f'{st.session_state["db_name"]}_which_corpus']
-            if server_state[f'{st.session_state["db_name"]}_which_corpus'] is not None
-            else "None"
-        ),
-        help="Which corpus to contextualize on.",
-    )
+            ),  # don't show others' temporary corpora
+            index=0
+            if f"""{st.session_state["db_name"]}_which_corpus""" not in server_state
+            else tuple(
+                ["None"]
+                + sorted(
+                    [
+                        x
+                        for x in list(st.session_state["corpora_dict"].name)
+                        if "temporary" not in x
+                        or x == f"temporary_{st.session_state['db_name']}"
+                    ]
+                )
+            ).index(
+                server_state[f'{st.session_state["db_name"]}_which_corpus']
+                if server_state[f'{st.session_state["db_name"]}_which_corpus'] is not None
+                else "None"
+            ),
+            help="Which corpus to contextualize on.",
+        )
 
 
 def ui_advanced_model_params():
@@ -200,25 +202,27 @@ def ui_advanced_model_params():
 
     with st.sidebar.expander("Advanced model parameters"):
         # renaming new corpus
-        st.session_state["new_corpus_name"] = st.text_input(
-            "Uploaded corpus name",
-            value=f"temporary_{st.session_state['db_name']}"
-            if "new_corpus_name" not in st.session_state
-            else st.session_state["new_corpus_name"],
-            help="The name of the new corpus you are processing. It must be able to be a SQL database name, so only lower case, no special characters, no spaces. Use underscores.",
-        )
+        with no_rerun:
+            st.session_state["new_corpus_name"] = st.text_input(
+                "Uploaded corpus name",
+                value=f"temporary_{st.session_state['db_name']}"
+                if "new_corpus_name" not in st.session_state
+                else st.session_state["new_corpus_name"],
+                help="The name of the new corpus you are processing. It must be able to be a SQL database name, so only lower case, no special characters, no spaces. Use underscores.",
+            )
 
         # similarity top k
-        st.session_state["similarity_top_k"] = st.slider(
-            "Similarity top K",
-            min_value=1,
-            max_value=20,
-            step=1,
-            value=4
-            if "similarity_top_k" not in st.session_state
-            else st.session_state["similarity_top_k"],
-            help="The number of contextual document chunks to retrieve for RAG.",
-        )
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_similarity_top_k'] = st.slider(
+                "Similarity top K",
+                min_value=1,
+                max_value=20,
+                step=1,
+                value=4
+                if f'{st.session_state["user_name"]}_similarity_top_k' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_similarity_top_k'],
+                help="The number of contextual document chunks to retrieve for RAG.",
+            )
 
         # n_gpu layers
         st.session_state["n_gpu_layers"] = (
@@ -228,61 +232,66 @@ def ui_advanced_model_params():
         )
 
         # temperature
-        st.session_state["temperature"] = st.slider(
-            "Temperature",
-            min_value=0,
-            max_value=100,
-            step=1,
-            value=0
-            if "temperature" not in st.session_state
-            else st.session_state["temperature"],
-            help="How much leeway/creativity to give the model, 0 = least creativity, 100 = most creativity.",
-        )
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_temperature'] = st.slider(
+                "Temperature",
+                min_value=0,
+                max_value=100,
+                step=1,
+                value=0
+                if f'{st.session_state["user_name"]}_temperature' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_temperature'],
+                help="How much leeway/creativity to give the model, 0 = least creativity, 100 = most creativity.",
+            )
 
         # max_new tokens
-        st.session_state["max_new_tokens"] = st.slider(
-            "Max new tokens",
-            min_value=16,
-            max_value=16000,
-            step=8,
-            value=512
-            if "max_new_tokens" not in st.session_state
-            else st.session_state["max_new_tokens"],
-            help="How long to limit the responses to (token ≈ word).",
-        )
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_max_new_tokens'] = st.slider(
+                "Max new tokens",
+                min_value=16,
+                max_value=16000,
+                step=8,
+                value=512
+                if f'{st.session_state["user_name"]}_max_new_tokens' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_max_new_tokens'],
+                help="How long to limit the responses to (token ≈ word).",
+            )
 
         # context window
-        st.session_state["context_window"] = st.slider(
-            "Context window",
-            min_value=500,
-            max_value=50000,
-            step=100,
-            value=4000
-            if "context_window" not in st.session_state
-            else st.session_state["context_window"],
-            help="How large to make the context window for the LLM. The maximum depends on the model, a higher value might result in context window too large errors.",
-        )
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_context_window'] = st.slider(
+                "Context window",
+                min_value=500,
+                max_value=50000,
+                step=100,
+                value=4000
+                if f'{st.session_state["user_name"]}_context_window' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_context_window'],
+                help="How large to make the context window for the LLM. The maximum depends on the model, a higher value might result in context window too large errors.",
+            )
 
         # memory limit
-        st.session_state["memory_limit"] = st.slider(
-            "Memory limit",
-            min_value=80,
-            max_value=80000,
-            step=8,
-            value=2048
-            if "memory_limit" not in st.session_state
-            else st.session_state["memory_limit"],
-            help="How many tokens (words) memory to give the chatbot.",
-        )
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_memory_limit'] = st.slider(
+                "Memory limit",
+                min_value=80,
+                max_value=80000,
+                step=8,
+                value=2048
+                if f'{st.session_state["user_name"]}_memory_limit' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_memory_limit'],
+                help="How many tokens (words) memory to give the chatbot.",
+            )
 
         # system prompt
-        st.session_state["system_prompt"] = st.text_input(
-            "System prompt",
-            value=""
-            if "system_prompt" not in st.session_state
-            else st.session_state["system_prompt"],
-            help="What prompt to initialize the chatbot with. Hit the `Reset model's memory` button after changing to take effect. Has less impact with RAG queries.",
-        )
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_system_prompt'] = st.text_input(
+                "System prompt",
+                value=""
+                if f'{st.session_state["user_name"]}_system_prompt' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_system_prompt'],
+                help="What prompt to initialize the chatbot with. Hit the `Reset model's memory` button after changing to take effect. Has less impact with RAG queries.",
+            )
 
         # params that affect the vector_db
         st.markdown(
@@ -291,28 +300,30 @@ def ui_advanced_model_params():
         )
 
         # chunk overlap
-        st.session_state["chunk_overlap"] = st.slider(
-            "Chunk overlap",
-            min_value=0,
-            max_value=1000,
-            step=1,
-            value=200
-            if "chunk_overlap" not in st.session_state
-            else st.session_state["chunk_overlap"],
-            help="How many tokens to overlap when chunking the documents.",
-        )
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_chunk_overlap'] = st.slider(
+                "Chunk overlap",
+                min_value=0,
+                max_value=1000,
+                step=1,
+                value=200
+                if f'{st.session_state["user_name"]}_chunk_overlap' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_chunk_overlap'],
+                help="How many tokens to overlap when chunking the documents.",
+            )
 
         # chunk size
-        st.session_state["chunk_size"] = st.slider(
-            "Chunk size",
-            min_value=64,
-            max_value=6400,
-            step=8,
-            value=512
-            if "chunk_size" not in st.session_state
-            else st.session_state["chunk_size"],
-            help="How many tokens per chunk when chunking the documents.",
-        )
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_chunk_size'] = st.slider(
+                "Chunk size",
+                min_value=64,
+                max_value=6400,
+                step=8,
+                value=512
+                if f'{st.session_state["user_name"]}_chunk_size' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_chunk_size'],
+                help="How many tokens per chunk when chunking the documents.",
+            )
 
         st.session_state["reinitialize_remake"] = st.button(
             "Reinitialize model and remake DB",
@@ -412,11 +423,11 @@ def import_chat():
         # Accept user input
         if server_state[f'{st.session_state["db_name"]}_which_corpus'] is None:
             placeholder_text = (
-                f"""Query '{st.session_state["selected_llm"]}', not contextualized"""
+                "Query '" + server_state[f'{st.session_state["user_name"]}_selected_llm'] + "', not contextualized"
             )
         else:
             placeholder_text = (
-                f"""Query '{st.session_state["selected_llm"]}' contextualized on '"""
+                "Query '" + server_state[f'{st.session_state["user_name"]}_selected_llm'] + "' contextualized on '"""
                 + server_state[f'{st.session_state["db_name"]}_which_corpus']
                 + """' corpus"""
             )
@@ -471,15 +482,15 @@ def import_chat():
                 prompt=server_state[f'{st.session_state["user_name"]} messages'][-1][
                     "content"
                 ],
-                llm=server_state[st.session_state["selected_llm"]],
-                similarity_top_k=st.session_state["similarity_top_k"],
-                temperature=st.session_state["temperature"],
-                max_new_tokens=st.session_state["max_new_tokens"],
-                context_window=st.session_state["context_window"],
+                llm=server_state[server_state[f'{st.session_state["user_name"]}_selected_llm']],
+                similarity_top_k=server_state[f'{st.session_state["user_name"]}_similarity_top_k'],
+                temperature=server_state[f'{st.session_state["user_name"]}_temperature'],
+                max_new_tokens=server_state[f'{st.session_state["user_name"]}_max_new_tokens'],
+                context_window=server_state[f'{st.session_state["user_name"]}_context_window'],
                 use_chat_engine=st.session_state["use_chat_engine"],
                 reset_chat_engine=st.session_state["reset_chat_engine"],
-                memory_limit=st.session_state["memory_limit"],
-                system_prompt=st.session_state["system_prompt"],
+                memory_limit=server_state[f'{st.session_state["user_name"]}_memory_limit'],
+                system_prompt=server_state[f'{st.session_state["user_name"]}_system_prompt'],
                 streaming=True,
             )
 
@@ -522,16 +533,16 @@ def import_chat():
                 # adding model information
                 source_string += "\n# Model parameters\n"
                 source_string += f"""```
-Which LLM: {st.session_state["selected_llm"]}
-Which corpus: {st.session_state["selected_corpus"]}
-Similarity top K: {st.session_state["similarity_top_k"]}
-Temperature: {st.session_state["temperature"]}
-Max new tokens: {st.session_state["max_new_tokens"]}
-Context window: {st.session_state["context_window"]}
-Memory limit: {st.session_state["memory_limit"]}
-System prompt: {st.session_state["system_prompt"]}
-Chunk overlap: {st.session_state["chunk_overlap"]}
-Chunk size: {st.session_state["chunk_size"]}
+Which LLM: {server_state[f'{st.session_state["user_name"]}_selected_llm']}
+Which corpus: {server_state[f'{st.session_state["user_name"]}_selected_corpus']}
+Similarity top K: {server_state[f'{st.session_state["user_name"]}_similarity_top_k']}
+Temperature: {server_state[f'{st.session_state["user_name"]}_temperature']}
+Max new tokens: {server_state[f'{st.session_state["user_name"]}_max_new_tokens']}
+Context window: {server_state[f'{st.session_state["user_name"]}_context_window']}
+Memory limit: {server_state[f'{st.session_state["user_name"]}_memory_limit']}
+System prompt: {server_state[f'{st.session_state["user_name"]}_system_prompt']}
+Chunk overlap: {server_state[f'{st.session_state["user_name"]}_chunk_overlap']}
+Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
 ```
                 """
                 st.markdown(
