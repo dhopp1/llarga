@@ -359,6 +359,19 @@ def ui_export_chat_end_session():
     end_session = st.sidebar.button("End session", help="End your session.")
     if end_session:
         clear_models()
+        
+        # reset parameters to defaults
+        del server_state[f'{st.session_state["user_name"]}_selected_llm']
+        del server_state[f'{st.session_state["user_name"]}_selected_corpus']
+        del server_state[f'{st.session_state["user_name"]}_similarity_top_k']
+        del server_state[f'{st.session_state["user_name"]}_temperature']
+        del server_state[f'{st.session_state["user_name"]}_max_new_tokens']
+        del server_state[f'{st.session_state["user_name"]}_context_window']
+        del server_state[f'{st.session_state["user_name"]}_memory_limit']
+        del server_state[f'{st.session_state["user_name"]}_system_prompt']
+        del server_state[f'{st.session_state["user_name"]}_chunk_overlap']
+        del server_state[f'{st.session_state["user_name"]}_chunk_size']
+        
         update_server_state(
             f'{st.session_state["user_name"]} messages', []
         )  # reset user's message history
