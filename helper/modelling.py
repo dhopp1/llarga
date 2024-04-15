@@ -184,10 +184,8 @@ def load_rag_pipeline():
                         own_urls=st.session_state["own_urls"],
                         uploaded_document=st.session_state["uploaded_file"],
                     )
-
-                server_state[f'{st.session_state["user_name"]}_selected_corpus'] = st.session_state[
-                    "new_corpus_name"
-                ]
+                
+                update_server_state(f'{st.session_state["user_name"]}_selected_corpus', st.session_state["new_corpus_name"])
 
         clear_models()
 
@@ -235,7 +233,7 @@ def load_rag_pipeline():
             model_initialization()
 
             # clear the progress bar
-            if server_state[f'{st.session_state["user_name"]}_rerun_populate_db']:
+            if server_state[f'{st.session_state["user_name"]}_rerun_populate_db'] or st.session_state["process_corpus_button"]:
                 try:
                     sys.stdout = sys.stdout.clear()
                     sys.stdout = old_stdout
