@@ -14,6 +14,7 @@ from helper.own_corpus import (
     transfer_db,
 )
 from helper.progress_bar import Logger
+from helper.ui import populate_chat
 from helper.user_management import (
     clear_models,
     update_server_state,
@@ -69,7 +70,11 @@ def initialize_llm():
                 instantiate_llm(
                     llm_path=st.session_state["llm_dict"]
                     .loc[
-                        lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "llm_path"
+                        lambda x: x.name
+                        == server_state[
+                            f'{st.session_state["user_name"]}_selected_llm'
+                        ],
+                        "llm_path",
                     ]
                     .values[0],
                     n_gpu_layers=100,
@@ -162,6 +167,11 @@ def load_rag_pipeline():
         or st.session_state["process_corpus_button"]
     ):
         clear_models()
+
+        # hid messages so you can see the initializer
+        if "message_box" in st.session_state:
+            st.session_state["message_box"].empty()
+
         if st.session_state["process_corpus_button"]:
             if not (
                 (
@@ -184,8 +194,11 @@ def load_rag_pipeline():
                         own_urls=st.session_state["own_urls"],
                         uploaded_document=st.session_state["uploaded_file"],
                     )
-                
-                update_server_state(f'{st.session_state["user_name"]}_selected_corpus', st.session_state["new_corpus_name"])
+
+                update_server_state(
+                    f'{st.session_state["user_name"]}_selected_corpus',
+                    st.session_state["new_corpus_name"],
+                )
 
         clear_models()
 
@@ -213,10 +226,17 @@ def load_rag_pipeline():
                     which_corpus,
                 ) = initialize_rag_pipeline(
                     which_corpus_local=None
-                    if server_state[f'{st.session_state["user_name"]}_selected_corpus'] == "None"
-                    else server_state[f'{st.session_state["user_name"]}_selected_corpus'],
-                    chunk_overlap=server_state[f'{st.session_state["user_name"]}_chunk_overlap'],
-                    chunk_size=server_state[f'{st.session_state["user_name"]}_chunk_size'],
+                    if server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                    == "None"
+                    else server_state[
+                        f'{st.session_state["user_name"]}_selected_corpus'
+                    ],
+                    chunk_overlap=server_state[
+                        f'{st.session_state["user_name"]}_chunk_overlap'
+                    ],
+                    chunk_size=server_state[
+                        f'{st.session_state["user_name"]}_chunk_size'
+                    ],
                     paragraph_separator=st.session_state["paragraph_separator"],
                     separator=st.session_state["separator"],
                     rerun_populate_db=st.session_state["local_rerun_populate_db"],
@@ -226,14 +246,19 @@ def load_rag_pipeline():
                     db_info=st.session_state["db_info"],
                 )
                 update_server_state(f'model_{st.session_state["db_name"]}', model)
-                update_server_state(f'{st.session_state["db_name"]}_which_corpus', which_corpus)
+                update_server_state(
+                    f'{st.session_state["db_name"]}_which_corpus', which_corpus
+                )
                 del model
                 gc.collect()
 
             model_initialization()
 
             # clear the progress bar
-            if server_state[f'{st.session_state["user_name"]}_rerun_populate_db'] or st.session_state["process_corpus_button"]:
+            if (
+                server_state[f'{st.session_state["user_name"]}_rerun_populate_db']
+                or st.session_state["process_corpus_button"]
+            ):
                 try:
                     sys.stdout = sys.stdout.clear()
                     sys.stdout = old_stdout
@@ -246,7 +271,11 @@ def load_rag_pipeline():
                     user=st.session_state["db_info"].loc[0, "user"],
                     password=st.session_state["db_info"].loc[0, "password"],
                     db_name=st.session_state["master_db_name"],
-                    table_name="data_" + server_state[f'{st.session_state["db_name"]}_which_corpus'] if server_state[f'{st.session_state["db_name"]}_which_corpus'] is not None else "None"
+                    table_name="data_"
+                    + server_state[f'{st.session_state["db_name"]}_which_corpus']
+                    if server_state[f'{st.session_state["db_name"]}_which_corpus']
+                    is not None
+                    else "None",
                 )
             ):
                 # close the model connection to not have simulataneous ones
@@ -263,4 +292,6 @@ def load_rag_pipeline():
                 # reinitialize the model
                 model_initialization()
 
+            # repopulate the chat
+            populate_chat()
             st.info("Model successfully initialized!")

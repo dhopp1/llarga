@@ -16,6 +16,7 @@ def update_server_state(key, value):
         with server_state_lock[key]:
             server_state[key] = value
 
+
 def check_password():
     """Check if a user entered the password correctly"""
     if not (st.session_state["available"]):
@@ -81,15 +82,19 @@ def determine_availability():
         st.session_state["available"] = False
     else:
         st.session_state["available"] = True
-        
+
     # boot them if they're logging in again
     if "user_name" in st.session_state:
-        if f'{st.session_state["user_name"]}_count' in server_state and "count" in st.session_state:
-            if server_state[f'{st.session_state["user_name"]}_count'] != st.session_state["count"]:
-                #st.session_state["available"] = False
-                st.error(
-                    "You have logged in on another tab."
-                )
+        if (
+            f'{st.session_state["user_name"]}_count' in server_state
+            and "count" in st.session_state
+        ):
+            if (
+                server_state[f'{st.session_state["user_name"]}_count']
+                != st.session_state["count"]
+            ):
+                # st.session_state["available"] = False
+                st.error("You have logged in on another tab.")
                 clear_models()
                 st.stop()
 

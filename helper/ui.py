@@ -152,7 +152,9 @@ def ui_model_params():
 
     # which_llm
     with no_rerun:
-        server_state[f'{st.session_state["user_name"]}_selected_llm'] = st.sidebar.selectbox(
+        server_state[
+            f'{st.session_state["user_name"]}_selected_llm'
+        ] = st.sidebar.selectbox(
             "Which LLM",
             options=st.session_state["llm_dict"].name,
             index=tuple(st.session_state["llm_dict"].name).index("mistral-docsgpt")
@@ -165,7 +167,9 @@ def ui_model_params():
 
     # which corpus
     with no_rerun:
-        server_state[f'{st.session_state["user_name"]}_selected_corpus'] = st.sidebar.selectbox(
+        server_state[
+            f'{st.session_state["user_name"]}_selected_corpus'
+        ] = st.sidebar.selectbox(
             "Which corpus",
             options=["None"]
             + sorted(
@@ -177,7 +181,7 @@ def ui_model_params():
                 ]
             ),  # don't show others' temporary corpora
             index=0
-            if f"""{st.session_state["db_name"]}_which_corpus""" not in server_state
+            if f'{st.session_state["user_name"]}_selected_corpus' not in server_state
             else tuple(
                 ["None"]
                 + sorted(
@@ -189,8 +193,9 @@ def ui_model_params():
                     ]
                 )
             ).index(
-                server_state[f'{st.session_state["db_name"]}_which_corpus']
-                if server_state[f'{st.session_state["db_name"]}_which_corpus'] is not None
+                server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                if server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                is not None
                 else "None"
             ),
             help="Which corpus to contextualize on.",
@@ -213,13 +218,16 @@ def ui_advanced_model_params():
 
         # similarity top k
         with no_rerun:
-            server_state[f'{st.session_state["user_name"]}_similarity_top_k'] = st.slider(
+            server_state[
+                f'{st.session_state["user_name"]}_similarity_top_k'
+            ] = st.slider(
                 "Similarity top K",
                 min_value=1,
                 max_value=20,
                 step=1,
                 value=4
-                if f'{st.session_state["user_name"]}_similarity_top_k' not in server_state
+                if f'{st.session_state["user_name"]}_similarity_top_k'
+                not in server_state
                 else server_state[f'{st.session_state["user_name"]}_similarity_top_k'],
                 help="The number of contextual document chunks to retrieve for RAG.",
             )
@@ -285,7 +293,9 @@ def ui_advanced_model_params():
 
         # system prompt
         with no_rerun:
-            server_state[f'{st.session_state["user_name"]}_system_prompt'] = st.text_input(
+            server_state[
+                f'{st.session_state["user_name"]}_system_prompt'
+            ] = st.text_input(
                 "System prompt",
                 value=""
                 if f'{st.session_state["user_name"]}_system_prompt' not in server_state
@@ -359,7 +369,7 @@ def ui_export_chat_end_session():
     end_session = st.sidebar.button("End session", help="End your session.")
     if end_session:
         clear_models()
-        
+
         # reset parameters to defaults
         del server_state[f'{st.session_state["user_name"]}_selected_llm']
         del server_state[f'{st.session_state["user_name"]}_selected_corpus']
@@ -371,7 +381,7 @@ def ui_export_chat_end_session():
         del server_state[f'{st.session_state["user_name"]}_system_prompt']
         del server_state[f'{st.session_state["user_name"]}_chunk_overlap']
         del server_state[f'{st.session_state["user_name"]}_chunk_size']
-        
+
         update_server_state(
             f'{st.session_state["user_name"]} messages', []
         )  # reset user's message history
@@ -386,6 +396,33 @@ def ui_export_chat_end_session():
     )
 
 
+def populate_chat():
+    # Display chat messages from history on app rerun
+    st.session_state["message_box"] = st.empty()
+
+    if f'{st.session_state["user_name"]} messages' in server_state:
+        with st.session_state["message_box"].container():
+            for message in server_state[f'{st.session_state["user_name"]} messages']:
+                avatar = (
+                    st.session_state["user_avatar"]
+                    if message["role"] == "user"
+                    else st.session_state["assistant_avatar"]
+                )
+                with st.chat_message(message["role"], avatar=avatar):
+                    if "source_string" not in message["content"]:
+                        st.markdown(message["content"], unsafe_allow_html=True)
+                    else:
+                        st.markdown(
+                            "Sources: "
+                            + "<br>"
+                            + message["content"].split("string:")[1].split("<br>")[1],
+                            unsafe_allow_html=True,
+                            help=message["content"]
+                            .split("string:")[1]
+                            .split("<br>")[0],
+                        )
+
+
 def import_chat():
     "UI element and logic for chat interface"
 
@@ -394,24 +431,14 @@ def import_chat():
         if f'{st.session_state["user_name"]} messages' not in server_state:
             update_server_state(f'{st.session_state["user_name"]} messages', [])
 
-        # Display chat messages from history on app rerun
-        for message in server_state[f'{st.session_state["user_name"]} messages']:
-            avatar = (
-                st.session_state["user_avatar"]
-                if message["role"] == "user"
-                else st.session_state["assistant_avatar"]
-            )
-            with st.chat_message(message["role"], avatar=avatar):
-                if "source_string" not in message["content"]:
-                    st.markdown(message["content"], unsafe_allow_html=True)
-                else:
-                    st.markdown(
-                        "Sources: "
-                        + "<br>"
-                        + message["content"].split("string:")[1].split("<br>")[1],
-                        unsafe_allow_html=True,
-                        help=message["content"].split("string:")[1].split("<br>")[0],
-                    )
+        # populate the chat, only if not reinitialized/reprocess, in that case done elsewhere
+        if not (
+            f'model_{st.session_state["db_name"]}' not in server_state
+            or st.session_state["reinitialize"]
+            or st.session_state["reinitialize_remake"]
+            or st.session_state["process_corpus_button"]
+        ):
+            populate_chat()
 
         # reset model's memory
         if st.session_state["reset_memory"]:
@@ -436,11 +463,16 @@ def import_chat():
         # Accept user input
         if server_state[f'{st.session_state["db_name"]}_which_corpus'] is None:
             placeholder_text = (
-                "Query '" + server_state[f'{st.session_state["user_name"]}_selected_llm'] + "', not contextualized"
+                "Query '"
+                + server_state[f'{st.session_state["user_name"]}_selected_llm']
+                + "', not contextualized"
             )
         else:
             placeholder_text = (
-                "Query '" + server_state[f'{st.session_state["user_name"]}_selected_llm'] + "' contextualized on '"""
+                "Query '"
+                + server_state[f'{st.session_state["user_name"]}_selected_llm']
+                + "' contextualized on '"
+                ""
                 + server_state[f'{st.session_state["db_name"]}_which_corpus']
                 + """' corpus"""
             )
@@ -495,15 +527,29 @@ def import_chat():
                 prompt=server_state[f'{st.session_state["user_name"]} messages'][-1][
                     "content"
                 ],
-                llm=server_state[server_state[f'{st.session_state["user_name"]}_selected_llm']],
-                similarity_top_k=server_state[f'{st.session_state["user_name"]}_similarity_top_k'],
-                temperature=server_state[f'{st.session_state["user_name"]}_temperature'],
-                max_new_tokens=server_state[f'{st.session_state["user_name"]}_max_new_tokens'],
-                context_window=server_state[f'{st.session_state["user_name"]}_context_window'],
+                llm=server_state[
+                    server_state[f'{st.session_state["user_name"]}_selected_llm']
+                ],
+                similarity_top_k=server_state[
+                    f'{st.session_state["user_name"]}_similarity_top_k'
+                ],
+                temperature=server_state[
+                    f'{st.session_state["user_name"]}_temperature'
+                ],
+                max_new_tokens=server_state[
+                    f'{st.session_state["user_name"]}_max_new_tokens'
+                ],
+                context_window=server_state[
+                    f'{st.session_state["user_name"]}_context_window'
+                ],
                 use_chat_engine=st.session_state["use_chat_engine"],
                 reset_chat_engine=st.session_state["reset_chat_engine"],
-                memory_limit=server_state[f'{st.session_state["user_name"]}_memory_limit'],
-                system_prompt=server_state[f'{st.session_state["user_name"]}_system_prompt'],
+                memory_limit=server_state[
+                    f'{st.session_state["user_name"]}_memory_limit'
+                ],
+                system_prompt=server_state[
+                    f'{st.session_state["user_name"]}_system_prompt'
+                ],
                 streaming=True,
             )
 
