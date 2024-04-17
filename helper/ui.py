@@ -526,7 +526,7 @@ def import_chat():
             ].gen_response(
                 prompt=server_state[f'{st.session_state["user_name"]} messages'][-1][
                     "content"
-                ],
+                ][:len(f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>""")], # don't pass the time to the LLM ,
                 llm=server_state[
                     server_state[f'{st.session_state["user_name"]}_selected_llm']
                 ],
