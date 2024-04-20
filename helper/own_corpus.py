@@ -1,4 +1,5 @@
 import os
+import types
 import shutil
 from nlp_pipeline.nlp_pipeline import nlp_processor
 import pandas as pd
@@ -6,6 +7,10 @@ from zipfile import ZipFile
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import streamlit as st
+from streamlit_server_state import server_state
+
+from helper.google_news import available_countries, available_languages, gen_google_news
 
 
 # set these to the install locations if on Windows
@@ -95,7 +100,9 @@ def check_table_exists(user, password, db_name, table_name):
     return table_exists
 
 
-def process_corpus(user_name, corpus_name, own_urls, uploaded_document):
+def process_corpus(
+    user_name, corpus_name, own_urls, uploaded_document, passed_google_news
+):
     "process an uploaded corpus"
     temp_directory = f"corpora/tmp_helper_{user_name}/"
 
@@ -139,31 +146,81 @@ def process_corpus(user_name, corpus_name, own_urls, uploaded_document):
             processor.sync_local_metadata()
 
         else:
-            # download the document
-            with open(
-                f"{temp_directory}tmp.{uploaded_document.name.split('.')[-1]}", "wb"
-            ) as new_file:
-                new_file.write(uploaded_document.getbuffer())
-                new_file.close()
+            if not (passed_google_news):
+                # download the document
+                with open(
+                    f"{temp_directory}tmp.{uploaded_document.name.split('.')[-1]}", "wb"
+                ) as new_file:
+                    new_file.write(uploaded_document.getbuffer())
+                    new_file.close()
+            # google news
+            else:
+                news_info = gen_google_news(
+                    language=available_languages[
+                        server_state[f'{st.session_state["user_name"]}_gn_language']
+                    ],
+                    max_results=server_state[
+                        f'{st.session_state["user_name"]}_gn_max_results'
+                    ],
+                    country=available_countries[
+                        server_state[f'{st.session_state["user_name"]}_gn_country']
+                    ],
+                    start_date=server_state[
+                        f'{st.session_state["user_name"]}_gn_date_range'
+                    ][0],
+                    end_date=server_state[
+                        f'{st.session_state["user_name"]}_gn_date_range'
+                    ][1],
+                    search_term=server_state[
+                        f'{st.session_state["user_name"]}_gn_query'
+                    ],
+                    site_list=[]
+                    if server_state[f'{st.session_state["user_name"]}_gn_site_list']
+                    == ""
+                    else server_state[
+                        f'{st.session_state["user_name"]}_gn_site_list'
+                    ].split(","),
+                )
+
+                # create a synthetic metadata file
+                uploaded_document = types.SimpleNamespace()
+                uploaded_document.name = "metadata.csv"
+                metadata_addt_column_names = [
+                    "title",
+                    "description",
+                    "published_date",
+                    "publisher",
+                ]
+                metadata = pd.DataFrame(
+                    {
+                        "text_id": list(range(1, len(news_info) + 1)),
+                        "web_filepath": [x["url"] for x in news_info],
+                        "title": [x["title"] for x in news_info],
+                        "description": [x["description"] for x in news_info],
+                        "published_date": [x["published date"] for x in news_info],
+                        "publisher": [x["publisher"]["title"] for x in news_info],
+                    }
+                )
 
             # only uploaded a metadata CSV
             if uploaded_document.name == "metadata.csv":
-                metadata = pd.read_csv(f"{temp_directory}tmp.csv")
-                if "text_id" not in list(metadata.columns):
-                    metadata["text_id"] = list(range(1, len(metadata) + 1))
-                metadata_addt_column_names = list(
-                    metadata.columns[
-                        ~metadata.columns.isin(
-                            [
-                                "text_id",
-                                "web_filepath",
-                                "local_raw_filepath",
-                                "local_txt_filepath",
-                                "detected_language",
-                            ]
-                        )
-                    ]
-                )
+                if not (passed_google_news):
+                    metadata = pd.read_csv(f"{temp_directory}tmp.csv")
+                    if "text_id" not in list(metadata.columns):
+                        metadata["text_id"] = list(range(1, len(metadata) + 1))
+                    metadata_addt_column_names = list(
+                        metadata.columns[
+                            ~metadata.columns.isin(
+                                [
+                                    "text_id",
+                                    "web_filepath",
+                                    "local_raw_filepath",
+                                    "local_txt_filepath",
+                                    "detected_language",
+                                ]
+                            )
+                        ]
+                    )
 
                 # write metadata out
                 processor = nlp_processor(

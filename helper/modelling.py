@@ -193,6 +193,10 @@ def load_rag_pipeline():
                         corpus_name=st.session_state["new_corpus_name"],
                         own_urls=st.session_state["own_urls"],
                         uploaded_document=st.session_state["uploaded_file"],
+                        passed_google_news=False
+                        if server_state[f'{st.session_state["user_name"]}_gn_query']
+                        == ""
+                        else True,
                     )
 
                 update_server_state(

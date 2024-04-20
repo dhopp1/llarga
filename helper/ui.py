@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 import pandas as pd
@@ -6,6 +6,7 @@ from streamlit_server_state import server_state, no_rerun
 import streamlit as st
 
 from helper.user_management import clear_models, update_server_state
+from helper.google_news import available_countries, available_languages
 
 
 def ui_tab():
@@ -117,7 +118,7 @@ def ui_upload_docs():
     # upload your own documents
     st.sidebar.markdown(
         "# Upload your own documents",
-        help="Enter the name of your corpus in the `Corpus name` field. If named `temporary`, it will be able to be written over after your session.",
+        help="Enter the name of your corpus in the `Corpus name` field. If named `temporary`, it will be able to be written over after your session. For Google News, you can create a corpus by searching Google News first, which will automatically create a corpus based on your chosen search parameters.",
     )
 
     # paste a list of web urls
@@ -129,12 +130,85 @@ def ui_upload_docs():
         help="A comma separated list of URLs.",
     )
 
+    # upload file
     st.session_state["uploaded_file"] = st.sidebar.file_uploader(
         "Upload your own documents",
         type=[".zip", ".docx", ".doc", ".txt", ".pdf", ".csv"],
         help="Upload either a single `metadata.csv` file, with at least one column named `web_filepath` with the web addresses of the .html or .pdf documents, or upload a .zip file that contains a folder named `corpus` with the .csv, .doc, .docx, .txt, or .pdf files inside. You can optionally include a `metadata.csv` file in the zip file at the same level as the `corpus` folder, with at least a column named `filename` with the names of the files. If you want to only include certain page numbers of PDF files, in the metadata include a column called 'page_numbers', with the pages formatted as e.g., '1,6,9:12'.",
     )
 
+    # google news
+    with st.sidebar.expander("Google News"):
+        with no_rerun:
+            # google news language
+            server_state[f'{st.session_state["user_name"]}_gn_language'] = st.selectbox(
+                "Google News language",
+                options=sorted(list(available_languages.keys())),
+                index=sorted(list(available_languages.keys())).index("english")
+                if f'{st.session_state["user_name"]}_gn_language' not in server_state
+                else sorted(list(available_languages.keys())).index(
+                    server_state[f'{st.session_state["user_name"]}_gn_language']
+                ),
+                help="Which language to search Google News in.",
+            )
+
+            # google news country
+            server_state[f'{st.session_state["user_name"]}_gn_country'] = st.selectbox(
+                "Google News country",
+                options=sorted(list(available_countries.keys())),
+                index=sorted(list(available_countries.keys())).index("United States")
+                if f'{st.session_state["user_name"]}_gn_country' not in server_state
+                else sorted(list(available_countries.keys())).index(
+                    server_state[f'{st.session_state["user_name"]}_gn_country']
+                ),
+                help="Which country to search Google News in.",
+            )
+
+            # google news max results
+            server_state[
+                f'{st.session_state["user_name"]}_gn_max_results'
+            ] = st.selectbox(
+                "Google News max results",
+                options=list(range(1, 21)),
+                index=list(range(1, 21)).index(5)
+                if f'{st.session_state["user_name"]}_gn_max_results' not in server_state
+                else list(range(1, 21)).index(
+                    server_state[f'{st.session_state["user_name"]}_gn_max_results']
+                ),
+                help="How many results from Google News to index.",
+            )
+
+            # google news time range
+            server_state[
+                f'{st.session_state["user_name"]}_gn_date_range'
+            ] = st.date_input(
+                "Google News date range",
+                format="DD.MM.YYYY",
+                value=(datetime.today() - timedelta(days=7), datetime.now()),
+                help="What time range to search Google News.",
+            )
+
+            # google news search term
+            server_state[f'{st.session_state["user_name"]}_gn_query'] = st.text_input(
+                "Google news query",
+                value=""
+                if f'{st.session_state["user_name"]}_gn_query' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_gn_query'],
+                help="Google News query.",
+            )
+
+            # google news site list
+            server_state[
+                f'{st.session_state["user_name"]}_gn_site_list'
+            ] = st.text_input(
+                "Google News site list",
+                value=""
+                if f'{st.session_state["user_name"]}_gn_site_list' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_gn_site_list'],
+                help="Which websites you want to search Google News for. Pass a comma separated list for multiple sites, e.g.,: `bbc.com,cnn.com`",
+            )
+
+    # process corpus button
     st.session_state["process_corpus_button"] = st.sidebar.button(
         "Process corpus",
         help="Click if you uploaded your own documents or pasted your own URLs.",
@@ -526,7 +600,13 @@ def import_chat():
             ].gen_response(
                 prompt=server_state[f'{st.session_state["user_name"]} messages'][-1][
                     "content"
-                ][:-(len(f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""))], # don't pass the time to the LLM ,
+                ][
+                    : -(
+                        len(
+                            f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+                        )
+                    )
+                ],  # don't pass the time to the LLM ,
                 llm=server_state[
                     server_state[f'{st.session_state["user_name"]}_selected_llm']
                 ],

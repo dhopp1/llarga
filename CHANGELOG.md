@@ -1,5 +1,9 @@
 # Change Log
 
+### 0.0.4
+### Added
+* Added Google News support for generation of a corpus.
+
 ### 0.0.3
 ### Changed
 * Made model parameters persistent per user between sessions.
