@@ -33,13 +33,14 @@ secondaryBackgroundColor="#F0F2F6"
 
 ## Uploading your own documents
 - The system intializes with no corpus, so you are chatting with the vanilla LLM
-- To query over your own documents, you have 6 options:
+- To query over your own documents, you have 7 options:
 	1. Preprocess your files into .txts and place in the appropriate places according to the instructions in the "Set up" section. The corpus will then appear as an option under the `Which corpus` selector.
 	2. Paste a comma-separated list of URLs into the `URLs` box. Make sure these URLs aren't behind a log in/paywall. If that is the case, copy the content to a Word or .txt file and upload directly.
 	3. Upload/drag a single .csv, .doc, .docx, .pdf, or .txt file into the `Upload your own documents` box
 	4. Upload a single `metadata.csv` file into the `Upload your own documents` box. The CSV can include any metadata you want, but must at least include a `web_filepath` column pointing to the website or PDF file online.
 	5. Upload a .zip file containing many documents. Put all your documents into a directory called `corpus/`, then zip it. Upload that file into the `Upload your own documents` box.
 	6. Upload a .zip file containing many documents as well as a metadata file. Put all your documents into a directory called `corpus/`, then put a file called `metadata.csv` at the same level as the `corpus/` directory (not _in_ directory), then zip the directory and CSV together. The CSV needs to have at least a column named `filename` with the filename of the documents. Upload that file into the `Upload your own documents` box.
+	7. Fill in the `Google News query` parameter to create a corpus based on results from Google News.
 
 - You can persist your corpus if it is large by typing a name other than `temporary` to the `Uploaded corpus name` box. This name will then appear as an option under the `Which corpus` dropdown. It should be lower case with no spaces or special characters, use underscores for spaces.
 - Then hit the `Process corpus` button. This will both process the corpus and then reinitialize the model on this corpus, wait for both to finish.
