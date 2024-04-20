@@ -1,3 +1,4 @@
+gnews
 nlp_pipeline
 local-rag-llm
 pandas
