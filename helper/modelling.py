@@ -78,6 +78,15 @@ def initialize_llm():
                     ]
                     .values[0],
                     n_gpu_layers=100,
+                    context_window=st.session_state["llm_dict"]
+                    .loc[
+                        lambda x: x.name
+                        == server_state[
+                            f'{st.session_state["user_name"]}_selected_llm'
+                        ],
+                        "context_window",
+                    ]
+                    .values[0],
                 ),
             )
         except:
@@ -167,6 +176,35 @@ def load_rag_pipeline():
         or st.session_state["process_corpus_button"]
     ):
         clear_models()
+
+        # update the memory limit
+        update_server_state(
+            f'{st.session_state["user_name"]}_memory_limit',
+            int(
+                (
+                    1
+                    - server_state[f'{st.session_state["user_name"]}_similarity_top_k']
+                    * server_state[f'{st.session_state["user_name"]}_chunk_size']
+                    / st.session_state["llm_dict"]
+                    .loc[
+                        lambda x: x.name
+                        == server_state[
+                            f'{st.session_state["user_name"]}_selected_llm'
+                        ],
+                        "context_window",
+                    ]
+                    .values[0]
+                )
+                * st.session_state["llm_dict"]
+                .loc[
+                    lambda x: x.name
+                    == server_state[f'{st.session_state["user_name"]}_selected_llm'],
+                    "context_window",
+                ]
+                .values[0]
+                - 200
+            ),
+        )
 
         # hid messages so you can see the initializer
         if "message_box" in st.session_state:

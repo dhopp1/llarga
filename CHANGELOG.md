@@ -1,5 +1,10 @@
 # Change Log
 
+### 0.0.5
+### Fixed
+* Moved context window to only be handled on an LLM-level.
+* Fixed chat memory limit overflowing the context window leading the model to stop answering.
+
 ### 0.0.4
 ### Added
 * Added Google News support for generation of a corpus.

@@ -303,7 +303,8 @@ def ui_advanced_model_params():
                 if f'{st.session_state["user_name"]}_similarity_top_k'
                 not in server_state
                 else server_state[f'{st.session_state["user_name"]}_similarity_top_k'],
-                help="The number of contextual document chunks to retrieve for RAG.",
+                # help="The number of contextual document chunks to retrieve for RAG.",
+                help=f"""The number of contextual document chunks to retrieve for RAG. `Similarity top K` * `Chunk size` must be less than your chosen LLM's context window, which is `{st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}`.""",
             )
 
         # n_gpu layers
@@ -337,32 +338,6 @@ def ui_advanced_model_params():
                 if f'{st.session_state["user_name"]}_max_new_tokens' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_max_new_tokens'],
                 help="How long to limit the responses to (token ≈ word).",
-            )
-
-        # context window
-        with no_rerun:
-            server_state[f'{st.session_state["user_name"]}_context_window'] = st.slider(
-                "Context window",
-                min_value=500,
-                max_value=50000,
-                step=100,
-                value=4000
-                if f'{st.session_state["user_name"]}_context_window' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_context_window'],
-                help="How large to make the context window for the LLM. The maximum depends on the model, a higher value might result in context window too large errors.",
-            )
-
-        # memory limit
-        with no_rerun:
-            server_state[f'{st.session_state["user_name"]}_memory_limit'] = st.slider(
-                "Memory limit",
-                min_value=80,
-                max_value=80000,
-                step=8,
-                value=2048
-                if f'{st.session_state["user_name"]}_memory_limit' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_memory_limit'],
-                help="How many tokens (words) memory to give the chatbot.",
             )
 
         # system prompt
@@ -419,6 +394,55 @@ def ui_advanced_model_params():
         help="Click if you change the `Which LLM` or `Which corpus` options.",
     )
 
+    # show error if chunk size * top k too large
+    chunk_error = st.sidebar.empty()
+    if (
+        server_state[f'{st.session_state["user_name"]}_chunk_size']
+        * server_state[f'{st.session_state["user_name"]}_similarity_top_k']
+        > st.session_state["llm_dict"]
+        .loc[
+            lambda x: x.name
+            == server_state[f'{st.session_state["user_name"]}_selected_llm'],
+            "context_window",
+        ]
+        .values[0]
+    ):
+        chunk_error.error(
+            f"""Chunk size ({server_state[f'{st.session_state["user_name"]}_chunk_size']}) * similarity top K ({server_state[f'{st.session_state["user_name"]}_similarity_top_k']}) = {server_state[f'{st.session_state["user_name"]}_chunk_size'] * server_state[f'{st.session_state["user_name"]}_similarity_top_k']} is larger than the context window ({st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}). Either decrease chunk size or lower similarity top K."""
+        )
+    else:
+        chunk_error.empty()
+
+    # set memory limit dynamically
+    if f'{st.session_state["user_name"]}_memory_limit' not in server_state:
+        update_server_state(
+            f'{st.session_state["user_name"]}_memory_limit',
+            int(
+                (
+                    1
+                    - server_state[f'{st.session_state["user_name"]}_similarity_top_k']
+                    * server_state[f'{st.session_state["user_name"]}_chunk_size']
+                    / st.session_state["llm_dict"]
+                    .loc[
+                        lambda x: x.name
+                        == server_state[
+                            f'{st.session_state["user_name"]}_selected_llm'
+                        ],
+                        "context_window",
+                    ]
+                    .values[0]
+                )
+                * st.session_state["llm_dict"]
+                .loc[
+                    lambda x: x.name
+                    == server_state[f'{st.session_state["user_name"]}_selected_llm'],
+                    "context_window",
+                ]
+                .values[0]
+                - 200
+            ),
+        )
+
 
 def ui_reset():
     "UI reset button"
@@ -450,7 +474,6 @@ def ui_export_chat_end_session():
         del server_state[f'{st.session_state["user_name"]}_similarity_top_k']
         del server_state[f'{st.session_state["user_name"]}_temperature']
         del server_state[f'{st.session_state["user_name"]}_max_new_tokens']
-        del server_state[f'{st.session_state["user_name"]}_context_window']
         del server_state[f'{st.session_state["user_name"]}_memory_limit']
         del server_state[f'{st.session_state["user_name"]}_system_prompt']
         del server_state[f'{st.session_state["user_name"]}_chunk_overlap']
@@ -619,9 +642,6 @@ def import_chat():
                 max_new_tokens=server_state[
                     f'{st.session_state["user_name"]}_max_new_tokens'
                 ],
-                context_window=server_state[
-                    f'{st.session_state["user_name"]}_context_window'
-                ],
                 use_chat_engine=st.session_state["use_chat_engine"],
                 reset_chat_engine=st.session_state["reset_chat_engine"],
                 memory_limit=server_state[
@@ -677,7 +697,7 @@ Which corpus: {server_state[f'{st.session_state["user_name"]}_selected_corpus']}
 Similarity top K: {server_state[f'{st.session_state["user_name"]}_similarity_top_k']}
 Temperature: {server_state[f'{st.session_state["user_name"]}_temperature']}
 Max new tokens: {server_state[f'{st.session_state["user_name"]}_max_new_tokens']}
-Context window: {server_state[f'{st.session_state["user_name"]}_context_window']}
+Context window: {st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}
 Memory limit: {server_state[f'{st.session_state["user_name"]}_memory_limit']}
 System prompt: {server_state[f'{st.session_state["user_name"]}_system_prompt']}
 Chunk overlap: {server_state[f'{st.session_state["user_name"]}_chunk_overlap']}
