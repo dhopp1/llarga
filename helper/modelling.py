@@ -332,6 +332,7 @@ def load_rag_pipeline():
                 )
 
                 # reinitialize the model
+                st.session_state["local_rerun_populate_db"] = False # don't repopulate the DB again
                 model_initialization()
 
             # repopulate the chat
