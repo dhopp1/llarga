@@ -74,30 +74,31 @@ def initialize_llm():
 
     if llm_name not in server_state:
         try:
-            update_server_state(
-                llm_name,
-                instantiate_llm(
-                    llm_path=st.session_state["llm_dict"]
-                    .loc[
-                        lambda x: x.name
-                        == server_state[
-                            f'{st.session_state["user_name"]}_selected_llm'
-                        ],
-                        "llm_path",
-                    ]
-                    .values[0],
-                    n_gpu_layers=100,
-                    context_window=st.session_state["llm_dict"]
-                    .loc[
-                        lambda x: x.name
-                        == server_state[
-                            f'{st.session_state["user_name"]}_selected_llm'
-                        ],
-                        "context_window",
-                    ]
-                    .values[0],
-                ),
-            )
+            with st.spinner("Loading LLM..."):
+                update_server_state(
+                    llm_name,
+                    instantiate_llm(
+                        llm_path=st.session_state["llm_dict"]
+                        .loc[
+                            lambda x: x.name
+                            == server_state[
+                                f'{st.session_state["user_name"]}_selected_llm'
+                            ],
+                            "llm_path",
+                        ]
+                        .values[0],
+                        n_gpu_layers=100,
+                        context_window=st.session_state["llm_dict"]
+                        .loc[
+                            lambda x: x.name
+                            == server_state[
+                                f'{st.session_state["user_name"]}_selected_llm'
+                            ],
+                            "context_window",
+                        ]
+                        .values[0],
+                    ),
+                )
         except:
             st.error("Not enough memory to load this model.")
 
