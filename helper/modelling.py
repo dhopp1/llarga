@@ -44,13 +44,17 @@ def determine_rerun_reinitialize():
     if not (server_state[f'{st.session_state["user_name"]}_reinitialized_db']):
         # only run if database exists
         if check_db_exists(
-            user=st.session_state["db_info"].loc[0, "user"],
-            password=st.session_state["db_info"].loc[0, "password"],
+            host=st.session_state["db_host"],
+            port=st.session_state["db_port"],
+            user=st.session_state["db_user"],
+            password=st.session_state["db_password"],
             db_name=st.session_state["master_db_name"],
         ):
             transfer_db(
-                user=st.session_state["db_info"].loc[0, "user"],
-                password=st.session_state["db_info"].loc[0, "password"],
+                host=st.session_state["db_host"],
+                port=st.session_state["db_port"],
+                user=st.session_state["db_user"],
+                password=st.session_state["db_password"],
                 source_db=st.session_state["master_db_name"],
                 target_db=st.session_state["db_name"],
             )
@@ -66,7 +70,7 @@ def initialize_llm():
                     if llm_title in server_state:
                         del server_state[llm_title]
                 gc.collect()
-    
+
     if f'{st.session_state["user_name"]}_selected_llm' in server_state:
         llm_name = server_state[f'{st.session_state["user_name"]}_selected_llm']
     else:
@@ -151,9 +155,11 @@ def initialize_rag_pipeline(
             clear_table = False
 
         user_rag_pipeline.setup_db(
+            host=st.session_state["db_host"],
+            port=st.session_state["db_port"],
+            user=st.session_state["db_user"],
+            password=st.session_state["db_password"],
             db_name=db_name,
-            user=db_info.loc[0, "user"],
-            password=db_info.loc[0, "password"],
             table_name=which_corpus_local,
             clear_database=clear_database_local,
             clear_table=clear_table,
@@ -320,8 +326,10 @@ def load_rag_pipeline():
             # copy the new table to master vector_db if it's not already there
             if not (
                 check_table_exists(
-                    user=st.session_state["db_info"].loc[0, "user"],
-                    password=st.session_state["db_info"].loc[0, "password"],
+                    host=st.session_state["db_host"],
+                    port=st.session_state["db_port"],
+                    user=st.session_state["db_user"],
+                    password=st.session_state["db_password"],
                     db_name=st.session_state["master_db_name"],
                     table_name="data_"
                     + server_state[f'{st.session_state["db_name"]}_which_corpus']
@@ -335,14 +343,18 @@ def load_rag_pipeline():
 
                 # transfer the db
                 transfer_db(
-                    user=st.session_state["db_info"].loc[0, "user"],
-                    password=st.session_state["db_info"].loc[0, "password"],
+                    host=st.session_state["db_host"],
+                    port=st.session_state["db_port"],
+                    user=st.session_state["db_user"],
+                    password=st.session_state["db_password"],
                     source_db=st.session_state["db_name"],
                     target_db=st.session_state["master_db_name"],
                 )
 
                 # reinitialize the model
-                st.session_state["local_rerun_populate_db"] = False # don't repopulate the DB again
+                st.session_state[
+                    "local_rerun_populate_db"
+                ] = False  # don't repopulate the DB again
                 model_initialization()
 
             # repopulate the chat

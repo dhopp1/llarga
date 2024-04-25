@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import time
 
+from local_rag_llm.db_setup import pg_dump
 import pandas as pd
 from streamlit_server_state import server_state, no_rerun
 import streamlit as st
@@ -89,9 +90,6 @@ def initial_placeholder():
 def ui_header():
     "UI header + setting some variables"
     st.title("Local LLM")
-
-    if "master_db_name" not in st.session_state:
-        st.session_state["master_db_name"] = "vector_db"
 
     if "db_name" not in st.session_state:
         st.session_state["db_name"] = (
@@ -383,14 +381,15 @@ def ui_advanced_model_params():
                 else server_state[f'{st.session_state["user_name"]}_chunk_size'],
                 help="How many tokens per chunk when chunking the documents.",
             )
-            
+
         # clear other models on reinitialize
         st.session_state["clear_llms"] = st.checkbox(
             "Clear other LLMs on reinitialize",
-            value=False if "clear_llms" not in  st.session_state else st.session_state["clear_llms"],
-            help="Whether or not to clear out other LLMs when selecting a new one. Check if you don't have enough VRAM to load multiple models simultaneously. NOTE: it will remove the LLM for all users."
+            value=False
+            if "clear_llms" not in st.session_state
+            else st.session_state["clear_llms"],
+            help="Whether or not to clear out other LLMs when selecting a new one. Check if you don't have enough VRAM to load multiple models simultaneously. NOTE: it will remove the LLM for all users.",
         )
-            
 
         st.session_state["reinitialize_remake"] = st.button(
             "Reinitialize model and remake DB",
@@ -486,6 +485,30 @@ def ui_export_chat_end_session():
         del server_state[f'{st.session_state["user_name"]}_system_prompt']
         del server_state[f'{st.session_state["user_name"]}_chunk_overlap']
         del server_state[f'{st.session_state["user_name"]}_chunk_size']
+        del server_state[f'{st.session_state["user_name"]}_gn_language']
+        del server_state[f'{st.session_state["user_name"]}_gn_country']
+        del server_state[f'{st.session_state["user_name"]}_gn_max_results']
+        del server_state[f'{st.session_state["user_name"]}_gn_date_range']
+        del server_state[f'{st.session_state["user_name"]}_gn_query']
+        del server_state[f'{st.session_state["user_name"]}_gn_site_list']
+
+        # do a database dump
+        if (
+            int(
+                st.session_state["db_info"]
+                .loc[lambda x: x.field == "dump_on_exit", "value"]
+                .values[0]
+            )
+            == 1
+        ):
+            pg_dump(
+                host=st.session_state["db_host"],
+                port=st.session_state["db_port"],
+                user=st.session_state["db_user"],
+                password=st.session_state["db_password"],
+                db_name=st.session_state["master_db_name"],
+                filename="corpora/vector_db_dump.sql",
+            )
 
         update_server_state(
             f'{st.session_state["user_name"]} messages', []

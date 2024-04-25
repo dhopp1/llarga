@@ -18,10 +18,12 @@ windows_tesseract_path = None
 windows_poppler_path = None
 
 
-def transfer_db(user, password, source_db, target_db):
+def transfer_db(host, port, user, password, source_db, target_db):
     "drop target db and replace it with source db"
     # establish connection
-    conn = psycopg2.connect(f"dbname=postgres user={user} password={password}")
+    conn = psycopg2.connect(
+        f"host={host} port={port} dbname=postgres user={user} password={password}"
+    )
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
 
@@ -41,7 +43,9 @@ def transfer_db(user, password, source_db, target_db):
     conn.close()
 
     # drop all temporary tables from target db
-    conn = psycopg2.connect(f"dbname={target_db} user={user} password={password}")
+    conn = psycopg2.connect(
+        f"host={host} port={port} dbname={target_db} user={user} password={password}"
+    )
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
 
@@ -61,9 +65,11 @@ def transfer_db(user, password, source_db, target_db):
     conn.close()
 
 
-def check_db_exists(user, password, db_name):
+def check_db_exists(host, port, user, password, db_name):
     "check if a database exists"
-    conn = psycopg2.connect(f"dbname=postgres user={user} password={password}")
+    conn = psycopg2.connect(
+        f"host={host} port={port} dbname=postgres user={user} password={password}"
+    )
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
 
@@ -78,11 +84,13 @@ def check_db_exists(user, password, db_name):
     return result
 
 
-def check_table_exists(user, password, db_name, table_name):
+def check_table_exists(host, port, user, password, db_name, table_name):
     "check if a table exists in a database"
     # establish connection
     try:
-        conn = psycopg2.connect(f"dbname={db_name} user={user} password={password}")
+        conn = psycopg2.connect(
+            f"host={host} port={port} dbname={db_name} user={user} password={password}"
+        )
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cur = conn.cursor()
 

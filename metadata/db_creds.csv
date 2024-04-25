@@ -1,2 +1,8 @@
-user,password
-user1,password
+field,value
+host,localhost
+port,5432
+username,user1
+password,password
+master_db_name,vector_db
+restore_db,0
+dump_on_exit,0

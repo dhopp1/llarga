@@ -23,7 +23,9 @@ backgroundColor="#FFFFFF"
 secondaryBackgroundColor="#F0F2F6"
 ```
 
-- The app can support unlimited users. Simultaneous generation requests will be queued and executed in the order they are received. All users share the same LLMs, so if you want to allow users to choose between multiple LLMs, you need to have enough VRAM to load them simultaneously.
+- The app can support unlimited users. Simultaneous generation requests will be queued and executed in the order they are received. 
+- All users share the same LLMs, so if you want to allow users to choose between multiple LLMs, you need to have enough VRAM to load them simultaneously. 
+- Or, you can tick the `Clear other LLMs on reinitialize` checkbox under `Advanced model parameters`, which will clear all other LLMs (for all users) before loading the chosen model.
 
 ## Changing model parameters
 - Parameters are explained in the sidebar in their respective tooltips.
@@ -47,6 +49,12 @@ secondaryBackgroundColor="#F0F2F6"
 - You can clear out old corpora from local files and the database by using `helper/clear_corpus.py`. E.g., run the command line in the `helper/` directory, then enter: 
 	- `python clear_corpus.py --keep corpus1,corpus1` to delete everything except corpus1 and corpus2
 	- `python clear_corpus.py --remove corpus1,corpus2` to remove only corpus1 and corpus2
+
+## Managing the vector database
+- Database credentials are stored in `metadata/db_creds.csv`
+- For backing up, if you have `dump_on_exit` set to `1` in the `metadata/db_creds.csv` file, a database dump will be created each time a user exits the application in `corpora/vector_db_dump.sql`
+- If you want to recreate the vector database in another place, for instance for running the application on a different computer, copy the entire `corpora/` directory to the new application and set `restore_db` to `1` in the `metadata/db_creds.csv` file. When you restart the server, when the first user logs into a new session, you will have to type the db password from `metadata/db_creds.csv` into the terminal to restore the database. This won't be required for subsequent log ons.
+- Also make sure
 
 ## Example image
 ![Example image](metadata/example_screen.png)

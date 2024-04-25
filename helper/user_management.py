@@ -2,9 +2,11 @@ from datetime import datetime, timedelta
 import gc
 import hmac
 import math
+import os
 import subprocess as sp
 import psutil
 
+from local_rag_llm.db_setup import pg_restore
 import pandas as pd
 import streamlit as st
 from streamlit_server_state import server_state, server_state_lock, no_rerun
@@ -110,3 +112,59 @@ def setup_local_files():
 
     if "db_info" not in st.session_state:
         st.session_state["db_info"] = pd.read_csv("metadata/db_creds.csv")
+
+    if "master_db_name" not in st.session_state:
+        st.session_state["master_db_name"] = (
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "master_db_name", "value"]
+            .values[0]
+        )
+
+    if "db_password" not in st.session_state:
+        st.session_state["db_password"] = (
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "password", "value"]
+            .values[0]
+        )
+
+    if "db_user" not in st.session_state:
+        st.session_state["db_user"] = (
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "username", "value"]
+            .values[0]
+        )
+
+    if "db_host" not in st.session_state:
+        st.session_state["db_host"] = (
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "host", "value"]
+            .values[0]
+        )
+
+    if "db_port" not in st.session_state:
+        st.session_state["db_port"] = (
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "port", "value"]
+            .values[0]
+        )
+
+    # restore DB if there's a backup
+    if (
+        int(
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "restore_db", "value"]
+            .values[0]
+        )
+        == 1
+    ):
+        if "db_restored" not in server_state:
+            if os.path.isfile("corpora/vector_db_dump.sql"):
+                pg_restore(
+                    host=st.session_state["db_host"],
+                    port=st.session_state["db_port"],
+                    user=st.session_state["db_user"],
+                    password=st.session_state["db_password"],
+                    db_name=st.session_state["master_db_name"],
+                    filename="corpora/vector_db_dump.sql",
+                )
+            update_server_state("db_restored", True)

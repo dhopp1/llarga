@@ -41,15 +41,14 @@ if not check_password():
 
 ### initial setup
 
+# parameters/authentication
+setup_local_files()
 
 # header
 ui_header()
 
 # styles sheets
 import_styles()
-
-# parameters/authentication
-setup_local_files()
 
 # placeholder on initial load
 initial_placeholder()
