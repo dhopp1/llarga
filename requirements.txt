@@ -1,7 +1,7 @@
-gnews
+gnews==0.3.6
 nlp_pipeline
 local-rag-llm
 pandas
 psutil
-streamlit
-streamlit-server-state
+streamlit==1.32.2
+streamlit-server-state==0.17.1
