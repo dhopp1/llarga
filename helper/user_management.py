@@ -187,3 +187,28 @@ def setup_local_files():
                 tmp.to_csv("corpora/" + file, index=False)
 
         update_server_state("corpora_metadata_confirmed", True)
+
+    # set application name and author
+    if "app_title" not in server_state:
+        update_server_state(
+            "app_title",
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "app_title", "value"]
+            .values[0],
+        )
+
+    if "author_name" not in server_state:
+        update_server_state(
+            "author_name",
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "author_name", "value"]
+            .values[0],
+        )
+
+    if "author_email" not in server_state:
+        update_server_state(
+            "author_email",
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "author_email", "value"]
+            .values[0],
+        )

@@ -13,7 +13,7 @@ from helper.google_news import available_countries, available_languages
 def ui_tab():
     "tab title and icon"
     st.set_page_config(
-        page_title="Local LLM",
+        page_title=server_state["app_title"],
         page_icon="https://www.svgrepo.com/show/375527/ai-platform.svg",
     )
 
@@ -89,7 +89,7 @@ def initial_placeholder():
 
 def ui_header():
     "UI header + setting some variables"
-    st.title("Local LLM")
+    st.title(server_state["app_title"])
 
     if "db_name" not in st.session_state:
         st.session_state["db_name"] = (
@@ -519,7 +519,7 @@ def ui_export_chat_end_session():
 
     # help contact
     st.sidebar.markdown(
-        "*For questions on how to use this application or its methodology, please write [Author](mailto:someone@example.com)*",
+        f"""*For questions on how to use this application or its methodology, please write [{server_state["author_name"]}](mailto:{server_state["author_email"]})*""",
         unsafe_allow_html=True,
     )
 

@@ -9,6 +9,9 @@ A streamlit app for interfacing with a local LLM.
 - Update the `metadata/llm_list.csv` file with the URL and local path of the model (`mistral-docsgpt` is recommended for RAG)
 - If you would like to prepopulate a corpus outside of the app, add its name to the `metadata/corpora_list.csv` file in the `name` the file, the directory to the .txt files in the `text_path` column, and the path to the metadata file in the `metadata_path` column. The metadata file can contain anything, but must at least include a `text_id` column (unique identifier starting from 1) and a `file_path` column, containing the absolute path of all the text files in the corpus.
 - In the `metadata/user_list.csv` file, put user names and optionally emails.
+- You can change the title of the application by changing the `app_title` column in the `metadata/db_creds.csv` file
+- You can change the contact person by changing the `author_name` and `author_email` columns in the `metadata/db_creds.csv` file
+- In `metadata/db_creds.csv`, in the `corpora_location` column, put the directory of your streamlit app and its `corpora/` directory. This is for management of the corpus metadata files, which use absolute paths because of the `nlp_pipeline` library
 - run the app from the command line with `streamlit run app.py --server.port 8***` at whatever port you wish.
 - To get the app online quickly, you can use [ngrok](https://www.sitepoint.com/use-ngrok-test-local-site/) to expose this local port to be able to access via the internet.
 
@@ -54,7 +57,6 @@ secondaryBackgroundColor="#F0F2F6"
 - Database credentials are stored in `metadata/db_creds.csv`
 - For backing up, if you have `dump_on_exit` set to `1` in the `metadata/db_creds.csv` file, a database dump will be created each time a user exits the application in `corpora/vector_db_dump.sql`
 - If you want to recreate the vector database in another place, for instance for running the application on a different computer, copy the entire `corpora/` directory to the new application and set `restore_db` to `1` in the `metadata/db_creds.csv` file.
-- In `metadata/db_creds.csv`, in the `corpora_location` column, put the directory of your streamlit app and its `corpora/` directory. This is for management of the corpus metadata files, which use absolute paths because of the `nlp_pipeline` library
 
 ## Example image
 ![Example image](metadata/example_screen.png)

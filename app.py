@@ -26,6 +26,8 @@ from helper.user_management import (
     setup_local_files,
 )
 
+# parameters/authentication
+setup_local_files()
 
 # tab icon and text
 ui_tab()
@@ -40,9 +42,6 @@ if not check_password():
 
 
 ### initial setup
-
-# parameters/authentication
-setup_local_files()
 
 # header
 ui_header()
