@@ -2,5 +2,6 @@ gnews
 nlp_pipeline
 local-rag-llm
 pandas
+psutil
 streamlit
 streamlit-server-state
