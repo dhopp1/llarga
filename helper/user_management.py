@@ -177,18 +177,22 @@ def setup_local_files():
             .loc[lambda x: x.field == "corpora_location", "value"]
             .values[0]
         )
+
+        def replace_path(file_path):
+            if type(file_path) == str:
+                try:
+                    name = file_prefix + dir_name + file_path.split("/")[-1]
+                except:
+                    name = file_prefix + dir_name + file_path.split("\\")[-1]
+            else:
+                name = ""
+            return name
+
         for file in os.listdir("corpora/"):
             if re.match(r"^metadata_.*\.csv$", file):
                 dir_name = re.sub(r"metadata_|\.csv", "", file) + "/"
                 tmp = pd.read_csv("corpora/" + file)
-                try:
-                    tmp["file_path"] = [
-                        file_prefix + dir_name + x.split("/")[-1] for x in tmp["file_path"]
-                    ]
-                except:
-                    tmp["file_path"] = [
-                        file_prefix + dir_name + x.split("\\")[-1] for x in tmp["file_path"]
-                    ]
+                tmp["file_path"] = [replace_path(x) for x in tmp["file_path"]]
                 tmp.to_csv("corpora/" + file, index=False)
 
         update_server_state("corpora_metadata_confirmed", True)
