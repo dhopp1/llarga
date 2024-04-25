@@ -383,6 +383,14 @@ def ui_advanced_model_params():
                 else server_state[f'{st.session_state["user_name"]}_chunk_size'],
                 help="How many tokens per chunk when chunking the documents.",
             )
+            
+        # clear other models on reinitialize
+        st.session_state["clear_llms"] = st.checkbox(
+            "Clear other LLMs on reinitialize",
+            value=False if "clear_llms" not in  st.session_state else st.session_state["clear_llms"],
+            help="Whether or not to clear out other LLMs when selecting a new one. Check if you don't have enough VRAM to load multiple models simultaneously. NOTE: it will remove the LLM for all users."
+        )
+            
 
         st.session_state["reinitialize_remake"] = st.button(
             "Reinitialize model and remake DB",

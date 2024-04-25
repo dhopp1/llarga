@@ -5,7 +5,7 @@ import sys
 from local_rag_llm import local_llm
 from local_rag_llm.model_setup import instantiate_llm
 import streamlit as st
-from streamlit_server_state import server_state
+from streamlit_server_state import server_state, no_rerun
 
 from helper.own_corpus import (
     check_db_exists,
@@ -58,6 +58,15 @@ def determine_rerun_reinitialize():
 
 def initialize_llm():
     "initialize an LLM"
+    # clear out existing models
+    if "clear_llms" in st.session_state:
+        with no_rerun:
+            if st.session_state["clear_llms"]:
+                for llm_title in st.session_state["llm_dict"].loc[:, "name"].values:
+                    if llm_title in server_state:
+                        del server_state[llm_title]
+                gc.collect()
+    
     if f'{st.session_state["user_name"]}_selected_llm' in server_state:
         llm_name = server_state[f'{st.session_state["user_name"]}_selected_llm']
     else:
