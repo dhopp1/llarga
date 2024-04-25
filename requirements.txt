@@ -4,4 +4,3 @@ local-rag-llm
 pandas
 streamlit
 streamlit-server-state
-zipfile
