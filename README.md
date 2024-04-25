@@ -53,8 +53,8 @@ secondaryBackgroundColor="#F0F2F6"
 ## Managing the vector database
 - Database credentials are stored in `metadata/db_creds.csv`
 - For backing up, if you have `dump_on_exit` set to `1` in the `metadata/db_creds.csv` file, a database dump will be created each time a user exits the application in `corpora/vector_db_dump.sql`
-- If you want to recreate the vector database in another place, for instance for running the application on a different computer, copy the entire `corpora/` directory to the new application and set `restore_db` to `1` in the `metadata/db_creds.csv` file. When you restart the server, when the first user logs into a new session, you will have to type the db password from `metadata/db_creds.csv` into the terminal to restore the database. This won't be required for subsequent log ons.
-- Also make sure
+- If you want to recreate the vector database in another place, for instance for running the application on a different computer, copy the entire `corpora/` directory to the new application and set `restore_db` to `1` in the `metadata/db_creds.csv` file.
+- In `metadata/db_creds.csv`, in the `corpora_location` column, put the directory of your streamlit app and its `corpora/` directory. This is for management of the corpus metadata files, which use absolute paths because of the `nlp_pipeline` library
 
 ## Example image
 ![Example image](metadata/example_screen.png)

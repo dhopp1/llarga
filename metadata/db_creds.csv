@@ -6,3 +6,4 @@ password,password
 master_db_name,vector_db
 restore_db,0
 dump_on_exit,0
+corpora_location,/app/streamlit_rag/corpora/

@@ -3,6 +3,7 @@ import gc
 import hmac
 import math
 import os
+import re
 import subprocess as sp
 import psutil
 
@@ -168,3 +169,21 @@ def setup_local_files():
                     filename="corpora/vector_db_dump.sql",
                 )
             update_server_state("db_restored", True)
+
+    # ensure corpora metadata files `file_path` columns are correct
+    if "corpora_metadata_confirmed" not in server_state:
+        file_prefix = (
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "corpora_location", "value"]
+            .values[0]
+        )
+        for file in os.listdir("corpora/"):
+            if re.match(r"^metadata_.*\.csv$", file):
+                dir_name = re.sub(r"metadata_|\.csv", "", file) + "/"
+                tmp = pd.read_csv("corpora/" + file)
+                tmp["file_path"] = [
+                    file_prefix + dir_name + x.split("/")[-1] for x in tmp["file_path"]
+                ]
+                tmp.to_csv("corpora/" + file, index=False)
+
+        update_server_state("corpora_metadata_confirmed", True)
