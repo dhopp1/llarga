@@ -60,3 +60,28 @@ secondaryBackgroundColor="#F0F2F6"
 
 ## Example image
 ![Example image](metadata/example_screen.png)
+
+## Docker usage
+### CPU only and CUDA
+If only using the CPU or an Nvidia GPU, you can run the application exclusively with Docker.
+
+- Download the `docker-compose.yml` and `Dockerfile` (for CPU-only) or `Dockerfile-gpu` (for GPU) files
+- In `docker-compose.yml`, edit the HF_TOKEN to your API token
+- There are four elements which need to exist outside of the container for persistence, portability, and personalization:
+	- **`corpora/` directory**: this is where processed corpora (text files and vector database dumps) are saved. Change the `<local corpora directory>` line in `docker-compose.yml` to your local path for these files.
+	- **`metadata/` directory**: this is where various information like database credentials, user list, llm list, etc. are stored. Change the `<local metadata directory>` line in `docker-compose.yml` to your local path for these files. The elements to be manually checked and changed are `db_creds.csv`, the `app_title`, `author_name`, and `author_email` columns, `llm_list.csv`, and `user_list.csv`.
+	- **`models/` directory**: this is where the actual LLMs are stored. Change the `<local models directory>` line in `docker-compose.yml` to your local path for these files.
+	- **`secrets.toml` file**: this is where you can change the application's password. Change the `<local secrets.toml file path>` line in `docker-compose.yml` to your local path for this file.
+- If you are using the CPU, delete or comment out the `deploy:` section in `docker-compose.yml`, and change the `dockerfile: Dockerfile-gpu` line to `dockerfile: Dockerfile`.
+- Navigate to the directory where you saved the `docker-compose.yml` file and Dockerfile and run `docker compose up`
+- The application will now be available on port 8502 by default.
+
+### Apple silicon
+If you are using Apple silicon, you won't be able to run everything in Docker because of the lack of MPS drivers. You can still use the pgvector image however.
+
+- follow the instructions to install [local\_rag\_llm](https://github.com/dhopp1/local_rag_llm/) and [nlp\_pipeline](https://github.com/dhopp1/nlp_pipeline) individually
+- Download the `docker-compose.yml` file
+- From the `docker-compose.yml` file, delete the `streamlit:` line and everything below it
+- Start the postgres container with `docker compose up`
+- Edit your `metadata/db_creds.csv` file and change the `host` column from `localhost` to `postgres` and `username` to `postgres`
+- Run the application as normal.

@@ -1,5 +1,9 @@
 # Change Log
 
+### 0.0.6
+### Added
+* Added dockerfiles and database export and import functionality.
+
 ### 0.0.5
 ### Fixed
 * Moved context window to only be handled on an LLM-level.

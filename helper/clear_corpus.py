@@ -7,10 +7,27 @@ import psycopg2
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-from own_corpus import check_db_exists
-
 # standalone script to clear out corpora. Run standalone directly from the helper/ directory
 # ex: python clear_corpus --keep corpus1,corpus1 | python clear_corpus --remove corpus1,corpus2
+
+
+def check_db_exists(host, port, user, password, db_name):
+    "check if a database exists"
+    conn = psycopg2.connect(
+        f"host={host} port={port} dbname=postgres user={user} password={password}"
+    )
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
+
+    cur.execute(sql.SQL("SELECT datname FROM pg_database WHERE datistemplate = false;"))
+    dbs = cur.fetchall()
+
+    result = db_name in [x[0] for x in dbs]
+
+    cur.close()
+    conn.close()
+
+    return result
 
 
 def parse_list(arg):
@@ -46,8 +63,9 @@ def clear_corpus(keep=[], remove=[]):
         ):
             # establish connection
             conn = psycopg2.connect(
-                f"dbname=vector_db user={db_info.loc[0, 'user']} password={db_info.loc[0, 'password']}"
+                f"""host={db_info.loc[lambda x: x.field == "host", "value"].values[0]} port={db_info.loc[lambda x: x.field == "port", "value"].values[0]} dbname={db_info.loc[lambda x: x.field == "master_db_name", "value"].values[0]} user={db_info.loc[lambda x: x.field == "user", "value"].values[0]} password={db_info.loc[lambda x: x.field == "password", "value"].values[0]}"""
             )
+
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             cur = conn.cursor()
 
