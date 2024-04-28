@@ -342,14 +342,17 @@ def load_rag_pipeline():
                 clear_models()
 
                 # transfer the db
-                transfer_db(
-                    host=st.session_state["db_host"],
-                    port=st.session_state["db_port"],
-                    user=st.session_state["db_user"],
-                    password=st.session_state["db_password"],
-                    source_db=st.session_state["db_name"],
-                    target_db=st.session_state["master_db_name"],
-                )
+                try:
+                    transfer_db(
+                        host=st.session_state["db_host"],
+                        port=st.session_state["db_port"],
+                        user=st.session_state["db_user"],
+                        password=st.session_state["db_password"],
+                        source_db=st.session_state["db_name"],
+                        target_db=st.session_state["master_db_name"],
+                    )
+                except:
+                    pass
 
                 # reinitialize the model
                 st.session_state[
