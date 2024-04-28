@@ -218,7 +218,7 @@ def load_rag_pipeline():
                     "context_window",
                 ]
                 .values[0]
-                - 200
+                - 0
             ),
         )
 
@@ -356,6 +356,23 @@ def load_rag_pipeline():
                     "local_rerun_populate_db"
                 ] = False  # don't repopulate the DB again
                 model_initialization()
+
+            # set a generic system prompt if non-RAG
+            if (
+                server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                == "None"
+                or server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                is None
+            ):
+                update_server_state(
+                    f'{st.session_state["user_name"]}_system_prompt',
+                    server_state["default_nonrag_system_prompt"],
+                )
+            else:
+                update_server_state(
+                    f'{st.session_state["user_name"]}_system_prompt',
+                    server_state["default_system_prompt"],
+                )
 
             # repopulate the chat
             populate_chat()

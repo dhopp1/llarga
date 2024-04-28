@@ -1,5 +1,9 @@
 # Change Log
 
+### 0.0.7
+### Added
+* Added ability to change context prompt, switched to `condense_plus_context` chat mode.
+
 ### 0.0.6
 ### Added
 * Added dockerfiles and database export and import functionality.

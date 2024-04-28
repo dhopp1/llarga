@@ -344,10 +344,10 @@ def ui_advanced_model_params():
                 f'{st.session_state["user_name"]}_system_prompt'
             ] = st.text_input(
                 "System prompt",
-                value=""
+                value=server_state["default_nonrag_system_prompt"]
                 if f'{st.session_state["user_name"]}_system_prompt' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_system_prompt'],
-                help="What prompt to initialize the chatbot with. Hit the `Reset model's memory` button after changing to take effect. Has less impact with RAG queries.",
+                help="What prompt to initialize the chatbot with. Hit the `Reset model's memory` button after changing to take effect.",
             )
 
         # params that affect the vector_db
@@ -363,7 +363,7 @@ def ui_advanced_model_params():
                 min_value=0,
                 max_value=1000,
                 step=1,
-                value=200
+                value=150
                 if f'{st.session_state["user_name"]}_chunk_overlap' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_chunk_overlap'],
                 help="How many tokens to overlap when chunking the documents.",
@@ -376,7 +376,7 @@ def ui_advanced_model_params():
                 min_value=64,
                 max_value=6400,
                 step=8,
-                value=512
+                value=384
                 if f'{st.session_state["user_name"]}_chunk_size' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_chunk_size'],
                 help="How many tokens per chunk when chunking the documents.",
@@ -422,32 +422,17 @@ def ui_advanced_model_params():
 
     # set memory limit dynamically
     if f'{st.session_state["user_name"]}_memory_limit' not in server_state:
+        # first boot is non-RAG, large memory
         update_server_state(
             f'{st.session_state["user_name"]}_memory_limit',
-            int(
-                (
-                    1
-                    - server_state[f'{st.session_state["user_name"]}_similarity_top_k']
-                    * server_state[f'{st.session_state["user_name"]}_chunk_size']
-                    / st.session_state["llm_dict"]
-                    .loc[
-                        lambda x: x.name
-                        == server_state[
-                            f'{st.session_state["user_name"]}_selected_llm'
-                        ],
-                        "context_window",
-                    ]
-                    .values[0]
-                )
-                * st.session_state["llm_dict"]
-                .loc[
-                    lambda x: x.name
-                    == server_state[f'{st.session_state["user_name"]}_selected_llm'],
-                    "context_window",
-                ]
-                .values[0]
-                - 200
-            ),
+            st.session_state["llm_dict"]
+            .loc[
+                lambda x: x.name
+                == server_state[f'{st.session_state["user_name"]}_selected_llm'],
+                "context_window",
+            ]
+            .values[0]
+            - 200,
         )
 
 
@@ -649,117 +634,135 @@ def import_chat():
             update_server_state("in_use", True)
 
             # generate response
-            response = server_state[
-                f'model_{st.session_state["db_name"]}'
-            ].gen_response(
-                prompt=server_state[f'{st.session_state["user_name"]} messages'][-1][
-                    "content"
-                ][
-                    : -(
-                        len(
-                            f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+            try:
+                response = server_state[
+                    f'model_{st.session_state["db_name"]}'
+                ].gen_response(
+                    prompt=server_state[f'{st.session_state["user_name"]} messages'][
+                        -1
+                    ]["content"][
+                        : -(
+                            len(
+                                f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+                            )
                         )
-                    )
-                ],  # don't pass the time to the LLM ,
-                llm=server_state[
-                    server_state[f'{st.session_state["user_name"]}_selected_llm']
-                ],
-                similarity_top_k=server_state[
-                    f'{st.session_state["user_name"]}_similarity_top_k'
-                ],
-                temperature=server_state[
-                    f'{st.session_state["user_name"]}_temperature'
-                ],
-                max_new_tokens=server_state[
-                    f'{st.session_state["user_name"]}_max_new_tokens'
-                ],
-                use_chat_engine=st.session_state["use_chat_engine"],
-                reset_chat_engine=st.session_state["reset_chat_engine"],
-                memory_limit=server_state[
-                    f'{st.session_state["user_name"]}_memory_limit'
-                ],
-                system_prompt=server_state[
-                    f'{st.session_state["user_name"]}_system_prompt'
-                ],
-                streaming=True,
-            )
-
-            # Display assistant response in chat message container
-            with st.chat_message(
-                "assistant", avatar=st.session_state["assistant_avatar"]
-            ):
-                st.write_stream(streamed_response(response["response"]))
-
-            # adding sources
-            response_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
-            with st.chat_message(
-                "assistant", avatar=st.session_state["assistant_avatar"]
-            ):
-                if len(response.keys()) > 1:  # only do if RAG
-                    # markdown help way
-                    source_string = ""
-                    counter = 1
-                    for j in list(
-                        pd.Series(list(response.keys()))[
-                            pd.Series(list(response.keys())) != "response"
-                        ]
-                    ):
-                        # source_string += f"**Source {counter}**:\n\n \t\t{response[j]}\n\n\n\n"
-                        metadata_dict = eval(
-                            response[j]
-                            .split("| source text:")[0]
-                            .replace("metadata: ", "")
-                        )
-                        metadata_string = ""
-                        for key, value in metadata_dict.items():
-                            if key != "is_csv":
-                                metadata_string += f"'{key}': '{value}'\n"
-
-                        source_string += f"""# Source {counter}\n ### Metadata:\n ```{metadata_string}```\n ### Text:\n{response[j].split("| source text:")[1]}\n\n"""
-                        counter += 1
-                else:
-                    source_string = "NA"
-
-                # adding model information
-                source_string += "\n# Model parameters\n"
-                source_string += f"""```
-Which LLM: {server_state[f'{st.session_state["user_name"]}_selected_llm']}
-Which corpus: {server_state[f'{st.session_state["user_name"]}_selected_corpus']}
-Similarity top K: {server_state[f'{st.session_state["user_name"]}_similarity_top_k']}
-Temperature: {server_state[f'{st.session_state["user_name"]}_temperature']}
-Max new tokens: {server_state[f'{st.session_state["user_name"]}_max_new_tokens']}
-Context window: {st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}
-Memory limit: {server_state[f'{st.session_state["user_name"]}_memory_limit']}
-System prompt: {server_state[f'{st.session_state["user_name"]}_system_prompt']}
-Chunk overlap: {server_state[f'{st.session_state["user_name"]}_chunk_overlap']}
-Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
-```
-                """
-                st.markdown(
-                    "Sources: " + response_time,
-                    unsafe_allow_html=True,
-                    help=f"{source_string}",
+                    ],  # don't pass the time to the LLM ,
+                    llm=server_state[
+                        server_state[f'{st.session_state["user_name"]}_selected_llm']
+                    ],
+                    similarity_top_k=server_state[
+                        f'{st.session_state["user_name"]}_similarity_top_k'
+                    ],
+                    temperature=server_state[
+                        f'{st.session_state["user_name"]}_temperature'
+                    ],
+                    max_new_tokens=server_state[
+                        f'{st.session_state["user_name"]}_max_new_tokens'
+                    ],
+                    use_chat_engine=st.session_state["use_chat_engine"],
+                    reset_chat_engine=st.session_state["reset_chat_engine"],
+                    memory_limit=server_state[
+                        f'{st.session_state["user_name"]}_memory_limit'
+                    ],
+                    system_prompt=server_state[
+                        f'{st.session_state["user_name"]}_system_prompt'
+                    ],
+                    context_prompt=""
+                    if server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                    == "None"
+                    or server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                    is None
+                    else server_state["default_context_prompt"],
+                    streaming=True,
+                    chat_mode="condense_plus_context",
                 )
 
-            # unlock the model
-            update_server_state("in_use", False)
-            update_server_state(
-                "exec_queue", server_state["exec_queue"][1:]
-            )  # take out of the queue
+                # Display assistant response in chat message container
+                with st.chat_message(
+                    "assistant", avatar=st.session_state["assistant_avatar"]
+                ):
+                    st.write_stream(streamed_response(response["response"]))
 
-            # Add assistant response to chat history
-            update_server_state(
-                f'{st.session_state["user_name"]} messages',
-                server_state[f'{st.session_state["user_name"]} messages']
-                + [{"role": "assistant", "content": response["response"].response}],
-            )
-            update_server_state(
-                f'{st.session_state["user_name"]} messages',
-                server_state[f'{st.session_state["user_name"]} messages']
-                + [
-                    {
-                        "role": "assistant",
-                        "content": f"source_string:{source_string}{response_time}",
-                    }
-                ],
-            )
+                # adding sources
+                response_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+                with st.chat_message(
+                    "assistant", avatar=st.session_state["assistant_avatar"]
+                ):
+                    if len(response.keys()) > 1:  # only do if RAG
+                        # markdown help way
+                        source_string = ""
+                        counter = 1
+                        for j in list(
+                            pd.Series(list(response.keys()))[
+                                pd.Series(list(response.keys())) != "response"
+                            ]
+                        ):
+                            # source_string += f"**Source {counter}**:\n\n \t\t{response[j]}\n\n\n\n"
+                            metadata_dict = eval(
+                                response[j]
+                                .split("| source text:")[0]
+                                .replace("metadata: ", "")
+                            )
+                            metadata_string = ""
+                            for key, value in metadata_dict.items():
+                                if key != "is_csv":
+                                    metadata_string += f"'{key}': '{value}'\n"
+
+                            source_string += f"""# Source {counter}\n ### Metadata:\n ```{metadata_string}```\n ### Text:\n{response[j].split("| source text:")[1]}\n\n"""
+                            counter += 1
+                    else:
+                        source_string = "NA"
+
+                    # adding model information
+                    source_string += "\n# Model parameters\n"
+                    source_string += f"""```
+    Which LLM: {server_state[f'{st.session_state["user_name"]}_selected_llm']}
+    Which corpus: {server_state[f'{st.session_state["user_name"]}_selected_corpus']}
+    Similarity top K: {server_state[f'{st.session_state["user_name"]}_similarity_top_k']}
+    Temperature: {server_state[f'{st.session_state["user_name"]}_temperature']}
+    Max new tokens: {server_state[f'{st.session_state["user_name"]}_max_new_tokens']}
+    Context window: {st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}
+    Memory limit: {server_state[f'{st.session_state["user_name"]}_memory_limit']}
+    System prompt: {server_state[f'{st.session_state["user_name"]}_system_prompt']}
+    Context prompt: {"NA" if server_state[f'{st.session_state["user_name"]}_selected_corpus'] == "None" or server_state[f'{st.session_state["user_name"]}_selected_corpus'] is None else server_state['default_context_prompt']}
+    Chunk overlap: {server_state[f'{st.session_state["user_name"]}_chunk_overlap']}
+    Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
+    ```
+                    """
+                    st.markdown(
+                        "Sources: " + response_time,
+                        unsafe_allow_html=True,
+                        help=f"{source_string}",
+                    )
+
+                # unlock the model
+                update_server_state("in_use", False)
+                update_server_state(
+                    "exec_queue", server_state["exec_queue"][1:]
+                )  # take out of the queue
+
+                # Add assistant response to chat history
+                update_server_state(
+                    f'{st.session_state["user_name"]} messages',
+                    server_state[f'{st.session_state["user_name"]} messages']
+                    + [{"role": "assistant", "content": response["response"].response}],
+                )
+                update_server_state(
+                    f'{st.session_state["user_name"]} messages',
+                    server_state[f'{st.session_state["user_name"]} messages']
+                    + [
+                        {
+                            "role": "assistant",
+                            "content": f"source_string:{source_string}{response_time}",
+                        }
+                    ],
+                )
+            except:
+                st.error(
+                    "An error was encountered. Try reducing your similarity top K or chunk size."
+                )
+                # unlock the model
+                update_server_state("in_use", False)
+                update_server_state(
+                    "exec_queue", server_state["exec_queue"][1:]
+                )  # take out of the queue

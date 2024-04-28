@@ -12,6 +12,7 @@ A streamlit app for interfacing with a local LLM.
 - You can change the title of the application by changing the `app_title` column in the `metadata/db_creds.csv` file
 - You can change the contact person by changing the `author_name` and `author_email` columns in the `metadata/db_creds.csv` file
 - In `metadata/db_creds.csv`, in the `corpora_location` column, put the directory of your streamlit app and its `corpora/` directory. This is for management of the corpus metadata files, which use absolute paths because of the `nlp_pipeline` library
+- You can change the context prompt by editing the `context_prompt` column in the `metadata/db_creds.csv` file. The `non_rag_system_prompt` is the default system prompt if you are not using RAG, `rag_system_prompt` is the default if you are. The system prompt can be changed from the front end as well.
 - run the app from the command line with `streamlit run app.py --server.port 8***` at whatever port you wish.
 - To get the app online quickly, you can use [ngrok](https://www.sitepoint.com/use-ngrok-test-local-site/) to expose this local port to be able to access via the internet.
 

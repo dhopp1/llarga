@@ -221,3 +221,27 @@ def setup_local_files():
             .loc[lambda x: x.field == "author_email", "value"]
             .values[0],
         )
+
+    # set default system prompt and context prompt
+    if "default_system_prompt" not in server_state:
+        update_server_state(
+            "default_system_prompt",
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "rag_system_prompt", "value"]
+            .values[0],
+        )
+
+        update_server_state(
+            "default_nonrag_system_prompt",
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "non_rag_system_prompt", "value"]
+            .values[0],
+        )
+
+    if "default_context_prompt" not in server_state:
+        update_server_state(
+            "default_context_prompt",
+            st.session_state["db_info"]
+            .loc[lambda x: x.field == "context_prompt", "value"]
+            .values[0],
+        )
