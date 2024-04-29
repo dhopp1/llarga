@@ -1,6 +1,9 @@
-from gnews import GNews
 import math
+import requests
+import re
 
+from gnews import GNews
+from bs4 import BeautifulSoup
 
 # supported countries/languages
 available_countries = {
@@ -153,3 +156,101 @@ def gen_google_news(
     )
     results = get_news(news_obj, search_term, site_list)
     return results
+
+
+# normal google, add a checkbox fto UI or searching normal google
+def get_google_results(params):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+    }
+
+    page_limit = 3
+    page_num = 1
+
+    data = []
+
+    while True:
+        html = requests.get(
+            "https://www.google.com/search", params=params, headers=headers, timeout=30
+        )
+        soup = BeautifulSoup(html.text, "lxml")
+
+        for result in soup.select(".tF2Cxc"):
+            title = result.select_one(".DKV0Md").text
+            try:
+                description = result.select_one(".lEBKkf span").text
+            except:
+                description = None
+            try:
+                site_date = result.select_one(".LEwnzc span").text
+            except:
+                site_date = None
+
+            links = result.select_one(".yuRUbf a")["href"]
+
+            data.append(
+                {
+                    "title": title,
+                    "description": description,
+                    "date": site_date,
+                    "links": links,
+                }
+            )
+
+        if page_num == page_limit:
+            break
+        if soup.select_one(".d6cvqb a[id=pnnext]"):
+            params["start"] += 10
+        else:
+            break
+
+        page_num += 1
+    return data
+
+
+def gen_google_search(
+    query,
+    language,
+    country,
+    max_results,
+    site_list=[],
+):
+    "get google search results"
+    # put in logic for if they do site list, divide max results by number of sites they put in and put that amount from each. If no site list, don't restrict just one search
+    params = {
+        "hl": language,  # search language
+        "gl": country.lower(),  # country of search
+        "start": 0,  # results start page
+        "num": max_results,
+    }
+
+    if len(site_list) == 0 or site_list == [""]:
+        params["q"] = f"{query}"
+        results = get_google_results(params)
+    else:
+        results = []
+        for site in site_list:
+            params["q"] = f"site:{site} {query}"
+            params["num"] = int(math.floor(max_results / len(site_list)))
+            tmp_results = get_google_results(params)
+            results += tmp_results
+
+    # put in format of google news
+    final_results = [
+        {
+            "title": x["title"],
+            "description": x["description"],
+            "published date": x["date"],
+            "url": x["links"],
+            "publisher": {
+                "href": re.match("(https?://[^/]+)", x["links"]).group(1),
+                "title": re.search(
+                    "(?:(?:https?://)?(?:www\.)?|(?:www\.)?)(\w+\.\w+)(?=/)", x["links"]
+                ).group(1),
+            },
+        }
+        for x in results
+    ]
+
+    # format data to be exact same style as gnews
+    return final_results

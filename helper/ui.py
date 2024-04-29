@@ -7,7 +7,7 @@ from streamlit_server_state import server_state, no_rerun
 import streamlit as st
 
 from helper.user_management import clear_models, update_server_state
-from helper.google_news import available_countries, available_languages
+from helper.agents import available_countries, available_languages
 
 
 def ui_tab():
@@ -116,7 +116,7 @@ def ui_upload_docs():
     # upload your own documents
     st.sidebar.markdown(
         "# Upload your own documents",
-        help="Enter the name of your corpus in the `Corpus name` field. If named `temporary`, it will be able to be written over after your session. For Google News, you can create a corpus by searching Google News first, which will automatically create a corpus based on your chosen search parameters.",
+        help="Enter the name of your corpus in the `Corpus name` field. If named `temporary`, it will be able to be written over after your session. For Google, you can create a corpus by searching Google or Google News first, which will automatically create a corpus based on your chosen search parameters.",
     )
 
     # paste a list of web urls
@@ -136,44 +136,58 @@ def ui_upload_docs():
     )
 
     # google news
-    with st.sidebar.expander("Google News"):
+    with st.sidebar.expander("Google"):
         with no_rerun:
+            # google or google news
+            server_state[f'{st.session_state["user_name"]}_gn_search'] = st.selectbox(
+                "Google source",
+                options=["Google search", "Google News"],
+                index=1
+                if f'{st.session_state["user_name"]}_gn_search' not in server_state
+                else ["Google search", "Google News"].index(
+                    server_state[f'{st.session_state["user_name"]}_gn_search']
+                ),
+                help="Whether to search regular Google or Google News.",
+            )
+
             # google news language
             server_state[f'{st.session_state["user_name"]}_gn_language'] = st.selectbox(
-                "Google News language",
-                options=sorted(list(available_languages.keys())),
-                index=sorted(list(available_languages.keys())).index("english")
+                "Google language",
+                options=sorted([x.title() for x in list(available_languages.keys())]),
+                index=sorted(
+                    [x.title() for x in list(available_languages.keys())]
+                ).index("English")
                 if f'{st.session_state["user_name"]}_gn_language' not in server_state
-                else sorted(list(available_languages.keys())).index(
-                    server_state[f'{st.session_state["user_name"]}_gn_language']
-                ),
-                help="Which language to search Google News in.",
+                else sorted(
+                    [x.title() for x in list(available_languages.keys())]
+                ).index(server_state[f'{st.session_state["user_name"]}_gn_language']),
+                help="Which language to search Google in.",
             )
 
             # google news country
             server_state[f'{st.session_state["user_name"]}_gn_country'] = st.selectbox(
-                "Google News country",
+                "Google country",
                 options=sorted(list(available_countries.keys())),
                 index=sorted(list(available_countries.keys())).index("United States")
                 if f'{st.session_state["user_name"]}_gn_country' not in server_state
                 else sorted(list(available_countries.keys())).index(
                     server_state[f'{st.session_state["user_name"]}_gn_country']
                 ),
-                help="Which country to search Google News in.",
+                help="Which country to search Google in.",
             )
 
             # google news max results
             server_state[
                 f'{st.session_state["user_name"]}_gn_max_results'
             ] = st.selectbox(
-                "Google News max results",
+                "Google number results",
                 options=list(range(1, 21)),
                 index=list(range(1, 21)).index(5)
                 if f'{st.session_state["user_name"]}_gn_max_results' not in server_state
                 else list(range(1, 21)).index(
                     server_state[f'{st.session_state["user_name"]}_gn_max_results']
                 ),
-                help="How many results from Google News to index.",
+                help="How many results from Google to index.",
             )
 
             # google news time range
@@ -183,27 +197,27 @@ def ui_upload_docs():
                 "Google News date range",
                 format="DD.MM.YYYY",
                 value=(datetime.today() - timedelta(days=7), datetime.now()),
-                help="What time range to search Google News.",
+                help="What time range to search Google News (not applicable to normal search).",
             )
 
             # google news search term
             server_state[f'{st.session_state["user_name"]}_gn_query'] = st.text_input(
-                "Google news query",
+                "Google query",
                 value=""
                 if f'{st.session_state["user_name"]}_gn_query' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_gn_query'],
-                help="Google News query.",
+                help="Google query.",
             )
 
             # google news site list
             server_state[
                 f'{st.session_state["user_name"]}_gn_site_list'
             ] = st.text_input(
-                "Google News site list",
+                "Google site list",
                 value=""
                 if f'{st.session_state["user_name"]}_gn_site_list' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_gn_site_list'],
-                help="Which websites you want to search Google News for. Pass a comma separated list for multiple sites, e.g.,: `bbc.com,cnn.com`",
+                help="Which websites you want to search Google for. Pass a comma separated list for multiple sites, e.g.,: `bbc.com,cnn.com`",
             )
 
     # process corpus button

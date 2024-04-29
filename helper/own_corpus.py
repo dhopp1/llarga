@@ -10,7 +10,12 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import streamlit as st
 from streamlit_server_state import server_state
 
-from helper.google_news import available_countries, available_languages, gen_google_news
+from helper.agents import (
+    available_countries,
+    available_languages,
+    gen_google_news,
+    gen_google_search,
+)
 
 
 # set these to the install locations if on Windows
@@ -161,34 +166,64 @@ def process_corpus(
                 ) as new_file:
                     new_file.write(uploaded_document.getbuffer())
                     new_file.close()
-            # google news
+            # google/google news/google scholar
             else:
-                news_info = gen_google_news(
-                    language=available_languages[
-                        server_state[f'{st.session_state["user_name"]}_gn_language']
-                    ],
-                    max_results=server_state[
-                        f'{st.session_state["user_name"]}_gn_max_results'
-                    ],
-                    country=available_countries[
-                        server_state[f'{st.session_state["user_name"]}_gn_country']
-                    ],
-                    start_date=server_state[
-                        f'{st.session_state["user_name"]}_gn_date_range'
-                    ][0],
-                    end_date=server_state[
-                        f'{st.session_state["user_name"]}_gn_date_range'
-                    ][1],
-                    search_term=server_state[
-                        f'{st.session_state["user_name"]}_gn_query'
-                    ],
-                    site_list=[]
-                    if server_state[f'{st.session_state["user_name"]}_gn_site_list']
-                    == ""
-                    else server_state[
-                        f'{st.session_state["user_name"]}_gn_site_list'
-                    ].split(","),
-                )
+                if (
+                    server_state[f'{st.session_state["user_name"]}_gn_search']
+                    == "Google News"
+                ):
+                    news_info = gen_google_news(
+                        language=available_languages[
+                            server_state[
+                                f'{st.session_state["user_name"]}_gn_language'
+                            ].lower()
+                        ],
+                        max_results=server_state[
+                            f'{st.session_state["user_name"]}_gn_max_results'
+                        ],
+                        country=available_countries[
+                            server_state[f'{st.session_state["user_name"]}_gn_country']
+                        ],
+                        start_date=server_state[
+                            f'{st.session_state["user_name"]}_gn_date_range'
+                        ][0],
+                        end_date=server_state[
+                            f'{st.session_state["user_name"]}_gn_date_range'
+                        ][1],
+                        search_term=server_state[
+                            f'{st.session_state["user_name"]}_gn_query'
+                        ],
+                        site_list=[]
+                        if server_state[f'{st.session_state["user_name"]}_gn_site_list']
+                        == ""
+                        else server_state[
+                            f'{st.session_state["user_name"]}_gn_site_list'
+                        ].split(","),
+                    )
+                elif (
+                    server_state[f'{st.session_state["user_name"]}_gn_search']
+                    == "Google search"
+                ):
+                    news_info = gen_google_search(
+                        query=server_state[f'{st.session_state["user_name"]}_gn_query'],
+                        language=available_languages[
+                            server_state[
+                                f'{st.session_state["user_name"]}_gn_language'
+                            ].lower()
+                        ],
+                        max_results=server_state[
+                            f'{st.session_state["user_name"]}_gn_max_results'
+                        ],
+                        country=available_countries[
+                            server_state[f'{st.session_state["user_name"]}_gn_country']
+                        ],
+                        site_list=[]
+                        if server_state[f'{st.session_state["user_name"]}_gn_site_list']
+                        == ""
+                        else server_state[
+                            f'{st.session_state["user_name"]}_gn_site_list'
+                        ].split(","),
+                    )
 
                 # create a synthetic metadata file
                 uploaded_document = types.SimpleNamespace()
