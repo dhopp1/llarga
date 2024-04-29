@@ -1,3 +1,4 @@
+bs4
 gnews==0.3.6
 nlp_pipeline
 local-rag-llm
