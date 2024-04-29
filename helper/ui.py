@@ -716,18 +716,18 @@ def import_chat():
                     # adding model information
                     source_string += "\n# Model parameters\n"
                     source_string += f"""```
-    Which LLM: {server_state[f'{st.session_state["user_name"]}_selected_llm']}
-    Which corpus: {server_state[f'{st.session_state["user_name"]}_selected_corpus']}
-    Similarity top K: {server_state[f'{st.session_state["user_name"]}_similarity_top_k']}
-    Temperature: {server_state[f'{st.session_state["user_name"]}_temperature']}
-    Max new tokens: {server_state[f'{st.session_state["user_name"]}_max_new_tokens']}
-    Context window: {st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}
-    Memory limit: {server_state[f'{st.session_state["user_name"]}_memory_limit']}
-    System prompt: {server_state[f'{st.session_state["user_name"]}_system_prompt']}
-    Context prompt: {"NA" if server_state[f'{st.session_state["user_name"]}_selected_corpus'] == "None" or server_state[f'{st.session_state["user_name"]}_selected_corpus'] is None else server_state['default_context_prompt']}
-    Chunk overlap: {server_state[f'{st.session_state["user_name"]}_chunk_overlap']}
-    Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
-    ```
+Which LLM: {server_state[f'{st.session_state["user_name"]}_selected_llm']}
+Which corpus: {server_state[f'{st.session_state["user_name"]}_selected_corpus']}
+Similarity top K: {server_state[f'{st.session_state["user_name"]}_similarity_top_k']}
+Temperature: {server_state[f'{st.session_state["user_name"]}_temperature']}
+Max new tokens: {server_state[f'{st.session_state["user_name"]}_max_new_tokens']}
+Context window: {st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}
+Memory limit: {server_state[f'{st.session_state["user_name"]}_memory_limit']}
+System prompt: {server_state[f'{st.session_state["user_name"]}_system_prompt']}
+Context prompt: {"NA" if server_state[f'{st.session_state["user_name"]}_selected_corpus'] == "None" or server_state[f'{st.session_state["user_name"]}_selected_corpus'] is None else server_state['default_context_prompt']}
+Chunk overlap: {server_state[f'{st.session_state["user_name"]}_chunk_overlap']}
+Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
+```
                     """
                     st.markdown(
                         "Sources: " + response_time,
