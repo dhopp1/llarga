@@ -155,6 +155,9 @@ def gen_google_news(
         end_date=end_date,
     )
     results = get_news(news_obj, search_term, site_list)
+    
+    # don't return .asp or .page results
+    results = [x for x in results if x["url"][-4:] not in [".asp", "page"]]
     return results
 
 
@@ -251,6 +254,9 @@ def gen_google_search(
         }
         for x in results
     ]
+    
+    # don't return .asp or .page results
+    final_results = [x for x in final_results if x["url"][-4:] not in [".asp", "page"]]
 
     # format data to be exact same style as gnews
     return final_results
