@@ -213,7 +213,7 @@ def process_corpus(
                         ],
                         max_results=server_state[
                             f'{st.session_state["user_name"]}_gn_max_results'
-                        ],
+                        ]+1,
                         country=available_countries[
                             server_state[f'{st.session_state["user_name"]}_gn_country']
                         ],
