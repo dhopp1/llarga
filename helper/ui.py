@@ -120,13 +120,38 @@ def ui_upload_docs():
     )
 
     # paste a list of web urls
-    st.session_state["own_urls"] = st.sidebar.text_input(
-        "URLs",
-        value=""
-        if "own_urls" not in st.session_state
-        else st.session_state["own_urls"],
-        help="A comma separated list of URLs.",
-    )
+    with st.sidebar.expander("URL(s)"):
+        with no_rerun:
+            server_state[f'{st.session_state["user_name"]}_own_urls'] = st.text_input(
+                "URLs",
+                value=""
+                if f'{st.session_state["user_name"]}_own_urls' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_own_urls'],
+                help="A comma separated list of URLs.",
+            )
+
+        server_state[
+            f'{st.session_state["user_name"]}_own_urls_prefix'
+        ] = st.text_input(
+            "URL prefix",
+            value=""
+            if f'{st.session_state["user_name"]}_own_urls_prefix' not in server_state
+            else server_state[f'{st.session_state["user_name"]}_own_urls_prefix'],
+            help="If you would like to get not just the URL provided above, but all links from that page, put here the page prefix for those outward URLs. For instance, say I wanted to process all the pages of documentation for Scikit Learn. I would put `https://scikit-learn.org/stable/user_guide.html` in the field above, then `https://scikit-learn.org/stable/` in this field, because that is the prefix to all the URLs on the user guide site.",
+        )
+
+        server_state[
+            f'{st.session_state["user_name"]}_own_urls_include_https'
+        ] = st.checkbox(
+            "Include HTTPS links?",
+            value=False
+            if f'{st.session_state["user_name"]}_own_urls_include_https'
+            not in server_state
+            else server_state[
+                f'{st.session_state["user_name"]}_own_urls_include_https'
+            ],
+            help="If getting all the links from a page, whether to include https links on that page or just prefixed links.",
+        )
 
     # upload file
     st.session_state["uploaded_file"] = st.sidebar.file_uploader(
@@ -484,6 +509,9 @@ def ui_export_chat_end_session():
         del server_state[f'{st.session_state["user_name"]}_system_prompt']
         del server_state[f'{st.session_state["user_name"]}_chunk_overlap']
         del server_state[f'{st.session_state["user_name"]}_chunk_size']
+        del server_state[f'{st.session_state["user_name"]}_own_urls']
+        del server_state[f'{st.session_state["user_name"]}_own_urls_prefix']
+        del server_state[f'{st.session_state["user_name"]}_own_urls_include_https']
         del server_state[f'{st.session_state["user_name"]}_gn_language']
         del server_state[f'{st.session_state["user_name"]}_gn_country']
         del server_state[f'{st.session_state["user_name"]}_gn_max_results']

@@ -1,12 +1,15 @@
 import os
 import types
 import shutil
+
+from bs4 import BeautifulSoup
 from nlp_pipeline.nlp_pipeline import nlp_processor
 import pandas as pd
 from zipfile import ZipFile
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import requests
 import streamlit as st
 from streamlit_server_state import server_state
 
@@ -113,6 +116,23 @@ def check_table_exists(host, port, user, password, db_name, table_name):
     return table_exists
 
 
+def extract_links(url, prefix, include_https):
+    "extract links from a URL"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
+    urls = [
+        prefix + a["href"]
+        for a in soup.find_all("a", href=True)
+        if "#" not in a["href"] and "https" not in a["href"]
+    ]  # prefix links
+    if include_https:
+        urls = urls + [
+            a["href"] for a in soup.find_all("a", href=True) if "https" in a["href"]
+        ]  # https: links
+
+    return urls
+
+
 def process_corpus(
     user_name, corpus_name, own_urls, uploaded_document, passed_google_news
 ):
@@ -133,9 +153,42 @@ def process_corpus(
         # just sent a list of websites
         if own_urls != "":
             url_list = own_urls.split(",")
-            metadata = pd.DataFrame(
-                {"text_id": list(range(1, len(url_list) + 1)), "web_filepath": url_list}
-            )
+
+            # passed a URL prefix, meaning get all outward URLs on the page
+            if (
+                len(url_list) == 1
+                and server_state[f'{st.session_state["user_name"]}_own_urls_prefix']
+                != ""
+            ):
+                urls = extract_links(
+                    server_state[f'{st.session_state["user_name"]}_own_urls'],
+                    server_state[f'{st.session_state["user_name"]}_own_urls_prefix']
+                    + "/"
+                    if server_state[f'{st.session_state["user_name"]}_own_urls_prefix'][
+                        -1
+                    ]
+                    != "/"
+                    else server_state[
+                        f'{st.session_state["user_name"]}_own_urls_prefix'
+                    ],
+                    server_state[
+                        f'{st.session_state["user_name"]}_own_urls_include_https'
+                    ],
+                )
+                metadata = pd.DataFrame(
+                    {
+                        "text_id": list(range(1, len(urls) + 1)),
+                        "web_filepath": urls,
+                    }
+                )
+            else:
+                # just passed URLs metadata
+                metadata = pd.DataFrame(
+                    {
+                        "text_id": list(range(1, len(url_list) + 1)),
+                        "web_filepath": url_list,
+                    }
+                )
 
             # create the processor
             processor = nlp_processor(
@@ -213,7 +266,8 @@ def process_corpus(
                         ],
                         max_results=server_state[
                             f'{st.session_state["user_name"]}_gn_max_results'
-                        ]+1,
+                        ]
+                        + 1,
                         country=available_countries[
                             server_state[f'{st.session_state["user_name"]}_gn_country']
                         ],
@@ -224,11 +278,16 @@ def process_corpus(
                             f'{st.session_state["user_name"]}_gn_site_list'
                         ].split(","),
                     )
-                    
+
                     # for arxiv, return the PDF not the abstract
-                    if server_state[f'{st.session_state["user_name"]}_gn_site_list'] == "arxiv.org":
+                    if (
+                        server_state[f'{st.session_state["user_name"]}_gn_site_list']
+                        == "arxiv.org"
+                    ):
                         for i in range(len(news_info)):
-                            news_info[i]["url"] = news_info[i]["url"].replace("/abs/", "/pdf/")
+                            news_info[i]["url"] = news_info[i]["url"].replace(
+                                "/abs/", "/pdf/"
+                            )
 
                 # create a synthetic metadata file
                 uploaded_document = types.SimpleNamespace()

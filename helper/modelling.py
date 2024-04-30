@@ -245,7 +245,9 @@ def load_rag_pipeline():
                     st.session_state["corpora_dict"] = process_corpus(
                         user_name=st.session_state["db_name"],
                         corpus_name=st.session_state["new_corpus_name"],
-                        own_urls=st.session_state["own_urls"],
+                        own_urls=server_state[
+                            f'{st.session_state["user_name"]}_own_urls'
+                        ],
                         uploaded_document=st.session_state["uploaded_file"],
                         passed_google_news=False
                         if server_state[f'{st.session_state["user_name"]}_gn_query']
