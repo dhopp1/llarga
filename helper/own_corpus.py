@@ -224,6 +224,11 @@ def process_corpus(
                             f'{st.session_state["user_name"]}_gn_site_list'
                         ].split(","),
                     )
+                    
+                    # for arxiv, return the PDF not the abstract
+                    if server_state[f'{st.session_state["user_name"]}_gn_site_list'] == "arxiv.org":
+                        for i in range(len(news_info)):
+                            news_info[i]["url"] = news_info[i]["url"].replace("/abs/", "/pdf/")
 
                 # create a synthetic metadata file
                 uploaded_document = types.SimpleNamespace()
