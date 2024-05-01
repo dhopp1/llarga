@@ -278,6 +278,30 @@ def ui_model_params():
 
     # which corpus
     with no_rerun:
+        prefix_text = "Which corpus to contextualize on."
+        if (
+            f'{st.session_state["user_name"]}_corpus_help_text' not in server_state
+        ):  # first run
+            server_state[
+                f'{st.session_state["user_name"]}_corpus_help_text'
+            ] = prefix_text
+        elif (
+            server_state[f'{st.session_state["user_name"]}_selected_corpus'] == "None"
+        ):  # no corpus
+            server_state[
+                f'{st.session_state["user_name"]}_corpus_help_text'
+            ] = prefix_text
+        else:  # metadata of selected corpus
+            metadata = pd.read_csv(
+                f"""corpora/metadata_{server_state[f'{st.session_state["user_name"]}_selected_corpus']}.csv"""
+            )
+            metadata["file_path"] = [
+                x.split("/")[-1] for x in metadata["file_path"]
+            ]  # show only filename
+            server_state[
+                f'{st.session_state["user_name"]}_corpus_help_text'
+            ] = f"""{prefix_text}\n\nMetadata of the selected corpus:\n{metadata.to_markdown(index=False)}"""
+
         server_state[
             f'{st.session_state["user_name"]}_selected_corpus'
         ] = st.sidebar.selectbox(
@@ -309,7 +333,7 @@ def ui_model_params():
                 is not None
                 else "None"
             ),
-            help="Which corpus to contextualize on.",
+            help=server_state[f'{st.session_state["user_name"]}_corpus_help_text'],
         )
 
 
