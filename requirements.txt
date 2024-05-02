@@ -6,3 +6,4 @@ pandas
 psutil
 streamlit==1.32.2
 streamlit-server-state==0.17.1
+tabulate
