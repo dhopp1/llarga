@@ -124,7 +124,7 @@ available_languages = {
 def get_news(news_obj, search_term, site_list=[]):
     "get google news results for a given search term and site list"
     search_term = "%20".join(search_term.split(" "))
-    if site_list == [''] or site_list == []:
+    if site_list == [""] or site_list == []:
         query = f"""/search?q={search_term}"""
         results = news_obj._get_news(query)
     else:
@@ -227,7 +227,7 @@ def gen_google_search(
         "num": max_results,
     }
 
-    if site_list == [''] or site_list == []:
+    if site_list == [""] or site_list == []:
         params["q"] = f"{query}"
         results = get_google_results(params)
     else:

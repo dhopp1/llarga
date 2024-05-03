@@ -24,7 +24,6 @@ from helper.user_management import (
 def set_static_model_params():
     st.session_state["paragraph_separator"] = "\n\n\n"
     st.session_state["separator"] = " "
-    st.session_state["use_chat_engine"] = True
     st.session_state["reset_chat_engine"] = False
 
 

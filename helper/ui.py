@@ -352,6 +352,15 @@ def ui_advanced_model_params():
                 help="The name of the new corpus you are processing. It must be able to be a SQL database name, so only lower case, no special characters, no spaces. Use underscores.",
             )
 
+        # include history
+        server_state[f'{st.session_state["user_name"]}_use_memory'] = st.checkbox(
+            "Use chat memory?",
+            value=True
+            if f'{st.session_state["user_name"]}_use_memory' not in server_state
+            else server_state[f'{st.session_state["user_name"]}_use_memory'],
+            help="Whether or not to have the model remember your chat history. If checked, you will be able to ask followup questions. If not checked, each query will be treated independently. The benefit of the latter is you can use the whole context length for RAG and not RAG + chat history, so you can increase your similarity top K.",
+        )
+
         # similarity top k
         with no_rerun:
             server_state[
@@ -701,7 +710,7 @@ def import_chat():
             update_server_state("in_use", True)
 
             # generate response
-            try:
+            if True:  # try:
                 response = server_state[
                     f'model_{st.session_state["db_name"]}'
                 ].gen_response(
@@ -726,11 +735,23 @@ def import_chat():
                     max_new_tokens=server_state[
                         f'{st.session_state["user_name"]}_max_new_tokens'
                     ],
-                    use_chat_engine=st.session_state["use_chat_engine"],
+                    use_chat_engine=server_state[
+                        f'{st.session_state["user_name"]}_use_memory'
+                    ],
                     reset_chat_engine=st.session_state["reset_chat_engine"],
                     memory_limit=server_state[
                         f'{st.session_state["user_name"]}_memory_limit'
-                    ],
+                    ]
+                    if server_state[f'{st.session_state["user_name"]}_use_memory']
+                    else st.session_state["llm_dict"]
+                    .loc[
+                        lambda x: x.name
+                        == server_state[
+                            f'{st.session_state["user_name"]}_selected_llm'
+                        ],
+                        "context_window",
+                    ]
+                    .values[0],
                     system_prompt=server_state[
                         f'{st.session_state["user_name"]}_system_prompt'
                     ],
@@ -824,7 +845,7 @@ Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
                         }
                     ],
                 )
-            except:
+            else:  # except:
                 st.error(
                     "An error was encountered. Try reducing your similarity top K or chunk size."
                 )
