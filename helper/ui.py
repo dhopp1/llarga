@@ -281,6 +281,7 @@ def ui_model_params():
         prefix_text = "Which corpus to contextualize on."
         if (
             f'{st.session_state["user_name"]}_corpus_help_text' not in server_state
+            or f'{st.session_state["user_name"]}_selected_corpus' not in server_state
         ):  # first run
             server_state[
                 f'{st.session_state["user_name"]}_corpus_help_text'
