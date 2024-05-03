@@ -268,7 +268,7 @@ def ui_model_params():
         ] = st.sidebar.selectbox(
             "Which LLM",
             options=st.session_state["llm_dict"].name,
-            index=tuple(st.session_state["llm_dict"].name).index("mistral-docsgpt")
+            index=0
             if f'{st.session_state["user_name"]}_selected_llm' not in server_state
             else tuple(st.session_state["llm_dict"].name).index(
                 server_state[f'{st.session_state["user_name"]}_selected_llm']
@@ -700,7 +700,7 @@ def import_chat():
             update_server_state("in_use", True)
 
             # generate response
-            try:
+            if True:#try:
                 response = server_state[
                     f'model_{st.session_state["db_name"]}'
                 ].gen_response(
@@ -823,7 +823,7 @@ Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
                         }
                     ],
                 )
-            except:
+            else:#except:
                 st.error(
                     "An error was encountered. Try reducing your similarity top K or chunk size."
                 )
