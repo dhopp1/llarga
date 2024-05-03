@@ -700,7 +700,7 @@ def import_chat():
             update_server_state("in_use", True)
 
             # generate response
-            if True:#try:
+            try:
                 response = server_state[
                     f'model_{st.session_state["db_name"]}'
                 ].gen_response(
@@ -823,7 +823,7 @@ Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
                         }
                     ],
                 )
-            else:#except:
+            except:
                 st.error(
                     "An error was encountered. Try reducing your similarity top K or chunk size."
                 )
