@@ -22,6 +22,12 @@ def update_server_state(key, value):
 
 def check_password():
     """Check if a user entered the password correctly"""
+    # check if it hasn't been used in a while, potentially interrupted while executing
+    if "last_used" not in server_state:
+        update_server_state("last_used", datetime.now())
+    if (datetime.now() - server_state["last_used"]).total_seconds() > 60:
+        update_server_state("in_use", False)
+
     if not (st.session_state["available"]):
         st.error("The LLM is currently generating, try again in a few seconds.")
 

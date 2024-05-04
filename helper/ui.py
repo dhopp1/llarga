@@ -681,6 +681,8 @@ def import_chat():
             # lock the model to perform requests sequentially
             if "in_use" not in server_state:
                 update_server_state("in_use", False)
+            if "last_used" not in server_state:
+                update_server_state("last_used", datetime.now())
 
             if "exec_queue" not in server_state:
                 update_server_state("exec_queue", [st.session_state["user_name"]])
@@ -700,6 +702,15 @@ def import_chat():
                     server_state["in_use"]
                     or server_state["exec_queue"][0] != st.session_state["user_name"]
                 ):
+                    # check if it hasn't been used in a while, potentially interrupted while executing
+                    if (
+                        datetime.now() - server_state["last_used"]
+                    ).total_seconds() > 60:
+                        update_server_state("in_use", False)
+                        update_server_state(
+                            "exec_queue", server_state["exec_queue"][1:]
+                        )  # take the first person out of the queue
+
                     t.markdown(
                         f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
                     )
@@ -708,9 +719,10 @@ def import_chat():
 
             # lock the model while generating
             update_server_state("in_use", True)
+            update_server_state("last_used", datetime.now())
 
             # generate response
-            if True:  # try:
+            try:
                 response = server_state[
                     f'model_{st.session_state["db_name"]}'
                 ].gen_response(
@@ -845,7 +857,7 @@ Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
                         }
                     ],
                 )
-            else:  # except:
+            except:
                 st.error(
                     "An error was encountered. Try reducing your similarity top K or chunk size."
                 )
