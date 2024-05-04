@@ -706,10 +706,15 @@ def import_chat():
                     if (
                         datetime.now() - server_state["last_used"]
                     ).total_seconds() > 60:
-                        update_server_state("in_use", False)
-                        update_server_state(
-                            "exec_queue", server_state["exec_queue"][1:]
-                        )  # take the first person out of the queue
+                        if (
+                            server_state["exec_queue"][1]
+                            == st.session_state["user_name"]
+                        ):  # only perform if first in the queue
+                            update_server_state("in_use", False)
+                            update_server_state(
+                                "exec_queue", server_state["exec_queue"][1:]
+                            )  # take the first person out of the queue
+                            update_server_state("last_used", datetime.now())
 
                     t.markdown(
                         f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
