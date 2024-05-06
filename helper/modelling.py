@@ -218,7 +218,17 @@ def load_rag_pipeline():
                 ]
                 .values[0]
                 - 0
-            ),
+            )
+            if server_state[f'{st.session_state["user_name"]}_selected_corpus']
+            != "None"
+            else st.session_state["llm_dict"]
+            .loc[
+                lambda x: x.name
+                == server_state[f'{st.session_state["user_name"]}_selected_llm'],
+                "context_window",
+            ]
+            .values[0]
+            - 200,  # bigger memory limit if non-RAG
         )
 
         # hid messages so you can see the initializer

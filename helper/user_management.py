@@ -113,6 +113,11 @@ def setup_local_files():
 
     if "llm_dict" not in st.session_state:
         st.session_state["llm_dict"] = pd.read_csv("metadata/llm_list.csv")
+        st.session_state["llm_dict"] = (
+            st.session_state["llm_dict"]
+            .loc[lambda x: x.display == 1, :]
+            .reset_index(drop=True)
+        )
 
     if "corpora_dict" not in st.session_state:
         st.session_state["corpora_dict"] = pd.read_csv("metadata/corpora_list.csv")
