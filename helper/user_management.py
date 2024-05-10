@@ -123,7 +123,7 @@ def setup_local_files():
         st.session_state["corpora_dict"] = pd.read_csv("metadata/corpora_list.csv")
 
     if "db_info" not in st.session_state:
-        st.session_state["db_info"] = pd.read_csv("metadata/db_creds.csv")
+        st.session_state["db_info"] = pd.read_csv("metadata/settings.csv")
 
     if "master_db_name" not in st.session_state:
         st.session_state["master_db_name"] = (
@@ -158,6 +158,57 @@ def setup_local_files():
             st.session_state["db_info"]
             .loc[lambda x: x.field == "port", "value"]
             .values[0]
+        )
+
+    if "default_similarity_top_k" not in server_state:
+        update_server_state(
+            "default_similarity_top_k",
+            int(
+                st.session_state["db_info"]
+                .loc[lambda x: x.field == "similarity_top_k", "value"]
+                .values[0]
+            ),
+        )
+
+    if "default_temperature" not in st.session_state:
+        update_server_state(
+            "default_temperature",
+            int(
+                st.session_state["db_info"]
+                .loc[lambda x: x.field == "temperature", "value"]
+                .values[0]
+            ),
+        )
+    print(f"WOW: {server_state['default_temperature']}")
+
+    if "default_max_new_tokens" not in st.session_state:
+        update_server_state(
+            "default_max_new_tokens",
+            int(
+                st.session_state["db_info"]
+                .loc[lambda x: x.field == "max_new_tokens", "value"]
+                .values[0]
+            ),
+        )
+
+    if "default_chunk_overlap" not in st.session_state:
+        update_server_state(
+            "default_chunk_overlap",
+            int(
+                st.session_state["db_info"]
+                .loc[lambda x: x.field == "chunk_overlap", "value"]
+                .values[0]
+            ),
+        )
+
+    if "default_chunk_size" not in st.session_state:
+        update_server_state(
+            "default_chunk_size",
+            int(
+                st.session_state["db_info"]
+                .loc[lambda x: x.field == "chunk_size", "value"]
+                .values[0]
+            ),
         )
 
     # restore DB if there's a backup

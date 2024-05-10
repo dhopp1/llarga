@@ -370,7 +370,7 @@ def ui_advanced_model_params():
                 min_value=1,
                 max_value=20,
                 step=1,
-                value=4
+                value=server_state["default_similarity_top_k"]
                 if f'{st.session_state["user_name"]}_similarity_top_k'
                 not in server_state
                 else server_state[f'{st.session_state["user_name"]}_similarity_top_k'],
@@ -392,7 +392,7 @@ def ui_advanced_model_params():
                 min_value=0,
                 max_value=100,
                 step=1,
-                value=0
+                value=server_state["default_temperature"]
                 if f'{st.session_state["user_name"]}_temperature' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_temperature'],
                 help="How much leeway/creativity to give the model, 0 = least creativity, 100 = most creativity.",
@@ -405,7 +405,7 @@ def ui_advanced_model_params():
                 min_value=16,
                 max_value=16000,
                 step=8,
-                value=512
+                value=server_state["default_max_new_tokens"]
                 if f'{st.session_state["user_name"]}_max_new_tokens' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_max_new_tokens'],
                 help="How long to limit the responses to (token ≈ word).",
@@ -436,7 +436,7 @@ def ui_advanced_model_params():
                 min_value=0,
                 max_value=1000,
                 step=1,
-                value=150
+                value=server_state["default_chunk_overlap"]
                 if f'{st.session_state["user_name"]}_chunk_overlap' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_chunk_overlap'],
                 help="How many tokens to overlap when chunking the documents.",
@@ -449,7 +449,7 @@ def ui_advanced_model_params():
                 min_value=64,
                 max_value=6400,
                 step=8,
-                value=384
+                value=server_state["default_chunk_size"]
                 if f'{st.session_state["user_name"]}_chunk_size' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_chunk_size'],
                 help="How many tokens per chunk when chunking the documents.",

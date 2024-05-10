@@ -1,0 +1,20 @@
+field,value
+host,localhost
+port,5432
+username,user1
+password,password
+master_db_name,vector_db
+restore_db,0
+dump_on_exit,0
+corpora_location,/app/streamlit_rag/corpora/
+app_title,Local LLM
+author_name,Author
+author_email,someone@example.com
+non_rag_system_prompt,You are a chatbot.
+rag_system_prompt,"You are a chatbot specialized in answering questions in context concisely. If you cannot find the answer to a query in the provided context, say you cannot answer or provide related information that is in the context. Do not make up answers that are not contained in the context."
+context_prompt,Here is the context:  {context_str}
+similarity_top_k,7
+temperature,0
+max_new_tokens,512
+chunk_overlap,150
+chunk_size,384
