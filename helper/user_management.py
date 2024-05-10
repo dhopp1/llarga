@@ -179,7 +179,6 @@ def setup_local_files():
                 .values[0]
             ),
         )
-    print(f"WOW: {server_state['default_temperature']}")
 
     if "default_max_new_tokens" not in st.session_state:
         update_server_state(

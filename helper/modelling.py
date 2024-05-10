@@ -235,6 +235,10 @@ def load_rag_pipeline():
         if "message_box" in st.session_state:
             st.session_state["message_box"].empty()
 
+        # intialize progress bar in case necessary
+        old_stdout = sys.stdout
+        sys.stdout = Logger(st.progress(0), st.empty())
+
         if st.session_state["process_corpus_button"]:
             if not (
                 (
@@ -249,8 +253,6 @@ def load_rag_pipeline():
                 st.error("A corpus with this name already exists, choose another one.")
             else:
                 with st.spinner("Processing corpus..."):
-                    old_stdout = sys.stdout
-                    sys.stdout = Logger(st.progress(0), st.empty())
                     st.session_state["corpora_dict"] = process_corpus(
                         user_name=st.session_state["db_name"],
                         corpus_name=st.session_state["new_corpus_name"],
@@ -324,15 +326,11 @@ def load_rag_pipeline():
             model_initialization()
 
             # clear the progress bar
-            if (
-                server_state[f'{st.session_state["user_name"]}_rerun_populate_db']
-                or st.session_state["process_corpus_button"]
-            ):
-                try:
-                    sys.stdout = sys.stdout.clear()
-                    sys.stdout = old_stdout
-                except:
-                    pass
+            try:
+                sys.stdout = sys.stdout.clear()
+                sys.stdout = old_stdout
+            except:
+                pass
 
             # copy the new table to master vector_db if it's not already there
             if not (
