@@ -6,8 +6,8 @@ password,password
 master_db_name,vector_db
 restore_db,0
 dump_on_exit,0
-corpora_location,/app/streamlit_rag/corpora/
-app_title,Local LLM
+corpora_location,/app/llarga/corpora/
+app_title,Llarga
 author_name,Author
 author_email,someone@example.com
 non_rag_system_prompt,You are a chatbot.
