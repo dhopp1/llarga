@@ -1,5 +1,5 @@
-# streamlit_rag
-A streamlit app for interfacing with a local LLM.
+# Llarga
+Llarga stands for 'Local Large language RAG Application'. A streamlit application for interfacing with a local RAG LLM.
 
 ## Set up
 - Install required libraries. The LLM and RAG system relies on two key libraries you should set up and make sure are working independently:
