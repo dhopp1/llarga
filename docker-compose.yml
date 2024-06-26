@@ -23,12 +23,12 @@ services:
             - driver: nvidia
               capabilities: [gpu]
               count: 'all'
-    working_dir: /app/streamlit_rag
+    working_dir: /app/llarga
     ports:
       - 8502:8502
     volumes:
-      - <local corpora directory>:/app/streamlit_rag/corpora
-      - <local metadata directory>:/app/streamlit_rag/metadata
-      - <local models directory>:/app/streamlit_rag/models
-      - <local secret.toml file path>:/app/streamlit_rag/.streamlit/secrets.toml
+      - <local corpora directory>:/app/llarga/corpora
+      - <local metadata directory>:/app/llarga/metadata
+      - <local models directory>:/app/llarga/models
+      - <local secret.toml file path>:/app/llarga/.streamlit/secrets.toml
     command: ["streamlit", "run", "app.py", "--server.port=8502", "--server.address=0.0.0.0"]

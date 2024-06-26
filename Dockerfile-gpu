@@ -33,7 +33,7 @@ RUN pip install -r https://raw.githubusercontent.com/dhopp1/local_rag_llm/main/r
 RUN pip install local-rag-llm
 
 # clone streamlit app
-RUN git clone https://github.com/dhopp1/streamlit_rag.git
+RUN git clone https://github.com/dhopp1/llarga.git
 RUN pip install gnews
 # exclude gnews because of requests dependency
-RUN curl -s https://raw.githubusercontent.com/dhopp1/streamlit_rag/main/requirements.txt | grep -v gnews | xargs pip install
+RUN curl -s https://raw.githubusercontent.com/dhopp1/llarga/main/requirements.txt | grep -v gnews | xargs pip install
