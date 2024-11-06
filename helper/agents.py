@@ -1,6 +1,9 @@
 import math
 import requests
 import re
+import time
+import json
+from urllib.parse import quote
 
 from gnews import GNews
 from bs4 import BeautifulSoup
@@ -121,6 +124,40 @@ available_languages = {
 }
 
 
+# helping functions for decoding google news URLs
+def get_decoding_params(gn_art_id):
+    response = requests.get(f"https://news.google.com/articles/{gn_art_id}")
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, "lxml")
+    div = soup.select_one("c-wiz > div")
+    return {
+        "signature": div.get("data-n-a-sg"),
+        "timestamp": div.get("data-n-a-ts"),
+        "gn_art_id": gn_art_id,
+    }
+
+
+def decode_urls(articles):
+    articles_reqs = [
+        [
+            "Fbv4je",
+            f'["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"{art["gn_art_id"]}",{art["timestamp"]},"{art["signature"]}"]',
+        ]
+        for art in articles
+    ]
+    payload = f"f.req={quote(json.dumps([articles_reqs]))}"
+    headers = {"content-type": "application/x-www-form-urlencoded;charset=UTF-8"}
+    response = requests.post(
+        url="https://news.google.com/_/DotsSplashUi/data/batchexecute",
+        headers=headers,
+        data=payload,
+    )
+    response.raise_for_status()
+    return [
+        json.loads(res[2])[1] for res in json.loads(response.text.split("\n\n")[1])[:-2]
+    ]
+
+
 def get_news(news_obj, search_term, site_list=[]):
     "get google news results for a given search term and site list"
     search_term = "%20".join(search_term.split(" "))
@@ -158,6 +195,18 @@ def gen_google_news(
 
     # don't return .asp or .page results
     results = [x for x in results if x["url"][-4:] not in [".asp", "page"]]
+
+    # convert google news URL to normal URL
+    for i in range(len(results)):
+        try:
+            art_id = re.search(r"articles/(.+?)\?", results[i]["url"]).group(1)
+            decoding_params = get_decoding_params(art_id)
+            url = decode_urls([decoding_params])
+            results[i]["url"] = url[0]
+            time.sleep(1)
+        except:
+            pass
+
     return results
 
 
@@ -230,6 +279,7 @@ def gen_google_search(
     if site_list == [""] or site_list == []:
         params["q"] = f"{query}"
         results = get_google_results(params)
+        results = results[:max_results]
     else:
         results = []
         for site in site_list:
@@ -237,6 +287,7 @@ def gen_google_search(
             params["num"] = int(math.floor(max_results / len(site_list)))
             tmp_results = get_google_results(params)
             results += tmp_results
+        results = results[:max_results]
 
     # put in format of google news
     final_results = [

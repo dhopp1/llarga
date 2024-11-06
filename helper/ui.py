@@ -810,7 +810,7 @@ def import_chat():
                             )
                             metadata_string = ""
                             for key, value in metadata_dict.items():
-                                if key != "is_csv":
+                                if not (key in ["is_csv", "file_path"]):
                                     metadata_string += f"'{key}': '{value}'\n"
 
                             source_string += f"""# Source {counter}\n ### Metadata:\n ```{metadata_string}```\n ### Text:\n{response[j].split("| source text:")[1]}\n\n"""
