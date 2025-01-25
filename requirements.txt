@@ -1,5 +1,6 @@
 bs4
 gnews==0.3.6
+googlesearch-python
 nlp_pipeline
 local-rag-llm
 pandas
