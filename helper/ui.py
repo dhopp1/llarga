@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import time
 
 from local_rag_llm.db_setup import pg_dump
+import os
 import pandas as pd
 from streamlit_server_state import server_state, no_rerun
 import streamlit as st
@@ -24,9 +25,9 @@ def import_styles():
         st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
 
     st.session_state["user_avatar"] = "https://www.svgrepo.com/show/524211/user.svg"
-    st.session_state[
-        "assistant_avatar"
-    ] = "https://www.svgrepo.com/show/375527/ai-platform.svg"
+    st.session_state["assistant_avatar"] = (
+        "https://www.svgrepo.com/show/375527/ai-platform.svg"
+    )
 
 
 def streamed_response(streamer):
@@ -124,33 +125,42 @@ def ui_upload_docs():
         with no_rerun:
             server_state[f'{st.session_state["user_name"]}_own_urls'] = st.text_input(
                 "URLs",
-                value=""
-                if f'{st.session_state["user_name"]}_own_urls' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_own_urls'],
+                value=(
+                    ""
+                    if f'{st.session_state["user_name"]}_own_urls' not in server_state
+                    else server_state[f'{st.session_state["user_name"]}_own_urls']
+                ),
                 help="A comma separated list of URLs.",
             )
 
-        server_state[
-            f'{st.session_state["user_name"]}_own_urls_prefix'
-        ] = st.text_input(
-            "URL prefix",
-            value=""
-            if f'{st.session_state["user_name"]}_own_urls_prefix' not in server_state
-            else server_state[f'{st.session_state["user_name"]}_own_urls_prefix'],
-            help="If you would like to get not just the URL provided above, but all links from that page, put here the page prefix for those outward URLs. For instance, say I wanted to process all the pages of documentation for Scikit Learn. I would put `https://scikit-learn.org/stable/user_guide.html` in the field above, then `https://scikit-learn.org/stable/` in this field, because that is the prefix to all the URLs on the user guide site.",
+        server_state[f'{st.session_state["user_name"]}_own_urls_prefix'] = (
+            st.text_input(
+                "URL prefix",
+                value=(
+                    ""
+                    if f'{st.session_state["user_name"]}_own_urls_prefix'
+                    not in server_state
+                    else server_state[
+                        f'{st.session_state["user_name"]}_own_urls_prefix'
+                    ]
+                ),
+                help="If you would like to get not just the URL provided above, but all links from that page, put here the page prefix for those outward URLs. For instance, say I wanted to process all the pages of documentation for Scikit Learn. I would put `https://scikit-learn.org/stable/user_guide.html` in the field above, then `https://scikit-learn.org/stable/` in this field, because that is the prefix to all the URLs on the user guide site.",
+            )
         )
 
-        server_state[
-            f'{st.session_state["user_name"]}_own_urls_include_https'
-        ] = st.checkbox(
-            "Include HTTPS links?",
-            value=False
-            if f'{st.session_state["user_name"]}_own_urls_include_https'
-            not in server_state
-            else server_state[
-                f'{st.session_state["user_name"]}_own_urls_include_https'
-            ],
-            help="If getting all the links from a page, whether to include https links on that page or just prefixed links.",
+        server_state[f'{st.session_state["user_name"]}_own_urls_include_https'] = (
+            st.checkbox(
+                "Include HTTPS links?",
+                value=(
+                    False
+                    if f'{st.session_state["user_name"]}_own_urls_include_https'
+                    not in server_state
+                    else server_state[
+                        f'{st.session_state["user_name"]}_own_urls_include_https'
+                    ]
+                ),
+                help="If getting all the links from a page, whether to include https links on that page or just prefixed links.",
+            )
         )
 
     # upload file
@@ -167,10 +177,12 @@ def ui_upload_docs():
             server_state[f'{st.session_state["user_name"]}_gn_search'] = st.selectbox(
                 "Google source",
                 options=["Google search", "Google News"],
-                index=1
-                if f'{st.session_state["user_name"]}_gn_search' not in server_state
-                else ["Google search", "Google News"].index(
-                    server_state[f'{st.session_state["user_name"]}_gn_search']
+                index=(
+                    1
+                    if f'{st.session_state["user_name"]}_gn_search' not in server_state
+                    else ["Google search", "Google News"].index(
+                        server_state[f'{st.session_state["user_name"]}_gn_search']
+                    )
                 ),
                 help="Whether to search regular Google or Google News.",
             )
@@ -179,13 +191,18 @@ def ui_upload_docs():
             server_state[f'{st.session_state["user_name"]}_gn_language'] = st.selectbox(
                 "Google language",
                 options=sorted([x.title() for x in list(available_languages.keys())]),
-                index=sorted(
-                    [x.title() for x in list(available_languages.keys())]
-                ).index("English")
-                if f'{st.session_state["user_name"]}_gn_language' not in server_state
-                else sorted(
-                    [x.title() for x in list(available_languages.keys())]
-                ).index(server_state[f'{st.session_state["user_name"]}_gn_language']),
+                index=(
+                    sorted([x.title() for x in list(available_languages.keys())]).index(
+                        "English"
+                    )
+                    if f'{st.session_state["user_name"]}_gn_language'
+                    not in server_state
+                    else sorted(
+                        [x.title() for x in list(available_languages.keys())]
+                    ).index(
+                        server_state[f'{st.session_state["user_name"]}_gn_language']
+                    )
+                ),
                 help="Which language to search Google in.",
             )
 
@@ -193,56 +210,70 @@ def ui_upload_docs():
             server_state[f'{st.session_state["user_name"]}_gn_country'] = st.selectbox(
                 "Google country",
                 options=sorted(list(available_countries.keys())),
-                index=sorted(list(available_countries.keys())).index("United States")
-                if f'{st.session_state["user_name"]}_gn_country' not in server_state
-                else sorted(list(available_countries.keys())).index(
-                    server_state[f'{st.session_state["user_name"]}_gn_country']
+                index=(
+                    sorted(list(available_countries.keys())).index("United States")
+                    if f'{st.session_state["user_name"]}_gn_country' not in server_state
+                    else sorted(list(available_countries.keys())).index(
+                        server_state[f'{st.session_state["user_name"]}_gn_country']
+                    )
                 ),
                 help="Which country to search Google in.",
             )
 
             # google news max results
-            server_state[
-                f'{st.session_state["user_name"]}_gn_max_results'
-            ] = st.selectbox(
-                "Google number results",
-                options=list(range(1, 21)),
-                index=list(range(1, 21)).index(5)
-                if f'{st.session_state["user_name"]}_gn_max_results' not in server_state
-                else list(range(1, 21)).index(
-                    server_state[f'{st.session_state["user_name"]}_gn_max_results']
-                ),
-                help="How many results from Google to index.",
+            server_state[f'{st.session_state["user_name"]}_gn_max_results'] = (
+                st.selectbox(
+                    "Google number results",
+                    options=list(range(1, 21)),
+                    index=(
+                        list(range(1, 21)).index(5)
+                        if f'{st.session_state["user_name"]}_gn_max_results'
+                        not in server_state
+                        else list(range(1, 21)).index(
+                            server_state[
+                                f'{st.session_state["user_name"]}_gn_max_results'
+                            ]
+                        )
+                    ),
+                    help="How many results from Google to index.",
+                )
             )
 
             # google news time range
-            server_state[
-                f'{st.session_state["user_name"]}_gn_date_range'
-            ] = st.date_input(
-                "Google News date range",
-                format="DD.MM.YYYY",
-                value=(datetime.today() - timedelta(days=7), datetime.now()),
-                help="What time range to search Google News (not applicable to normal search).",
+            server_state[f'{st.session_state["user_name"]}_gn_date_range'] = (
+                st.date_input(
+                    "Google News date range",
+                    format="DD.MM.YYYY",
+                    value=(datetime.today() - timedelta(days=7), datetime.now()),
+                    help="What time range to search Google News (not applicable to normal search).",
+                )
             )
 
             # google news search term
             server_state[f'{st.session_state["user_name"]}_gn_query'] = st.text_input(
                 "Google query",
-                value=""
-                if f'{st.session_state["user_name"]}_gn_query' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_gn_query'],
+                value=(
+                    ""
+                    if f'{st.session_state["user_name"]}_gn_query' not in server_state
+                    else server_state[f'{st.session_state["user_name"]}_gn_query']
+                ),
                 help="Google query.",
             )
 
             # google news site list
-            server_state[
-                f'{st.session_state["user_name"]}_gn_site_list'
-            ] = st.text_input(
-                "Google site list",
-                value=""
-                if f'{st.session_state["user_name"]}_gn_site_list' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_gn_site_list'],
-                help="Which websites you want to search Google for. Pass a comma separated list for multiple sites, e.g.,: `bbc.com,cnn.com`",
+            server_state[f'{st.session_state["user_name"]}_gn_site_list'] = (
+                st.text_input(
+                    "Google site list",
+                    value=(
+                        ""
+                        if f'{st.session_state["user_name"]}_gn_site_list'
+                        not in server_state
+                        else server_state[
+                            f'{st.session_state["user_name"]}_gn_site_list'
+                        ]
+                    ),
+                    help="Which websites you want to search Google for. Pass a comma separated list for multiple sites, e.g.,: `bbc.com,cnn.com`",
+                )
             )
 
     # process corpus button
@@ -263,17 +294,20 @@ def ui_model_params():
 
     # which_llm
     with no_rerun:
-        server_state[
-            f'{st.session_state["user_name"]}_selected_llm'
-        ] = st.sidebar.selectbox(
-            "Which LLM",
-            options=st.session_state["llm_dict"].name,
-            index=0
-            if f'{st.session_state["user_name"]}_selected_llm' not in server_state
-            else tuple(st.session_state["llm_dict"].name).index(
-                server_state[f'{st.session_state["user_name"]}_selected_llm']
-            ),
-            help="Which LLM to use.",
+        server_state[f'{st.session_state["user_name"]}_selected_llm'] = (
+            st.sidebar.selectbox(
+                "Which LLM",
+                options=st.session_state["llm_dict"].name,
+                index=(
+                    0
+                    if f'{st.session_state["user_name"]}_selected_llm'
+                    not in server_state
+                    else tuple(st.session_state["llm_dict"].name).index(
+                        server_state[f'{st.session_state["user_name"]}_selected_llm']
+                    )
+                ),
+                help="Which LLM to use.",
+            )
         )
 
     # which corpus
@@ -283,43 +317,48 @@ def ui_model_params():
             f'{st.session_state["user_name"]}_corpus_help_text' not in server_state
             or f'{st.session_state["user_name"]}_selected_corpus' not in server_state
         ):  # first run
-            server_state[
-                f'{st.session_state["user_name"]}_corpus_help_text'
-            ] = prefix_text
+            server_state[f'{st.session_state["user_name"]}_corpus_help_text'] = (
+                prefix_text
+            )
         elif (
             server_state[f'{st.session_state["user_name"]}_selected_corpus'] == "None"
         ):  # no corpus
-            server_state[
-                f'{st.session_state["user_name"]}_corpus_help_text'
-            ] = prefix_text
-        else:  # metadata of selected corpus
-            metadata = pd.read_csv(
-                f"""corpora/metadata_{server_state[f'{st.session_state["user_name"]}_selected_corpus']}.csv"""
+            server_state[f'{st.session_state["user_name"]}_corpus_help_text'] = (
+                prefix_text
             )
+        else:  # metadata of selected corpus
+            try:
+                metadata = pd.read_csv(
+                    f"""corpora/metadata_{server_state[f'{st.session_state["user_name"]}_selected_corpus']}.csv"""
+                )
+            except:  # it was deleted mid-text conversion
+                metadata = pd.DataFrame(columns=["text_id"])
+                metadata.to_csv(
+                    f"""corpora/metadata_{server_state[f'{st.session_state["user_name"]}_selected_corpus']}.csv""",
+                    index=False,
+                )
+
+                # recreate the directory
+                if not (
+                    os.path.isdir(
+                        f"""corpora/{server_state[f'{st.session_state["user_name"]}_selected_corpus']}"""
+                    )
+                ):
+                    os.makedirs(
+                        f"""corpora/{server_state[f'{st.session_state["user_name"]}_selected_corpus']}"""
+                    )
+
             metadata["file_path"] = [
                 x.split("/")[-1] for x in metadata["file_path"]
             ]  # show only filename
-            server_state[
-                f'{st.session_state["user_name"]}_corpus_help_text'
-            ] = f"""{prefix_text}\n\nMetadata of the selected corpus:\n{metadata.to_markdown(index=False)}"""
+            server_state[f'{st.session_state["user_name"]}_corpus_help_text'] = (
+                f"""{prefix_text}\n\nMetadata of the selected corpus:\n{metadata.to_markdown(index=False)}"""
+            )
 
-        server_state[
-            f'{st.session_state["user_name"]}_selected_corpus'
-        ] = st.sidebar.selectbox(
-            "Which corpus",
-            options=["None"]
-            + sorted(
-                [
-                    x
-                    for x in list(st.session_state["corpora_dict"].name)
-                    if "temporary" not in x
-                    or x == f"temporary_{st.session_state['db_name']}"
-                ]
-            ),  # don't show others' temporary corpora
-            index=0
-            if f'{st.session_state["user_name"]}_selected_corpus' not in server_state
-            else tuple(
-                ["None"]
+        server_state[f'{st.session_state["user_name"]}_selected_corpus'] = (
+            st.sidebar.selectbox(
+                "Which corpus",
+                options=["None"]
                 + sorted(
                     [
                         x
@@ -327,14 +366,32 @@ def ui_model_params():
                         if "temporary" not in x
                         or x == f"temporary_{st.session_state['db_name']}"
                     ]
-                )
-            ).index(
-                server_state[f'{st.session_state["user_name"]}_selected_corpus']
-                if server_state[f'{st.session_state["user_name"]}_selected_corpus']
-                is not None
-                else "None"
-            ),
-            help=server_state[f'{st.session_state["user_name"]}_corpus_help_text'],
+                ),  # don't show others' temporary corpora
+                index=(
+                    0
+                    if f'{st.session_state["user_name"]}_selected_corpus'
+                    not in server_state
+                    else tuple(
+                        ["None"]
+                        + sorted(
+                            [
+                                x
+                                for x in list(st.session_state["corpora_dict"].name)
+                                if "temporary" not in x
+                                or x == f"temporary_{st.session_state['db_name']}"
+                            ]
+                        )
+                    ).index(
+                        server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                        if server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ]
+                        is not None
+                        else "None"
+                    )
+                ),
+                help=server_state[f'{st.session_state["user_name"]}_corpus_help_text'],
+            )
         )
 
 
@@ -346,36 +403,44 @@ def ui_advanced_model_params():
         with no_rerun:
             st.session_state["new_corpus_name"] = st.text_input(
                 "Uploaded corpus name",
-                value=f"temporary_{st.session_state['db_name']}"
-                if "new_corpus_name" not in st.session_state
-                else st.session_state["new_corpus_name"],
+                value=(
+                    f"temporary_{st.session_state['db_name']}"
+                    if "new_corpus_name" not in st.session_state
+                    else st.session_state["new_corpus_name"]
+                ),
                 help="The name of the new corpus you are processing. It must be able to be a SQL database name, so only lower case, no special characters, no spaces. Use underscores.",
             )
 
         # include history
         server_state[f'{st.session_state["user_name"]}_use_memory'] = st.checkbox(
             "Use chat memory?",
-            value=True
-            if f'{st.session_state["user_name"]}_use_memory' not in server_state
-            else server_state[f'{st.session_state["user_name"]}_use_memory'],
+            value=(
+                True
+                if f'{st.session_state["user_name"]}_use_memory' not in server_state
+                else server_state[f'{st.session_state["user_name"]}_use_memory']
+            ),
             help="Whether or not to have the model remember your chat history. If checked, you will be able to ask followup questions. If not checked, each query will be treated independently. The benefit of the latter is you can use the whole context length for RAG and not RAG + chat history, so you can increase your similarity top K.",
         )
 
         # similarity top k
         with no_rerun:
-            server_state[
-                f'{st.session_state["user_name"]}_similarity_top_k'
-            ] = st.slider(
-                "Similarity top K",
-                min_value=1,
-                max_value=20,
-                step=1,
-                value=server_state["default_similarity_top_k"]
-                if f'{st.session_state["user_name"]}_similarity_top_k'
-                not in server_state
-                else server_state[f'{st.session_state["user_name"]}_similarity_top_k'],
-                # help="The number of contextual document chunks to retrieve for RAG.",
-                help=f"""The number of contextual document chunks to retrieve for RAG. `Similarity top K` * `Chunk size` must be less than your chosen LLM's context window, which is `{st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}`.""",
+            server_state[f'{st.session_state["user_name"]}_similarity_top_k'] = (
+                st.slider(
+                    "Similarity top K",
+                    min_value=1,
+                    max_value=20,
+                    step=1,
+                    value=(
+                        server_state["default_similarity_top_k"]
+                        if f'{st.session_state["user_name"]}_similarity_top_k'
+                        not in server_state
+                        else server_state[
+                            f'{st.session_state["user_name"]}_similarity_top_k'
+                        ]
+                    ),
+                    # help="The number of contextual document chunks to retrieve for RAG.",
+                    help=f"""The number of contextual document chunks to retrieve for RAG. `Similarity top K` * `Chunk size` must be less than your chosen LLM's context window, which is `{st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}`.""",
+                )
             )
 
         # n_gpu layers
@@ -392,9 +457,12 @@ def ui_advanced_model_params():
                 min_value=0,
                 max_value=100,
                 step=1,
-                value=server_state["default_temperature"]
-                if f'{st.session_state["user_name"]}_temperature' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_temperature'],
+                value=(
+                    server_state["default_temperature"]
+                    if f'{st.session_state["user_name"]}_temperature'
+                    not in server_state
+                    else server_state[f'{st.session_state["user_name"]}_temperature']
+                ),
                 help="How much leeway/creativity to give the model, 0 = least creativity, 100 = most creativity.",
             )
 
@@ -405,22 +473,30 @@ def ui_advanced_model_params():
                 min_value=16,
                 max_value=16000,
                 step=8,
-                value=server_state["default_max_new_tokens"]
-                if f'{st.session_state["user_name"]}_max_new_tokens' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_max_new_tokens'],
+                value=(
+                    server_state["default_max_new_tokens"]
+                    if f'{st.session_state["user_name"]}_max_new_tokens'
+                    not in server_state
+                    else server_state[f'{st.session_state["user_name"]}_max_new_tokens']
+                ),
                 help="How long to limit the responses to (token ≈ word).",
             )
 
         # system prompt
         with no_rerun:
-            server_state[
-                f'{st.session_state["user_name"]}_system_prompt'
-            ] = st.text_input(
-                "System prompt",
-                value=server_state["default_nonrag_system_prompt"]
-                if f'{st.session_state["user_name"]}_system_prompt' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_system_prompt'],
-                help="What prompt to initialize the chatbot with. Hit the `Reset model's memory` button after changing to take effect.",
+            server_state[f'{st.session_state["user_name"]}_system_prompt'] = (
+                st.text_input(
+                    "System prompt",
+                    value=(
+                        server_state["default_nonrag_system_prompt"]
+                        if f'{st.session_state["user_name"]}_system_prompt'
+                        not in server_state
+                        else server_state[
+                            f'{st.session_state["user_name"]}_system_prompt'
+                        ]
+                    ),
+                    help="What prompt to initialize the chatbot with. Hit the `Reset model's memory` button after changing to take effect.",
+                )
             )
 
         # params that affect the vector_db
@@ -436,9 +512,12 @@ def ui_advanced_model_params():
                 min_value=0,
                 max_value=1000,
                 step=1,
-                value=server_state["default_chunk_overlap"]
-                if f'{st.session_state["user_name"]}_chunk_overlap' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_chunk_overlap'],
+                value=(
+                    server_state["default_chunk_overlap"]
+                    if f'{st.session_state["user_name"]}_chunk_overlap'
+                    not in server_state
+                    else server_state[f'{st.session_state["user_name"]}_chunk_overlap']
+                ),
                 help="How many tokens to overlap when chunking the documents.",
             )
 
@@ -449,18 +528,22 @@ def ui_advanced_model_params():
                 min_value=64,
                 max_value=6400,
                 step=8,
-                value=server_state["default_chunk_size"]
-                if f'{st.session_state["user_name"]}_chunk_size' not in server_state
-                else server_state[f'{st.session_state["user_name"]}_chunk_size'],
+                value=(
+                    server_state["default_chunk_size"]
+                    if f'{st.session_state["user_name"]}_chunk_size' not in server_state
+                    else server_state[f'{st.session_state["user_name"]}_chunk_size']
+                ),
                 help="How many tokens per chunk when chunking the documents.",
             )
 
         # clear other models on reinitialize
         st.session_state["clear_llms"] = st.checkbox(
             "Clear other LLMs on reinitialize",
-            value=False
-            if "clear_llms" not in st.session_state
-            else st.session_state["clear_llms"],
+            value=(
+                False
+                if "clear_llms" not in st.session_state
+                else st.session_state["clear_llms"]
+            ),
             help="Whether or not to clear out other LLMs when selecting a new one. Check if you don't have enough VRAM to load multiple models simultaneously. NOTE: it will remove the LLM for all users.",
         )
 
@@ -636,9 +719,9 @@ def import_chat():
                 is not None
             ):
                 with no_rerun:
-                    server_state[
-                        f'model_{st.session_state["db_name"]}'
-                    ].chat_engine = None
+                    server_state[f'model_{st.session_state["db_name"]}'].chat_engine = (
+                        None
+                    )
             with st.chat_message(
                 "assistant", avatar=st.session_state["assistant_avatar"]
             ):
@@ -756,28 +839,34 @@ def import_chat():
                         f'{st.session_state["user_name"]}_use_memory'
                     ],
                     reset_chat_engine=st.session_state["reset_chat_engine"],
-                    memory_limit=server_state[
-                        f'{st.session_state["user_name"]}_memory_limit'
-                    ]
-                    if server_state[f'{st.session_state["user_name"]}_use_memory']
-                    else st.session_state["llm_dict"]
-                    .loc[
-                        lambda x: x.name
-                        == server_state[
-                            f'{st.session_state["user_name"]}_selected_llm'
-                        ],
-                        "context_window",
-                    ]
-                    .values[0],
+                    memory_limit=(
+                        server_state[f'{st.session_state["user_name"]}_memory_limit']
+                        if server_state[f'{st.session_state["user_name"]}_use_memory']
+                        else st.session_state["llm_dict"]
+                        .loc[
+                            lambda x: x.name
+                            == server_state[
+                                f'{st.session_state["user_name"]}_selected_llm'
+                            ],
+                            "context_window",
+                        ]
+                        .values[0]
+                    ),
                     system_prompt=server_state[
                         f'{st.session_state["user_name"]}_system_prompt'
                     ],
-                    context_prompt=""
-                    if server_state[f'{st.session_state["user_name"]}_selected_corpus']
-                    == "None"
-                    or server_state[f'{st.session_state["user_name"]}_selected_corpus']
-                    is None
-                    else server_state["default_context_prompt"],
+                    context_prompt=(
+                        ""
+                        if server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ]
+                        == "None"
+                        or server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ]
+                        is None
+                        else server_state["default_context_prompt"]
+                    ),
                     streaming=True,
                     chat_mode="condense_plus_context",
                 )
