@@ -39,17 +39,17 @@ def streamed_response(streamer):
         prev_token = ""
         hold_token = ""
         st.session_state["assistant_answer"] = ""
-        stop_displaying = False
+        st.session_state["stop_displaying"] = False
         counter = 0
         for token in streamer.response_gen:
             if ((prev_token in stop_token_start) and (token == stop_token_end)) or (
-                stop_displaying
+                st.session_state["stop_displaying"]
             ):
                 if counter == 0:
                     st.error("Still thinking...")
                 else:
                     yield ""
-                stop_displaying = True
+                st.session_state["stop_displaying"] = True
                 counter += 1
             elif token in stop_token_start:
                 hold_token = token
@@ -58,9 +58,6 @@ def streamed_response(streamer):
                 st.session_state["assistant_answer"] += hold_token + token
                 hold_token = ""
             prev_token = token
-
-    if stop_displaying:
-        st.info("Done!")
 
 
 def export_chat_history():
@@ -992,3 +989,10 @@ Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
                 update_server_state(
                     "exec_queue", server_state["exec_queue"][1:]
                 )  # take out of the queue
+
+    if "stop_displaying" in st.session_state:
+        if st.session_state[
+            "stop_displaying"
+        ]:  # refresh to get rid of 'still thinking...' if it did more user:assistant:
+            st.session_state["stop_displaying"] = False
+            st.rerun()
