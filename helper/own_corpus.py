@@ -162,15 +162,17 @@ def process_corpus(
             ):
                 urls = extract_links(
                     server_state[f'{st.session_state["user_name"]}_own_urls'],
-                    server_state[f'{st.session_state["user_name"]}_own_urls_prefix']
-                    + "/"
-                    if server_state[f'{st.session_state["user_name"]}_own_urls_prefix'][
-                        -1
-                    ]
-                    != "/"
-                    else server_state[
-                        f'{st.session_state["user_name"]}_own_urls_prefix'
-                    ],
+                    (
+                        server_state[f'{st.session_state["user_name"]}_own_urls_prefix']
+                        + "/"
+                        if server_state[
+                            f'{st.session_state["user_name"]}_own_urls_prefix'
+                        ][-1]
+                        != "/"
+                        else server_state[
+                            f'{st.session_state["user_name"]}_own_urls_prefix'
+                        ]
+                    ),
                     server_state[
                         f'{st.session_state["user_name"]}_own_urls_include_https'
                     ],
@@ -246,12 +248,16 @@ def process_corpus(
                         search_term=server_state[
                             f'{st.session_state["user_name"]}_gn_query'
                         ],
-                        site_list=[]
-                        if server_state[f'{st.session_state["user_name"]}_gn_site_list']
-                        == ""
-                        else server_state[
-                            f'{st.session_state["user_name"]}_gn_site_list'
-                        ].split(","),
+                        site_list=(
+                            []
+                            if server_state[
+                                f'{st.session_state["user_name"]}_gn_site_list'
+                            ]
+                            == ""
+                            else server_state[
+                                f'{st.session_state["user_name"]}_gn_site_list'
+                            ].split(",")
+                        ),
                     )
                 elif (
                     server_state[f'{st.session_state["user_name"]}_gn_search']
@@ -271,12 +277,16 @@ def process_corpus(
                         country=available_countries[
                             server_state[f'{st.session_state["user_name"]}_gn_country']
                         ],
-                        site_list=[]
-                        if server_state[f'{st.session_state["user_name"]}_gn_site_list']
-                        == ""
-                        else server_state[
-                            f'{st.session_state["user_name"]}_gn_site_list'
-                        ].split(","),
+                        site_list=(
+                            []
+                            if server_state[
+                                f'{st.session_state["user_name"]}_gn_site_list'
+                            ]
+                            == ""
+                            else server_state[
+                                f'{st.session_state["user_name"]}_gn_site_list'
+                            ].split(",")
+                        ),
                     )
 
                     # for arxiv, return the PDF not the abstract
@@ -430,11 +440,16 @@ def process_corpus(
                     if "text_id" not in list(metadata.columns):
                         metadata["text_id"] = list(range(1, len(metadata) + 1))
                 else:
-                    file_list = [
-                        x
-                        for x in os.listdir(f"{temp_directory}corpus/")
-                        if x.split(".")[-1] in ["csv", "txt", "docx", "doc", "pdf"]
-                    ]
+                    try:
+                        file_list = [
+                            x
+                            for x in os.listdir(f"{temp_directory}corpus/")
+                            if x.split(".")[-1] in ["csv", "txt", "docx", "doc", "pdf"]
+                        ]
+                    except:
+                        st.error(
+                            "You didn't upload a correctly formatted zip file. You should create a folder called EXACTLY `corpus` and put your files there. Then zip that file. To check, when you unzip the file it should produce a folder called `corpus`. If you want to include a metadata file, create one called EXACTLY `metadata.csv`, then highlight the CSV file and the corpus folder and zip them together. To check you did it properly, when you unzip the file, it should create one `metadata.csv` file and one `corpus` folder at the same level.\n\nRefresh the page, log in again, and try again."
+                        )
 
                     metadata = pd.DataFrame(
                         {

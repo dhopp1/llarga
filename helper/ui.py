@@ -371,11 +371,27 @@ def ui_model_params():
                         f"""corpora/{server_state[f'{st.session_state["user_name"]}_selected_corpus']}"""
                     )
 
-            metadata["file_path"] = [
-                x.split("/")[-1] for x in metadata["file_path"]
-            ]  # show only filename
+            try:
+                metadata["file_path"] = [
+                    x.split("/")[-1] for x in metadata["file_path"]
+                ]  # show only filename
+            except:
+                st.error(
+                    "You didn't upload a correctly formatted zip file. You should create a folder called EXACTLY `corpus` and put your files there. Then zip that file. To check, when you unzip the file it should produce a folder called `corpus`. If you want to include a metadata file, create one called EXACTLY `metadata.csv`, then highlight the CSV file and the corpus folder and zip them together. To check you did it properly, when you unzip the file, it should create one `metadata.csv` file and one `corpus` folder at the same level."
+                )
             server_state[f'{st.session_state["user_name"]}_corpus_help_text'] = (
                 f"""{prefix_text}\n\nMetadata of the selected corpus:\n{metadata.to_markdown(index=False)}"""
+            )
+
+        # determine their corpus
+        if "user_list" not in st.session_state:
+            st.session_state["user_list"] = pd.read_csv(
+                "metadata/user_list.csv", keep_default_na=False
+            )
+            st.session_state["starting_corpus"] = (
+                st.session_state["user_list"]
+                .loc[lambda x: x["user"] == st.session_state["user_name"], "corpus"]
+                .values[0]
             )
 
         server_state[f'{st.session_state["user_name"]}_selected_corpus'] = (
@@ -391,7 +407,17 @@ def ui_model_params():
                     ]
                 ),  # don't show others' temporary corpora
                 index=(
-                    0
+                    (
+                        ["None"]
+                        + sorted(
+                            [
+                                x
+                                for x in list(st.session_state["corpora_dict"].name)
+                                if "temporary" not in x
+                                or x == f"temporary_{st.session_state['db_name']}"
+                            ]
+                        )
+                    ).index(st.session_state["starting_corpus"])
                     if f'{st.session_state["user_name"]}_selected_corpus'
                     not in server_state
                     else tuple(
@@ -507,20 +533,49 @@ def ui_advanced_model_params():
 
         # system prompt
         with no_rerun:
-            server_state[f'{st.session_state["user_name"]}_system_prompt'] = (
-                st.text_input(
-                    "System prompt",
-                    value=(
-                        server_state["default_nonrag_system_prompt"]
-                        if f'{st.session_state["user_name"]}_system_prompt'
-                        not in server_state
-                        else server_state[
-                            f'{st.session_state["user_name"]}_system_prompt'
-                        ]
-                    ),
-                    help="What prompt to initialize the chatbot with. Hit the `Reset model's memory` button after changing to take effect.",
+            if "system_prompt_key" not in st.session_state:
+                st.session_state["system_prompt_key"] = pd.read_csv(
+                    "metadata/system_prompt_key.csv", keep_default_na=False
                 )
-            )
+                st.session_state["starting_system_prompt"] = (
+                    st.session_state["system_prompt_key"]
+                    .loc[
+                        lambda x: x["corpus"] == st.session_state["starting_corpus"],
+                        "system_prompt",
+                    ]
+                    .values[0]
+                )
+
+            try:
+                server_state[f'{st.session_state["user_name"]}_system_prompt'] = (
+                    st.session_state["starting_system_prompt"]
+                    if f'{st.session_state["user_name"]}_system_prompt'
+                    not in server_state
+                    else (
+                        st.session_state["system_prompt_key"]
+                        .loc[
+                            lambda x: x["corpus"]
+                            == server_state[
+                                f'{st.session_state["user_name"]}_selected_corpus'
+                            ],
+                            "system_prompt",
+                        ]
+                        .values[0]
+                        if "temporary"
+                        not in server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ]
+                        else st.session_state["system_prompt_key"]
+                        .loc[lambda x: x["corpus"] == "temporary", "system_prompt"]
+                        .values[0]
+                    )
+                )
+            except: # a new named corpus, default to temporary system prompt
+                server_state[f'{st.session_state["user_name"]}_system_prompt'] = (
+                    st.session_state["system_prompt_key"]
+                    .loc[lambda x: x["corpus"] == "temporary", "system_prompt"]
+                    .values[0]
+                )
 
         # params that affect the vector_db
         st.markdown(

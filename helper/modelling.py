@@ -195,12 +195,25 @@ def load_rag_pipeline():
         # update the memory limit
         update_server_state(
             f'{st.session_state["user_name"]}_memory_limit',
-            int(
-                (
-                    1
-                    - server_state[f'{st.session_state["user_name"]}_similarity_top_k']
-                    * server_state[f'{st.session_state["user_name"]}_chunk_size']
-                    / st.session_state["llm_dict"]
+            (
+                int(
+                    (
+                        1
+                        - server_state[
+                            f'{st.session_state["user_name"]}_similarity_top_k'
+                        ]
+                        * server_state[f'{st.session_state["user_name"]}_chunk_size']
+                        / st.session_state["llm_dict"]
+                        .loc[
+                            lambda x: x.name
+                            == server_state[
+                                f'{st.session_state["user_name"]}_selected_llm'
+                            ],
+                            "context_window",
+                        ]
+                        .values[0]
+                    )
+                    * st.session_state["llm_dict"]
                     .loc[
                         lambda x: x.name
                         == server_state[
@@ -209,26 +222,19 @@ def load_rag_pipeline():
                         "context_window",
                     ]
                     .values[0]
+                    - 0
                 )
-                * st.session_state["llm_dict"]
+                if server_state[f'{st.session_state["user_name"]}_selected_corpus']
+                != "None"
+                else st.session_state["llm_dict"]
                 .loc[
                     lambda x: x.name
                     == server_state[f'{st.session_state["user_name"]}_selected_llm'],
                     "context_window",
                 ]
                 .values[0]
-                - 0
-            )
-            if server_state[f'{st.session_state["user_name"]}_selected_corpus']
-            != "None"
-            else st.session_state["llm_dict"]
-            .loc[
-                lambda x: x.name
-                == server_state[f'{st.session_state["user_name"]}_selected_llm'],
-                "context_window",
-            ]
-            .values[0]
-            - 200,  # bigger memory limit if non-RAG
+                - 200
+            ),  # bigger memory limit if non-RAG
         )
 
         # hid messages so you can see the initializer
@@ -260,10 +266,12 @@ def load_rag_pipeline():
                             f'{st.session_state["user_name"]}_own_urls'
                         ],
                         uploaded_document=st.session_state["uploaded_file"],
-                        passed_google_news=False
-                        if server_state[f'{st.session_state["user_name"]}_gn_query']
-                        == ""
-                        else True,
+                        passed_google_news=(
+                            False
+                            if server_state[f'{st.session_state["user_name"]}_gn_query']
+                            == ""
+                            else True
+                        ),
                     )
 
                 update_server_state(
@@ -296,12 +304,16 @@ def load_rag_pipeline():
                     model,
                     which_corpus,
                 ) = initialize_rag_pipeline(
-                    which_corpus_local=None
-                    if server_state[f'{st.session_state["user_name"]}_selected_corpus']
-                    == "None"
-                    else server_state[
-                        f'{st.session_state["user_name"]}_selected_corpus'
-                    ],
+                    which_corpus_local=(
+                        None
+                        if server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ]
+                        == "None"
+                        else server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ]
+                    ),
                     chunk_overlap=server_state[
                         f'{st.session_state["user_name"]}_chunk_overlap'
                     ],
@@ -340,11 +352,13 @@ def load_rag_pipeline():
                     user=st.session_state["db_user"],
                     password=st.session_state["db_password"],
                     db_name=st.session_state["master_db_name"],
-                    table_name="data_"
-                    + server_state[f'{st.session_state["db_name"]}_which_corpus']
-                    if server_state[f'{st.session_state["db_name"]}_which_corpus']
-                    is not None
-                    else "None",
+                    table_name=(
+                        "data_"
+                        + server_state[f'{st.session_state["db_name"]}_which_corpus']
+                        if server_state[f'{st.session_state["db_name"]}_which_corpus']
+                        is not None
+                        else "None"
+                    ),
                 )
             ):
                 # close the model connection to not have simulataneous ones
@@ -364,27 +378,10 @@ def load_rag_pipeline():
                     pass
 
                 # reinitialize the model
-                st.session_state[
-                    "local_rerun_populate_db"
-                ] = False  # don't repopulate the DB again
+                st.session_state["local_rerun_populate_db"] = (
+                    False  # don't repopulate the DB again
+                )
                 model_initialization()
-
-            # set a generic system prompt if non-RAG
-            if (
-                server_state[f'{st.session_state["user_name"]}_selected_corpus']
-                == "None"
-                or server_state[f'{st.session_state["user_name"]}_selected_corpus']
-                is None
-            ):
-                update_server_state(
-                    f'{st.session_state["user_name"]}_system_prompt',
-                    server_state["default_nonrag_system_prompt"],
-                )
-            else:
-                update_server_state(
-                    f'{st.session_state["user_name"]}_system_prompt',
-                    server_state["default_system_prompt"],
-                )
 
             # repopulate the chat
             populate_chat()
