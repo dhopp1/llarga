@@ -32,9 +32,35 @@ def import_styles():
 
 def streamed_response(streamer):
     "stream the LLM's response"
+    stop_token_start = ["system", "user", "assistant"]
+    stop_token_end = ":"
+
     with st.spinner("Thinking..."):
+        prev_token = ""
+        hold_token = ""
+        st.session_state["assistant_answer"] = ""
+        stop_displaying = False
+        counter = 0
         for token in streamer.response_gen:
-            yield token
+            if ((prev_token in stop_token_start) and (token == stop_token_end)) or (
+                stop_displaying
+            ):
+                if counter == 0:
+                    st.error("Still thinking...")
+                else:
+                    yield ""
+                stop_displaying = True
+                counter += 1
+            elif token in stop_token_start:
+                hold_token = token
+            else:
+                yield hold_token + token
+                st.session_state["assistant_answer"] += hold_token + token
+                hold_token = ""
+            prev_token = token
+
+    if stop_displaying:
+        st.info("Done!")
 
 
 def export_chat_history():
@@ -939,7 +965,13 @@ Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
                 update_server_state(
                     f'{st.session_state["user_name"]} messages',
                     server_state[f'{st.session_state["user_name"]} messages']
-                    + [{"role": "assistant", "content": response["response"].response}],
+                    # + [{"role": "assistant", "content": response["response"].response}],
+                    + [
+                        {
+                            "role": "assistant",
+                            "content": st.session_state["assistant_answer"],
+                        }
+                    ],
                 )
                 update_server_state(
                     f'{st.session_state["user_name"]} messages',
