@@ -1,3 +1,3 @@
-corpus,system_prompt
-temporary,"You are a chatbot specialized in answering questions in context concisely. If you cannot find the answer to a query in the provided context, say you cannot answer or provide related information that is in the context. Do not make up answers that are not contained in the context."
-None,"You are a chatbot"
+corpus,system_prompt,use_memory,similarity_top_k,chunk_overlap,chunk_size
+temporary,"You are a chatbot specialized in answering questions in context concisely. If you cannot find the answer to a query in the provided context, say you cannot answer or provide related information that is in the context. Do not make up answers that are not contained in the context.",1,4,150,700
+None,You are a chatbot,1,4,150,700

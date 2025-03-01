@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import time
+import math
 
 from local_rag_llm.db_setup import pg_dump
 import os
@@ -461,10 +462,39 @@ def ui_advanced_model_params():
             )
 
         # include history
+        # reading in system prompt key
+        if "system_prompt_key" not in st.session_state:
+            st.session_state["system_prompt_key"] = pd.read_csv(
+                "metadata/system_prompt_key.csv", keep_default_na=False
+            )
+
+            # starting system prompt
+            st.session_state["starting_system_prompt"] = (
+                st.session_state["system_prompt_key"]
+                .loc[
+                    lambda x: x["corpus"] == st.session_state["starting_corpus"],
+                    "system_prompt",
+                ]
+                .values[0]
+            )
+
         server_state[f'{st.session_state["user_name"]}_use_memory'] = st.checkbox(
             "Use chat memory?",
             value=(
-                True
+                (
+                    True
+                    if st.session_state["system_prompt_key"]
+                    .loc[
+                        lambda x: x["corpus"]
+                        == server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ],
+                        "use_memory",
+                    ]
+                    .values[0]
+                    == 1
+                    else False
+                )
                 if f'{st.session_state["user_name"]}_use_memory' not in server_state
                 else server_state[f'{st.session_state["user_name"]}_use_memory']
             ),
@@ -473,24 +503,46 @@ def ui_advanced_model_params():
 
         # similarity top k
         with no_rerun:
-            server_state[f'{st.session_state["user_name"]}_similarity_top_k'] = (
-                st.slider(
-                    "Similarity top K",
-                    min_value=1,
-                    max_value=20,
-                    step=1,
-                    value=(
-                        server_state["default_similarity_top_k"]
-                        if f'{st.session_state["user_name"]}_similarity_top_k'
-                        not in server_state
-                        else server_state[
-                            f'{st.session_state["user_name"]}_similarity_top_k'
-                        ]
-                    ),
-                    # help="The number of contextual document chunks to retrieve for RAG.",
-                    help=f"""The number of contextual document chunks to retrieve for RAG. `Similarity top K` * `Chunk size` must be less than your chosen LLM's context window, which is `{st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}`.""",
+            if False:
+                server_state[f'{st.session_state["user_name"]}_similarity_top_k'] = (
+                    st.slider(
+                        "Similarity top K",
+                        min_value=1,
+                        max_value=20,
+                        step=1,
+                        value=(
+                            server_state["default_similarity_top_k"]
+                            if f'{st.session_state["user_name"]}_similarity_top_k'
+                            not in server_state
+                            else server_state[
+                                f'{st.session_state["user_name"]}_similarity_top_k'
+                            ]
+                        ),
+                        # help="The number of contextual document chunks to retrieve for RAG.",
+                        help=f"""The number of contextual document chunks to retrieve for RAG. `Similarity top K` * `Chunk size` must be less than your chosen LLM's context window, which is `{st.session_state["llm_dict"].loc[lambda x: x.name == server_state[f'{st.session_state["user_name"]}_selected_llm'], "context_window"].values[0]}`.""",
+                    )
                 )
-            )
+            else:
+                # cut top k in half if they're using memory
+                divisor = (
+                    2
+                    if server_state[f'{st.session_state["user_name"]}_use_memory']
+                    else 1
+                )
+                server_state[f'{st.session_state["user_name"]}_similarity_top_k'] = (
+                    math.floor(
+                        st.session_state["system_prompt_key"]
+                        .loc[
+                            lambda x: x["corpus"]
+                            == server_state[
+                                f'{st.session_state["user_name"]}_selected_corpus'
+                            ],
+                            "similarity_top_k",
+                        ]
+                        .values[0]
+                        / divisor
+                    )
+                )
 
         # n_gpu layers
         st.session_state["n_gpu_layers"] = (
@@ -533,19 +585,6 @@ def ui_advanced_model_params():
 
         # system prompt
         with no_rerun:
-            if "system_prompt_key" not in st.session_state:
-                st.session_state["system_prompt_key"] = pd.read_csv(
-                    "metadata/system_prompt_key.csv", keep_default_na=False
-                )
-                st.session_state["starting_system_prompt"] = (
-                    st.session_state["system_prompt_key"]
-                    .loc[
-                        lambda x: x["corpus"] == st.session_state["starting_corpus"],
-                        "system_prompt",
-                    ]
-                    .values[0]
-                )
-
             try:
                 server_state[f'{st.session_state["user_name"]}_system_prompt'] = (
                     st.session_state["starting_system_prompt"]
@@ -570,7 +609,7 @@ def ui_advanced_model_params():
                         .values[0]
                     )
                 )
-            except: # a new named corpus, default to temporary system prompt
+            except:  # a new named corpus, default to temporary system prompt
                 server_state[f'{st.session_state["user_name"]}_system_prompt'] = (
                     st.session_state["system_prompt_key"]
                     .loc[lambda x: x["corpus"] == "temporary", "system_prompt"]
@@ -578,57 +617,93 @@ def ui_advanced_model_params():
                 )
 
         # params that affect the vector_db
-        st.markdown(
-            "# Vector DB parameters",
-            help="Changing these parameters will require remaking the vector database and require a bit longer to run. Push the `Reinitialize model and remake DB` button if you change one of these.",
-        )
+        if False:
+            st.markdown(
+                "# Vector DB parameters",
+                help="Changing these parameters will require remaking the vector database and require a bit longer to run. Push the `Reinitialize model and remake DB` button if you change one of these.",
+            )
 
         # chunk overlap
         with no_rerun:
-            server_state[f'{st.session_state["user_name"]}_chunk_overlap'] = st.slider(
-                "Chunk overlap",
-                min_value=0,
-                max_value=1000,
-                step=1,
-                value=(
-                    server_state["default_chunk_overlap"]
-                    if f'{st.session_state["user_name"]}_chunk_overlap'
-                    not in server_state
-                    else server_state[f'{st.session_state["user_name"]}_chunk_overlap']
-                ),
-                help="How many tokens to overlap when chunking the documents.",
-            )
+            if False:
+                server_state[f'{st.session_state["user_name"]}_chunk_overlap'] = (
+                    st.slider(
+                        "Chunk overlap",
+                        min_value=0,
+                        max_value=1000,
+                        step=1,
+                        value=(
+                            server_state["default_chunk_overlap"]
+                            if f'{st.session_state["user_name"]}_chunk_overlap'
+                            not in server_state
+                            else server_state[
+                                f'{st.session_state["user_name"]}_chunk_overlap'
+                            ]
+                        ),
+                        help="How many tokens to overlap when chunking the documents.",
+                    )
+                )
+            else:
+                server_state[f'{st.session_state["user_name"]}_chunk_overlap'] = (
+                    st.session_state["system_prompt_key"]
+                    .loc[
+                        lambda x: x["corpus"]
+                        == server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ],
+                        "chunk_overlap",
+                    ]
+                    .values[0]
+                )
 
         # chunk size
         with no_rerun:
-            server_state[f'{st.session_state["user_name"]}_chunk_size'] = st.slider(
-                "Chunk size",
-                min_value=64,
-                max_value=6400,
-                step=8,
-                value=(
-                    server_state["default_chunk_size"]
-                    if f'{st.session_state["user_name"]}_chunk_size' not in server_state
-                    else server_state[f'{st.session_state["user_name"]}_chunk_size']
-                ),
-                help="How many tokens per chunk when chunking the documents.",
-            )
+            if False:
+                server_state[f'{st.session_state["user_name"]}_chunk_size'] = st.slider(
+                    "Chunk size",
+                    min_value=64,
+                    max_value=6400,
+                    step=8,
+                    value=(
+                        server_state["default_chunk_size"]
+                        if f'{st.session_state["user_name"]}_chunk_size'
+                        not in server_state
+                        else server_state[f'{st.session_state["user_name"]}_chunk_size']
+                    ),
+                    help="How many tokens per chunk when chunking the documents.",
+                )
+            else:
+                server_state[f'{st.session_state["user_name"]}_chunk_size'] = (
+                    st.session_state["system_prompt_key"]
+                    .loc[
+                        lambda x: x["corpus"]
+                        == server_state[
+                            f'{st.session_state["user_name"]}_selected_corpus'
+                        ],
+                        "chunk_size",
+                    ]
+                    .values[0]
+                )
 
         # clear other models on reinitialize
-        st.session_state["clear_llms"] = st.checkbox(
-            "Clear other LLMs on reinitialize",
-            value=(
-                False
-                if "clear_llms" not in st.session_state
-                else st.session_state["clear_llms"]
-            ),
-            help="Whether or not to clear out other LLMs when selecting a new one. Check if you don't have enough VRAM to load multiple models simultaneously. NOTE: it will remove the LLM for all users.",
-        )
+        if False:
+            st.session_state["clear_llms"] = st.checkbox(
+                "Clear other LLMs on reinitialize",
+                value=(
+                    False
+                    if "clear_llms" not in st.session_state
+                    else st.session_state["clear_llms"]
+                ),
+                help="Whether or not to clear out other LLMs when selecting a new one. Check if you don't have enough VRAM to load multiple models simultaneously. NOTE: it will remove the LLM for all users.",
+            )
 
-        st.session_state["reinitialize_remake"] = st.button(
-            "Reinitialize model and remake DB",
-            help="Click if you make any changes to the vector DB parameters.",
-        )
+            st.session_state["reinitialize_remake"] = st.button(
+                "Reinitialize model and remake DB",
+                help="Click if you make any changes to the vector DB parameters.",
+            )
+        else:
+            st.session_state["clear_llms"] = False
+            st.session_state["reinitialize_remake"] = False
 
     st.session_state["reinitialize"] = st.sidebar.button(
         "Reinitialize model",
@@ -666,7 +741,7 @@ def ui_advanced_model_params():
                 "context_window",
             ]
             .values[0]
-            - 200,
+            / 2,
         )
 
 
@@ -752,7 +827,9 @@ def populate_chat():
 
     if f'{st.session_state["user_name"]} messages' in server_state:
         with st.session_state["message_box"].container():
-            for message in server_state[f'{st.session_state["user_name"]} messages']:
+            for index, message in enumerate(
+                server_state[f'{st.session_state["user_name"]} messages']
+            ):
                 avatar = (
                     st.session_state["user_avatar"]
                     if message["role"] == "user"
@@ -1006,6 +1083,14 @@ Chunk size: {server_state[f'{st.session_state["user_name"]}_chunk_size']}
                         unsafe_allow_html=True,
                         help=f"{source_string}",
                     )
+
+                    # no memory warning
+                    if not (
+                        server_state[f'{st.session_state["user_name"]}_use_memory']
+                    ):
+                        st.warning(
+                            "**Note**: For security reasons, the LLM will not remember the chat history. It will treat every query as a standalone question."
+                        )
 
                 # unlock the model
                 update_server_state("in_use", False)
