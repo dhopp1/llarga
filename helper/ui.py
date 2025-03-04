@@ -665,6 +665,13 @@ def ui_advanced_model_params():
                         "chunk_overlap",
                     ]
                     .values[0]
+                    if "temporary"
+                    not in server_state[
+                        f'{st.session_state["user_name"]}_selected_corpus'
+                    ]
+                    else st.session_state["system_prompt_key"]
+                    .loc[lambda x: x["corpus"] == "temporary", "chunk_overlap"]
+                    .values[0]
                 )
 
         # chunk size
@@ -693,6 +700,13 @@ def ui_advanced_model_params():
                         ],
                         "chunk_size",
                     ]
+                    .values[0]
+                    if "temporary"
+                    not in server_state[
+                        f'{st.session_state["user_name"]}_selected_corpus'
+                    ]
+                    else st.session_state["system_prompt_key"]
+                    .loc[lambda x: x["corpus"] == "temporary", "chunk_size"]
                     .values[0]
                 )
 
