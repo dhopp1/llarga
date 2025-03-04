@@ -531,15 +531,26 @@ def ui_advanced_model_params():
                 )
                 server_state[f'{st.session_state["user_name"]}_similarity_top_k'] = (
                     math.floor(
-                        st.session_state["system_prompt_key"]
-                        .loc[
-                            lambda x: x["corpus"]
-                            == server_state[
+                        (
+                            st.session_state["system_prompt_key"]
+                            .loc[
+                                lambda x: x["corpus"]
+                                == server_state[
+                                    f'{st.session_state["user_name"]}_selected_corpus'
+                                ],
+                                "similarity_top_k",
+                            ]
+                            .values[0]
+                            if "temporary"
+                            not in server_state[
                                 f'{st.session_state["user_name"]}_selected_corpus'
-                            ],
-                            "similarity_top_k",
-                        ]
-                        .values[0]
+                            ]
+                            else st.session_state["system_prompt_key"]
+                            .loc[
+                                lambda x: x["corpus"] == "temporary", "similarity_top_k"
+                            ]
+                            .values[0]
+                        )
                         / divisor
                     )
                 )
