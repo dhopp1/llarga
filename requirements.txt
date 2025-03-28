@@ -1,10 +1,5 @@
-bs4
-gnews==0.3.6
-googlesearch-python
 nlp_pipeline
-local-rag-llm
+local-vector-search
 pandas
-psutil
-streamlit==1.32.2
-streamlit-server-state==0.17.1
-tabulate
+polars
+streamlit
