@@ -1,0 +1,2 @@
+name,llm_url,model_name,api_key
+Gemini 2.0 Flash,https://generativelanguage.googleapis.com/v1beta/openai,gemini-2.0-flash,API_KEY
