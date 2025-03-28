@@ -1,2 +1,0 @@
-name,llm_url,llm_path,context_window,display
-mistral-docsgpt,https://huggingface.co/TheBloke/docsgpt-7B-mistral-GGUF/resolve/main/docsgpt-7b-mistral.Q6_K.gguf,models/docsgpt-7b-mistral.Q6_K.gguf,4000,1
