@@ -84,6 +84,24 @@ def populate_chat():
                 ]["times"][i]
 
                 with st.chat_message(message["role"], avatar=avatar):
+                    # reasoning
+                    if (
+                        st.session_state["chat_history"][
+                            st.session_state["selected_chat_id"]
+                        ]["reasoning"][i]
+                        != ""
+                    ):
+                        with st.expander("Reasoning"):
+                            st.markdown(
+                                "<em>"
+                                + st.session_state["chat_history"][
+                                    st.session_state["selected_chat_id"]
+                                ]["reasoning"][i]
+                                + "</em>",
+                                unsafe_allow_html=True,
+                            )
+
+                    # normal response
                     st.markdown(
                         message["content"] + message_time, unsafe_allow_html=True
                     )
@@ -114,15 +132,18 @@ def import_chat():
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "times"
         ] += [prompt_time]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "reasoning"
+        ] += [""]
 
         # stream the LLM's answer
         with st.chat_message("assistant", avatar=st.session_state["assistant_avatar"]):
             write_stream(
                 gen_llm_response(
                     prompt,
-                    messages=st.session_state["chat_history"][
+                    messages_input=st.session_state["chat_history"][
                         st.session_state["selected_chat_id"]
-                    ]["messages"],
+                    ]["messages"].copy(),
                 )
             )
 
@@ -161,4 +182,4 @@ def import_chat():
             st.session_state["chat_history"],
             f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle""",
         )
-        # st.rerun()
+        st.rerun()

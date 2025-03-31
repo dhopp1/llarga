@@ -25,6 +25,9 @@ def make_new_chat():
             "times"
         ] = [None]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "reasoning"
+        ] = [""]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "chat_name"
         ] = "New chat"
 
@@ -160,25 +163,18 @@ def sidebar_llm_dropdown():
         st.session_state["selected_llm"] = st.selectbox(
             "Select LLM",
             options=st.session_state["llm_dropdown_options"],
-            index=(
-                0
-                if "selected_llm" not in st.session_state
-                else st.session_state["llm_dropdown_options"].index(
-                    st.session_state["selected_llm"]
-                )
-            ),
+            index=0,
             help="Which LLM to use. Those ending in `(private)` do not leave our local system, those ending in `(cloud)` will be sent to a cloud provider via API. The latter should not be used for sensitive information.",
         )
 
-    if "is_reasoning_model" not in st.session_state:
-        st.session_state["is_reasoning_model"] = (
-            st.session_state["llm_info"]
-            .loc[
-                lambda x: x["name"] == st.session_state["selected_llm"],
-                "reasoning_model",
-            ]
-            .values[0]
-        )
+    st.session_state["is_reasoning_model"] = (
+        st.session_state["llm_info"]
+        .loc[
+            lambda x: x["name"] == st.session_state["selected_llm"],
+            "reasoning_model",
+        ]
+        .values[0]
+    )
 
 
 def sidebar_llm_api_key():
