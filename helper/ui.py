@@ -207,19 +207,5 @@ def import_chat():
                 )
             )
 
-        # add assistant response to chat history
-        if False:
-            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-                "messages"
-            ] += [
-                {
-                    "role": "assistant",
-                    "content": st.session_state["llm_answer"].split("<br> <sub>")[0],
-                }
-            ]  # don't include time in chat history
-            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-                "times"
-            ] += ["<br> <sub>" + st.session_state["llm_answer"].split("<br> <sub>")[1]]
-
         ### !!! have to add source hover to message responses
         st.rerun()
