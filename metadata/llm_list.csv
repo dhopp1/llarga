@@ -1,3 +1,4 @@
-name,llm_url,model_name,api_key,context_length,display
-Llama-3.1-8b (private),http://localhost:8081/v1,path.gguf,no-key,32000,1
-Gemini 2.0 Flash (cloud),https://generativelanguage.googleapis.com/v1beta/openai,gemini-2.0-flash,API_KEY,128000,1
+name,llm_url,model_name,api_key,context_length,reasoning_model,display
+DeepSeek-R1-8b (private),http://localhost:8081/v1,model.gguf,no-key,32000,1,1
+Llama-3.1-8b (private),http://localhost:8081/v1,model.gguf,no-key,32000,0,1
+Gemini 2.0 Flash (cloud),https://generativelanguage.googleapis.com/v1beta/openai,gemini-2.0-flash,API_KEY,128000,0,1

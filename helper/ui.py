@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import streamlit as st
 
-from helper.llm import gen_llm_response
+from helper.llm import gen_llm_response, write_stream
 from helper.sidebar import make_new_chat
 
 
@@ -116,51 +116,6 @@ def import_chat():
         ] += [prompt_time]
 
         # stream the LLM's answer
-        def write_stream(stream):
-            st.session_state["llm_answer"] = ""
-            container = st.empty()
-
-            counter = 0
-            for chunk in stream:
-                st.session_state["llm_answer"] += chunk
-                container.write(st.session_state["llm_answer"], unsafe_allow_html=True)
-
-                # first time already begin writing message history
-                if counter == 0:
-                    # add assistant response to chat history
-                    st.session_state["chat_history"][
-                        st.session_state["selected_chat_id"]
-                    ]["messages"] += [
-                        {
-                            "role": "assistant",
-                            "content": st.session_state["llm_answer"].split(
-                                "<br> <sub>"
-                            )[0],
-                        }
-                    ]  # don't include time in chat history
-                    st.session_state["chat_history"][
-                        st.session_state["selected_chat_id"]
-                    ]["times"] += [
-                        f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
-                    ]
-                else:
-                    st.session_state["chat_history"][
-                        st.session_state["selected_chat_id"]
-                    ]["messages"][-1] = {
-                        "role": "assistant",
-                        "content": st.session_state["llm_answer"].split("<br> <sub>")[
-                            0
-                        ],
-                    }
-
-                    st.session_state["chat_history"][
-                        st.session_state["selected_chat_id"]
-                    ]["times"][
-                        -1
-                    ] = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
-
-                counter += 1
-
         with st.chat_message("assistant", avatar=st.session_state["assistant_avatar"]):
             write_stream(
                 gen_llm_response(
@@ -178,19 +133,24 @@ def import_chat():
             ]
             == "New chat"
         ):
-            messages = st.session_state["chat_history"][
-                st.session_state["selected_chat_id"]
-            ]["messages"].copy()
-            messages += [
-                {
-                    "role": "user",
-                    "content": "Given this chat history, provide a 3-7 word name or phrase summarizing the chat's contents. Don't use quotes in the name.",
-                }
-            ]
-            chat_name = ""
-            for chunk in gen_llm_response(prompt, messages):
-                if "<br> <sub><sup>" not in chunk:
-                    chat_name += chunk
+            if (
+                st.session_state["is_reasoning_model"] == 1
+            ):  # reasoning models take too long to name, just take the first user's question as the name
+                chat_name = prompt
+            else:
+                messages = st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]["messages"].copy()
+                messages += [
+                    {
+                        "role": "user",
+                        "content": "Given this chat history, provide a 3-7 word name or phrase summarizing the chat's contents. Don't use quotes in the name.",
+                    }
+                ]
+                chat_name = ""
+                for chunk in gen_llm_response(prompt, messages):
+                    if "<br> <sub><sup>" not in chunk:
+                        chat_name += chunk
 
             st.session_state["chat_history"][st.session_state["selected_chat_id"]][
                 "chat_name"

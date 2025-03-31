@@ -63,3 +63,46 @@ def gen_llm_response(query, messages=[]):
             pass
 
     yield f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+
+
+def write_stream(stream):
+    "write out the stream of the LLM's answer"
+    st.session_state["llm_answer"] = ""
+    container = st.empty()
+
+    counter = 0
+    for chunk in stream:
+        st.session_state["llm_answer"] += chunk
+        container.write(st.session_state["llm_answer"], unsafe_allow_html=True)
+
+        # first time already begin writing message history
+        if counter == 0:
+            # add assistant response to chat history
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "messages"
+            ] += [
+                {
+                    "role": "assistant",
+                    "content": st.session_state["llm_answer"].split("<br> <sub>")[0],
+                }
+            ]  # don't include time in chat history
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "times"
+            ] += [
+                f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+            ]
+        else:
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "messages"
+            ][-1] = {
+                "role": "assistant",
+                "content": st.session_state["llm_answer"].split("<br> <sub>")[0],
+            }
+
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "times"
+            ][
+                -1
+            ] = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+
+        counter += 1
