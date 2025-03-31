@@ -30,9 +30,9 @@ def import_styles():
         st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
 
     st.session_state["user_avatar"] = "https://www.svgrepo.com/show/524211/user.svg"
-    st.session_state["assistant_avatar"] = (
-        "https://www.svgrepo.com/show/375527/ai-platform.svg"
-    )
+    st.session_state[
+        "assistant_avatar"
+    ] = "https://www.svgrepo.com/show/375527/ai-platform.svg"
 
 
 def initial_placeholder():
@@ -149,3 +149,29 @@ def import_chat():
         ] += [
             f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
         ]
+
+        # get answer from LLM
+        def llm_placeholder(prompt):
+            import time
+
+            st.session_state["llm_answer"] = ""
+            for i in range(3):
+                time.sleep(1)
+                yield prompt
+                st.session_state["llm_answer"] += prompt
+
+        # stream the LLM's answer
+        with st.chat_message("assistant", avatar=st.session_state["assistant_avatar"]):
+            llm_answer = st.write_stream(llm_placeholder(prompt))
+
+        # add assistant response to chat history
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "messages"
+        ] += [{"role": "assistant", "content": llm_answer}]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "times"
+        ] += [
+            f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+        ]
+
+        ### !!! have to add source hover to message responses
