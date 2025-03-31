@@ -4,6 +4,8 @@ import pandas as pd
 import pickle
 import streamlit as st
 
+from helper.llm import gen_llm_response
+
 
 def pickle_save(obj, path):
     with open(path, "wb") as fOut:
@@ -38,7 +40,7 @@ def import_styles():
 def initial_placeholder():
     "initial placeholder upon first login"
 
-    if "intialized" not in st.session_state:
+    if "initialized" not in st.session_state:
         st.markdown(
             """<div class="icon_text"><img width=50 src='https://www.svgrepo.com/show/375527/ai-platform.svg'></div>""",
             unsafe_allow_html=True,
@@ -138,6 +140,7 @@ def import_chat():
         # Display user message in chat message container
         prompt_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
         with st.chat_message("user", avatar=st.session_state["user_avatar"]):
+            st.session_state["stop_generation"] = st.button("◼ Stop generating")
             st.markdown(prompt + prompt_time, unsafe_allow_html=True)
 
         # Add user message to chat history
@@ -146,19 +149,7 @@ def import_chat():
         ] += [{"role": "user", "content": prompt}]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "times"
-        ] += [
-            f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
-        ]
-
-        # get answer from LLM
-        def llm_placeholder(prompt):
-            import time
-
-            for i in range(3):
-                time.sleep(1)
-                yield prompt
-
-            yield f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+        ] += [prompt_time]
 
         # stream the LLM's answer
         def write_stream(stream):
@@ -169,7 +160,14 @@ def import_chat():
                 container.write(st.session_state["llm_answer"], unsafe_allow_html=True)
 
         with st.chat_message("assistant", avatar=st.session_state["assistant_avatar"]):
-            write_stream(llm_placeholder(prompt))
+            write_stream(
+                gen_llm_response(
+                    prompt,
+                    messages=st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["messages"],
+                )
+            )
 
         # add assistant response to chat history
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
@@ -185,3 +183,4 @@ def import_chat():
         ] += ["<br> <sub>" + st.session_state["llm_answer"].split("<br> <sub>")[1]]
 
         ### !!! have to add source hover to message responses
+        st.rerun()

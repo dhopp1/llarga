@@ -55,7 +55,7 @@ def setup_local_files():
         )
 
     if "max_tokens" not in st.session_state:
-        st.session_state["max_tokens"] = (
+        st.session_state["max_tokens"] = int(
             st.session_state["settings"]
             .loc[lambda x: x["field"] == "max_tokens", "value"]
             .values[0]

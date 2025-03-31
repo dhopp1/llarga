@@ -1,14 +1,20 @@
+from datetime import datetime
+import json
+import re
+import requests
 import streamlit as st
 
 
-def gen_llm_call(messages=None):
+def gen_llm_response(query, messages=[]):
     """Create the data required for an LLM call"""
+    messages = messages.copy()
+
     # llm url
     llm_url = (
         st.session_state["llm_info"]
         .loc[lambda x: x["name"] == st.session_state["selected_llm"], "llm_url"]
         .values[0]
-    )
+    ) + "/chat/completions"
 
     # llm model name
     llm_model_name = (
@@ -17,45 +23,34 @@ def gen_llm_call(messages=None):
         .values[0]
     )
 
-    # llm api key
-    st.session_state["llm_api_key"]
-
-    st.session_state["temperature"]
-
-    st.session_state["max_tokens"]
-
-    system_prompt
+    # messages = empty = first call
+    if len(messages) == 0:
+        messages = [
+            {"role": "system", "content": st.session_state["system_prompt"]},
+            {"role": "user", "content": query},
+        ]
+    else:
+        messages += [{"role": "user", "content": query}]
 
     llm_headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {llm_api_key}",
+        "Authorization": f'Bearer {st.session_state["llm_api_key"]}',
     }
-
-
-def stream_response(query):
-    """Stream LLM responses and allow stopping mid-stream."""
-    # initial messages
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": query},
-    ]
 
     llm_data = {
         "model": llm_model_name,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
+        "temperature": st.session_state["temperature"],
+        "max_tokens": st.session_state["max_tokens"],
         "messages": messages,
         "stream": True,
     }
 
     response = requests.post(
-        API_URL, data=json.dumps(llm_data), headers=HEADERS, stream=True
+        llm_url, headers=llm_headers, data=json.dumps(llm_data), stream=True
     )
-    output = ""
-
-    # make sure this is st.write_stream somewhere
     for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
-        if st.session_state.stop_generation:
+        if st.session_state["stop_generation"]:
+            st.session_state["generating"] = False
             break
         try:
             tokens = [
@@ -64,8 +59,7 @@ def stream_response(query):
             ]
             for token in tokens:
                 yield token
-                output += token
         except:
             pass
 
-    return output
+    yield f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
