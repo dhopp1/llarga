@@ -1,21 +1,11 @@
 from datetime import datetime
+from local_vector_search.misc import pickle_save
 import os
 import pandas as pd
-import pickle
 import streamlit as st
 
 from helper.llm import gen_llm_response
-
-
-def pickle_save(obj, path):
-    with open(path, "wb") as fOut:
-        pickle.dump(obj, fOut)
-
-
-def pickle_load(path):
-    with open(path, "rb") as input_file:
-        obj = pickle.load(input_file)
-    return obj
+from helper.sidebar import make_new_chat
 
 
 def ui_title_icon():
@@ -41,14 +31,19 @@ def initial_placeholder():
     "initial placeholder upon first login"
 
     if "initialized" not in st.session_state:
-        st.markdown(
-            """<div class="icon_text"><img width=50 src='https://www.svgrepo.com/show/375527/ai-platform.svg'></div>""",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            """<div class="icon_text"<h4>What would you like to know?</h4></div>""",
-            unsafe_allow_html=True,
-        )
+        if not (
+            os.path.isfile(
+                f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
+            )
+        ):
+            st.markdown(
+                """<div class="icon_text"><img width=50 src='https://www.svgrepo.com/show/375527/ai-platform.svg'></div>""",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                """<div class="icon_text"<h4>What would you like to know?</h4></div>""",
+                unsafe_allow_html=True,
+            )
         st.session_state["initialized"] = True
 
 
@@ -66,7 +61,7 @@ def populate_chat():
     "Display chat messages from history on app rerun"
     st.session_state["message_box"] = st.empty()
 
-    if "initialized" in st.session_state:
+    if "initialized" and "selected_chat_id" in st.session_state:
         with st.session_state["message_box"].container():
             for i in range(
                 1,
@@ -98,33 +93,14 @@ def import_chat():
     "logic for user chat"
 
     # load user chat histories if available
-    if "chat_history" not in st.session_state:
-        if os.path.isfile(f"""{st.session_state["user_name"]}_chats.pickle"""):
-            st.session_state["chat_history"] = pickle_load(
-                f"""{st.session_state["user_name"]}_chats.pickle"""
-            )
-            st.session_state["latest_chat_id"] = max(
-                [k for k, v in st.session_state["chat_history"].items()]
-            )
-        else:
-            st.session_state["chat_history"] = {}
-            st.session_state["latest_chat_id"] = 0
-    else:
-        if "selected_chat_id" not in st.session_state:  # first load
-            st.session_state["selected_chat_id"] = (
-                st.session_state["latest_chat_id"] + 1
-            )
-            st.session_state["chat_history"][st.session_state["selected_chat_id"]] = {}
-            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-                "messages"
-            ] = [{"role": "system", "content": st.session_state["system_prompt"]}]
-            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-                "times"
-            ] = [None]
-
+    if "chat_history" in st.session_state:
         populate_chat()
 
     if prompt := st.chat_input("Enter question"):
+        # make a new chat if there is none
+        if "selected_chat_id" not in st.session_state:
+            make_new_chat()
+
         # Display user message in chat message container
         prompt_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
         with st.chat_message("user", avatar=st.session_state["user_avatar"]):
@@ -195,5 +171,34 @@ def import_chat():
                 )
             )
 
-        ### !!! have to add source hover to message responses
+        # name this chat if haven't already
+        if (
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "chat_name"
+            ]
+            == "New chat"
+        ):
+            messages = st.session_state["chat_history"][
+                st.session_state["selected_chat_id"]
+            ]["messages"].copy()
+            messages += [
+                {
+                    "role": "user",
+                    "content": "Given this chat history, provide a 3-7 word name or phrase summarizing the chat's contents. Don't use quotes in the name.",
+                }
+            ]
+            chat_name = ""
+            for chunk in gen_llm_response(prompt, messages):
+                if "<br> <sub><sup>" not in chunk:
+                    chat_name += chunk
+
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "chat_name"
+            ] = chat_name
+
+        # saving chat history
+        pickle_save(
+            st.session_state["chat_history"],
+            f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle""",
+        )
         st.rerun()

@@ -1,6 +1,7 @@
 import streamlit as st
 
 from helper.sidebar import (
+    sidebar_chats,
     sidebar_llm_api_key,
     sidebar_llm_dropdown,
     sidebar_temperature_dropdown,
@@ -34,6 +35,10 @@ import_styles()
 initial_placeholder()
 
 ### sidebar
+# previous chats
+st.sidebar.markdown("### Chats")
+sidebar_chats()
+
 # corpus info
 st.sidebar.markdown("### Corpus")
 sidebar_which_corpus()

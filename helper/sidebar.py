@@ -1,5 +1,152 @@
+from local_vector_search.misc import pickle_load, pickle_save
+import os
 import pandas as pd
 import streamlit as st
+import time
+
+
+def make_new_chat():
+    # don't want to allow multiple new chats
+    try:
+        make_new_condition = "New chat" not in [
+            v["chat_name"] for k, v in st.session_state["chat_history"].items()
+        ]
+    except:
+        make_new_condition = True
+
+    if make_new_condition:
+        st.session_state["selected_chat_id"] = st.session_state["latest_chat_id"] + 1
+        st.session_state["latest_chat_id"] += 1
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]] = {}
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "messages"
+        ] = [{"role": "system", "content": st.session_state["system_prompt"]}]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "times"
+        ] = [None]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "chat_name"
+        ] = "New chat"
+
+        del st.session_state["initialized"]
+        st.rerun()
+    else:
+        st.warning("There is already a new chat.")
+
+
+def sidebar_chats():
+    if "chat_history" not in st.session_state:
+        if os.path.isfile(
+            f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
+        ):
+            st.session_state["chat_history"] = pickle_load(
+                f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
+            )
+            st.session_state["latest_chat_id"] = max(
+                [k for k, v in st.session_state["chat_history"].items()]
+            )
+        else:
+            st.session_state["chat_history"] = {}
+            st.session_state["latest_chat_id"] = 0
+
+    # chats dropdown
+    try:
+        chat_options = [
+            v["chat_name"] for k, v in st.session_state["chat_history"].items()
+        ][::-1]
+        st.session_state["selected_chat_name"] = st.sidebar.selectbox(
+            "Select chat",
+            options=chat_options,
+            index=0,
+            help="Which chat history to load",
+        )
+        st.session_state["selected_chat_id"] = [
+            key
+            for key, value in st.session_state["chat_history"].items()
+            if value.get("chat_name") == st.session_state["selected_chat_name"]
+        ][0]
+    except:
+        pass
+
+    # chat buttons
+    if "selected_chat_id" in st.session_state:
+        with st.sidebar:
+            # delete chat button
+            # Initial state
+            if "show_confirmation" not in st.session_state:
+                st.session_state.show_confirmation = False
+            if "confirmed" not in st.session_state:
+                st.session_state.confirmed = False
+
+            # Function to handle the initial button click
+            def show_confirmation_dialog():
+                st.session_state.show_confirmation = True
+
+            # Function to handle the confirmation
+            def confirm_action():
+                st.session_state.confirmed = True
+                st.session_state.show_confirmation = False
+
+            # Main button
+            if (
+                not st.session_state.show_confirmation
+                and not st.session_state.confirmed
+            ):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.session_state["new_chat"] = st.button("New chat ✎")
+                with col2:
+                    st.button("Delete chat ⌫", on_click=show_confirmation_dialog)
+
+                # make a new chat
+                if st.session_state["new_chat"]:
+                    make_new_chat()
+
+            # Confirmation dialog
+            if st.session_state.show_confirmation:
+                st.error(
+                    "Are you sure you want to delete this chat? This action cannot be undone."
+                )
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.button("Yes, I'm Sure", on_click=confirm_action)
+                with col2:
+                    st.button(
+                        "Cancel",
+                        on_click=lambda: setattr(
+                            st.session_state, "show_confirmation", False
+                        ),
+                    )
+
+            # Action after confirmation
+            if st.session_state.confirmed:
+                st.sidebar.info("Data has been deleted successfully!")
+                # actual deletion
+                del st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]
+                pickle_save(
+                    st.session_state["chat_history"],
+                    f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle""",
+                )
+
+                if (
+                    len(st.session_state["chat_history"]) == 0
+                ):  # remove pickle if there are no chats
+                    os.remove(
+                        f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
+                    )
+                # Reset the confirmation if needed
+                st.session_state.confirmed = False
+                time.sleep(3)
+
+                if len(st.session_state["chat_history"]) > 0:
+                    st.session_state["selected_chat_id"] = max(
+                        [k for k, v in st.session_state["chat_history"].items()]
+                    )
+                    st.rerun()
+                else:
+                    make_new_chat()
 
 
 def sidebar_llm_dropdown():
@@ -152,3 +299,6 @@ def sidebar_system_prompt():
             else st.session_state["system_prompt"],
             help="If you change the system prompt, start a new chat to have it take effect.",
         )
+
+    if st.session_state["chat_history"] == {}:
+        make_new_chat()
