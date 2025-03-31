@@ -120,7 +120,7 @@ def sidebar_chats():
 
             # Action after confirmation
             if st.session_state.confirmed:
-                st.sidebar.info("Data has been deleted successfully!")
+                st.sidebar.info("Chat has been deleted successfully!")
                 # actual deletion
                 del st.session_state["chat_history"][
                     st.session_state["selected_chat_id"]
@@ -156,16 +156,6 @@ def sidebar_llm_dropdown():
             st.session_state["llm_info"].loc[lambda x: x["display"] == 1, "name"].values
         )
 
-    if "is_reasoning_model" not in st.session_state:
-        st.session_state["is_reasoning_model"] = (
-            st.session_state["llm_info"]
-            .loc[
-                lambda x: x["name"] == st.session_state["selected_llm"],
-                "reasoning_model",
-            ]
-            .values[0]
-        )
-
     with st.sidebar:
         st.session_state["selected_llm"] = st.selectbox(
             "Select LLM",
@@ -178,6 +168,16 @@ def sidebar_llm_dropdown():
                 )
             ),
             help="Which LLM to use. Those ending in `(private)` do not leave our local system, those ending in `(cloud)` will be sent to a cloud provider via API. The latter should not be used for sensitive information.",
+        )
+
+    if "is_reasoning_model" not in st.session_state:
+        st.session_state["is_reasoning_model"] = (
+            st.session_state["llm_info"]
+            .loc[
+                lambda x: x["name"] == st.session_state["selected_llm"],
+                "reasoning_model",
+            ]
+            .values[0]
         )
 
 

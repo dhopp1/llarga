@@ -161,4 +161,4 @@ def import_chat():
             st.session_state["chat_history"],
             f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle""",
         )
-        st.rerun()
+        # st.rerun()

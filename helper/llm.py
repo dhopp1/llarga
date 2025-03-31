@@ -68,8 +68,20 @@ def gen_llm_response(query, messages=[]):
 def write_stream(stream):
     "write out the stream of the LLM's answer"
     st.session_state["llm_answer"] = ""
-    container = st.empty()
 
+    if st.session_state["is_reasoning_model"]:
+        with st.expander("Reasoning", expanded=True):
+            container = st.empty()
+            thinking = ""
+            for chunk in stream:
+                thinking += chunk
+                if "</think>" not in thinking:
+                    container.write(thinking, unsafe_allow_html=True)
+                else:
+                    break
+
+    # normal LLM output
+    container = st.empty()
     counter = 0
     for chunk in stream:
         st.session_state["llm_answer"] += chunk
