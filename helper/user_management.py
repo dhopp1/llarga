@@ -39,10 +39,11 @@ def check_password():
 
 def setup_local_files():
     """Load various settings"""
+    if "users_info" not in st.session_state:
+        st.session_state["users_info"] = pd.read_csv("metadata/user_list.csv")
+
     if "users_list" not in st.session_state:
-        st.session_state["users_list"] = list(
-            pd.read_csv("metadata/user_list.csv")["user"]
-        )
+        st.session_state["users_list"] = list(st.session_state["users_info"]["user"])
 
     if "settings" not in st.session_state:
         st.session_state["settings"] = pd.read_csv("metadata/settings.csv")

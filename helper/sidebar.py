@@ -87,3 +87,68 @@ The LLM has maximum creativity and freedom.
                 [0.0, 0.15, 0.4, 0.7, 1.0],
             )
         )[st.session_state["temperature_string"]]
+
+
+def sidebar_which_corpus():
+    with st.sidebar:
+        st.session_state["corpora_list"] = pd.read_csv("metadata/corpora_list.csv")
+        corpus_options = ["No corpus", "Workspace"] + list(
+            st.session_state["corpora_list"]["name"]
+        )
+        st.session_state["default_corpus"] = (
+            st.session_state["users_info"]
+            .loc[lambda x: x["user"] == st.session_state["user_name"], "default_corpus"]
+            .values[0]
+        )
+
+        st.session_state["selected_corpus"] = st.selectbox(
+            "Which corpus",
+            options=corpus_options,
+            index=(
+                corpus_options.index(st.session_state["default_corpus"])
+                if "selected_corpus" not in st.session_state
+                else corpus_options.index(st.session_state["selected_corpus"])
+            ),
+            help="Which corpus to query against. `Workspace` is your personal corpus only you can see. All others are visible to all users.",
+        )
+
+
+def sidebar_system_prompt():
+    with st.sidebar:
+        if "default_system_prompt" not in st.session_state:
+            try:
+                st.session_state["default_system_prompt"] = (
+                    st.session_state["corpora_list"]
+                    .loc[
+                        lambda x: x["name"] == st.session_state["selected_corpus"],
+                        "system_prompt",
+                    ]
+                    .values[0]
+                )
+            except:
+                if st.session_state["selected_corpus"] == "No corpus":
+                    st.session_state["default_system_prompt"] = (
+                        st.session_state["settings"]
+                        .loc[
+                            lambda x: x["field"] == "default_no_corpus_system_prompt",
+                            "value",
+                        ]
+                        .values[0]
+                    )
+                else:
+                    st.session_state["default_system_prompt"] = (
+                        st.session_state["settings"]
+                        .loc[
+                            lambda x: x["field"] == "default_corpus_system_prompt",
+                            "value",
+                        ]
+                        .values[0]
+                    )
+
+        st.session_state["system_prompt"] = st.text_input(
+            "System prompt",
+            value=st.session_state["default_system_prompt"]
+            if "system_prompt" not in st.session_state
+            else st.session_state["system_prompt"],
+            help="If you change the system prompt, start a new chat to have it take effect.",
+        )

@@ -60,18 +60,6 @@ def user_specific_load():
             .loc[lambda x: x["user"] == st.session_state["user_name"], "default_corpus"]
             .values[0]
         )
-        if st.session_state["selected_corpus"] == "no_corpus":
-            st.session_state["system_prompt"] = (
-                st.session_state["settings"]
-                .loc[lambda x: x["field"] == "default_no_corpus_system_prompt", "value"]
-                .values[0]
-            )
-        else:  ### !!! have to modify this to take the system prompt of the corpus once those are uploaded
-            st.session_state["system_prompt"] = (
-                pd.read_csv("metadata/settings.csv")
-                .loc[lambda x: x["field"] == "default_corpus_system_prompt", "value"]
-                .values[0]
-            )
 
 
 def populate_chat():
