@@ -44,9 +44,19 @@ def setup_local_files():
             pd.read_csv("metadata/user_list.csv")["user"]
         )
 
+    if "settings" not in st.session_state:
+        st.session_state["settings"] = pd.read_csv("metadata/settings.csv")
+
     if "app_title" not in st.session_state:
         st.session_state["app_title"] = (
-            pd.read_csv("metadata/settings.csv")
+            st.session_state["settings"]
             .loc[lambda x: x["field"] == "app_title", "value"]
+            .values[0]
+        )
+
+    if "max_tokens" not in st.session_state:
+        st.session_state["max_tokens"] = (
+            st.session_state["settings"]
+            .loc[lambda x: x["field"] == "max_tokens", "value"]
             .values[0]
         )

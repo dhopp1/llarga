@@ -2,3 +2,4 @@ field,value
 app_title,Llarga
 default_no_corpus_system_prompt,"You are a chatbot."
 default_corpus_system_prompt,"You are a chatbot specialized in answering questions based on a provided context. Do not provide answers that are not found within the context."
+max_tokens,2048

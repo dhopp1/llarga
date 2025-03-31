@@ -1,3 +1,37 @@
+import streamlit as st
+
+
+def gen_llm_call(messages=None):
+    """Create the data required for an LLM call"""
+    # llm url
+    llm_url = (
+        st.session_state["llm_info"]
+        .loc[lambda x: x["name"] == st.session_state["selected_llm"], "llm_url"]
+        .values[0]
+    )
+
+    # llm model name
+    llm_model_name = (
+        st.session_state["llm_info"]
+        .loc[lambda x: x["name"] == st.session_state["selected_llm"], "model_name"]
+        .values[0]
+    )
+
+    # llm api key
+    st.session_state["llm_api_key"]
+
+    st.session_state["temperature"]
+
+    st.session_state["max_tokens"]
+
+    system_prompt
+
+    llm_headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {llm_api_key}",
+    }
+
+
 def stream_response(query):
     """Stream LLM responses and allow stopping mid-stream."""
     # initial messages

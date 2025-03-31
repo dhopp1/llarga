@@ -60,7 +60,7 @@ def user_specific_load():
         )
         if st.session_state["selected_corpus"] == "no_corpus":
             st.session_state["system_prompt"] = (
-                pd.read_csv("metadata/settings.csv")
+                st.session_state["settings"]
                 .loc[lambda x: x["field"] == "default_no_corpus_system_prompt", "value"]
                 .values[0]
             )
@@ -154,24 +154,34 @@ def import_chat():
         def llm_placeholder(prompt):
             import time
 
-            st.session_state["llm_answer"] = ""
             for i in range(3):
                 time.sleep(1)
                 yield prompt
-                st.session_state["llm_answer"] += prompt
+
+            yield f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
 
         # stream the LLM's answer
+        def write_stream(stream):
+            st.session_state["llm_answer"] = ""
+            container = st.empty()
+            for chunk in stream:
+                st.session_state["llm_answer"] += chunk
+                container.write(st.session_state["llm_answer"], unsafe_allow_html=True)
+
         with st.chat_message("assistant", avatar=st.session_state["assistant_avatar"]):
-            llm_answer = st.write_stream(llm_placeholder(prompt))
+            write_stream(llm_placeholder(prompt))
 
         # add assistant response to chat history
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "messages"
-        ] += [{"role": "assistant", "content": llm_answer}]
+        ] += [
+            {
+                "role": "assistant",
+                "content": st.session_state["llm_answer"].split("<br> <sub>")[0],
+            }
+        ]  # don't include time in chat history
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "times"
-        ] += [
-            f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
-        ]
+        ] += ["<br> <sub>" + st.session_state["llm_answer"].split("<br> <sub>")[1]]
 
         ### !!! have to add source hover to message responses

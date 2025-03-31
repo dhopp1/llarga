@@ -1,6 +1,10 @@
 import streamlit as st
 
-from helper.sidebar import sidebar_llm_dropdown
+from helper.sidebar import (
+    sidebar_llm_api_key,
+    sidebar_llm_dropdown,
+    sidebar_temperature_dropdown,
+)
 from helper.user_management import check_password, setup_local_files
 from helper.ui import (
     import_chat,
@@ -29,6 +33,8 @@ initial_placeholder()
 
 # sidebar
 sidebar_llm_dropdown()
+sidebar_llm_api_key()
+sidebar_temperature_dropdown()
 
 # user specific data load
 user_specific_load()
