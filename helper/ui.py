@@ -155,9 +155,47 @@ def import_chat():
         def write_stream(stream):
             st.session_state["llm_answer"] = ""
             container = st.empty()
+
+            counter = 0
             for chunk in stream:
                 st.session_state["llm_answer"] += chunk
                 container.write(st.session_state["llm_answer"], unsafe_allow_html=True)
+
+                # first time already begin writing message history
+                if counter == 0:
+                    # add assistant response to chat history
+                    st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["messages"] += [
+                        {
+                            "role": "assistant",
+                            "content": st.session_state["llm_answer"].split(
+                                "<br> <sub>"
+                            )[0],
+                        }
+                    ]  # don't include time in chat history
+                    st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["times"] += [
+                        f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+                    ]
+                else:
+                    st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["messages"][-1] = {
+                        "role": "assistant",
+                        "content": st.session_state["llm_answer"].split("<br> <sub>")[
+                            0
+                        ],
+                    }
+
+                    st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["times"][
+                        -1
+                    ] = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+
+                counter += 1
 
         with st.chat_message("assistant", avatar=st.session_state["assistant_avatar"]):
             write_stream(
@@ -170,17 +208,18 @@ def import_chat():
             )
 
         # add assistant response to chat history
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "messages"
-        ] += [
-            {
-                "role": "assistant",
-                "content": st.session_state["llm_answer"].split("<br> <sub>")[0],
-            }
-        ]  # don't include time in chat history
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "times"
-        ] += ["<br> <sub>" + st.session_state["llm_answer"].split("<br> <sub>")[1]]
+        if False:
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "messages"
+            ] += [
+                {
+                    "role": "assistant",
+                    "content": st.session_state["llm_answer"].split("<br> <sub>")[0],
+                }
+            ]  # don't include time in chat history
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "times"
+            ] += ["<br> <sub>" + st.session_state["llm_answer"].split("<br> <sub>")[1]]
 
         ### !!! have to add source hover to message responses
         st.rerun()
