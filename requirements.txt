@@ -4,3 +4,4 @@ openai
 pandas
 polars
 streamlit
+streamlit-server-state

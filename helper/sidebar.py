@@ -4,6 +4,12 @@ import pandas as pd
 import streamlit as st
 import time
 
+from helper.llamacpp_helper import (
+    check_reload_llama_cpp,
+    start_llama_cpp_server,
+    stop_llama_cpp_server,
+)
+
 
 def make_new_chat():
     # don't want to allow multiple new chats
@@ -165,7 +171,9 @@ def sidebar_llm_dropdown():
             options=st.session_state["llm_dropdown_options"],
             index=0,
             help="Which LLM to use. Those ending in `(private)` do not leave our local system, those ending in `(cloud)` will be sent to a cloud provider via API. The latter should not be used for sensitive information.",
+            on_change=check_reload_llama_cpp(),
         )
+    check_reload_llama_cpp()
 
     st.session_state["is_reasoning_model"] = (
         st.session_state["llm_info"]
@@ -300,9 +308,11 @@ def sidebar_system_prompt():
 
         st.session_state["system_prompt"] = st.text_input(
             "System prompt",
-            value=st.session_state["default_system_prompt"]
-            if "system_prompt" not in st.session_state
-            else st.session_state["system_prompt"],
+            value=(
+                st.session_state["default_system_prompt"]
+                if "system_prompt" not in st.session_state
+                else st.session_state["system_prompt"]
+            ),
             help="If you change the system prompt, start a new chat to have it take effect.",
         )
 
