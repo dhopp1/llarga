@@ -1,5 +1,6 @@
 nlp_pipeline
 local-vector-search
+openai
 pandas
 polars
 streamlit
