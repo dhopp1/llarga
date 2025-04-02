@@ -8,6 +8,21 @@ import time
 from helper.user_management import update_server_state
 
 
+def wait_for_output(process, target_text):
+    """Reads output line by line until target_text is found."""
+    print("hi")
+    while True:
+        line = process.stdout.readline()
+        if not line:
+            break  # Process terminated
+        # decoded_line = line.decode("utf-8").strip()
+        print("hi")  # Optionally print output
+
+
+#        if target_text in decoded_line:
+#            return
+
+
 def start_llama_cpp_server(name, llm_info_df):
     "start a llama cpp server of a given model. Returns pid of process"
     print("started server func")
@@ -17,11 +32,27 @@ def start_llama_cpp_server(name, llm_info_df):
         r":(\d+)", llm_info_df.loc[lambda x: x["name"] == name, "llm_url"].values[0]
     ).group(1)
 
-    process = subprocess.Popen(
-        ["llama-server", "-m", llm_filepath, "--port", port, "--no-warmup"],
-        start_new_session=True,
-    )
-    print(f"pid of llama cpp model: {process.pid}")
+    with st.spinner("Loading LLM...", show_time=True):
+        process = subprocess.Popen(
+            ["llama-server", "-m", llm_filepath, "--port", port, "--no-warmup"],
+            start_new_session=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True,
+        )
+        print(f"pid of llama cpp model: {process.pid}")
+
+        # Monitor the output
+        target_string = "all slots are idle"
+        while process.poll() is None:  # While process is running
+            line = process.stdout.readline()
+            if line:
+                print(f"Process output: {line.strip()}")
+                if target_string in line:
+                    print(f"Target string '{target_string}' found!")
+                    break
 
     return process.pid
 
@@ -63,26 +94,21 @@ def check_reload_llama_cpp():
                         server_state["llama_cpp_name"]
                         != st.session_state["selected_llm"]
                     ):
-                        with st.spinner(
-                            "Waiting for generation to finish to switch model..."
-                        ):
-                            if "llm_generating" not in server_state:
-                                update_server_state("llm_generating", False)
+                        if "llm_generating" not in server_state:
+                            update_server_state("llm_generating", False)
 
-                            if not (server_state["llm_generating"]):
-                                stop_llama_cpp_server(server_state["llama_cpp_pid"])
-                                update_server_state(
-                                    "llama_cpp_name", st.session_state["selected_llm"]
-                                )
-                                update_server_state(
-                                    "llama_cpp_pid",
-                                    start_llama_cpp_server(
-                                        name=st.session_state["selected_llm"],
-                                        llm_info_df=st.session_state["llm_info"],
-                                    ),
-                                )
-                                with st.spinner("loading model..."):
-                                    time.sleep(10)  # give the model time to load
-                            else:
-                                time.sleep(5)
-                                st.rerun()
+                        if not (server_state["llm_generating"]):
+                            stop_llama_cpp_server(server_state["llama_cpp_pid"])
+                            update_server_state(
+                                "llama_cpp_name", st.session_state["selected_llm"]
+                            )
+                            update_server_state(
+                                "llama_cpp_pid",
+                                start_llama_cpp_server(
+                                    name=st.session_state["selected_llm"],
+                                    llm_info_df=st.session_state["llm_info"],
+                                ),
+                            )
+                        else:
+                            time.sleep(5)
+                            st.rerun()

@@ -40,60 +40,65 @@ def gen_llm_response(query, messages_input=[]):
 
 def write_stream(stream):
     "write out the stream of the LLM's answer"
-    lock_llm()
+    with st.spinner("Thinking...", show_time=True):
+        lock_llm()
 
-    st.session_state["llm_answer"] = ""
-    st.session_state["reasoning"] = ""
+        st.session_state["llm_answer"] = ""
+        st.session_state["reasoning"] = ""
 
-    # initialize an llm response in case interruption during reasoning
-    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-        "reasoning"
-    ] += [st.session_state["reasoning"]]
-    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-        "messages"
-    ] += [
-        {
-            "role": "assistant",
-            "content": "",
-        }
-    ]  # don't include time in chat history
-    st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] += [
-        f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
-    ]
-
-    if st.session_state["is_reasoning_model"]:
-        with st.expander("Reasoning", expanded=True):
-            container = st.empty()
-            for chunk in stream:
-                st.session_state["reasoning"] += chunk
-                if "</think>" not in st.session_state["reasoning"]:
-                    container.write(
-                        f'<em>{st.session_state["reasoning"]}</em>',
-                        unsafe_allow_html=True,
-                    )
-
-                    # add to reasoning history
-                    st.session_state["chat_history"][
-                        st.session_state["selected_chat_id"]
-                    ]["reasoning"][-1] = st.session_state["reasoning"]
-                else:
-                    break
-
-    # normal LLM output
-    container = st.empty()
-    for chunk in stream:
-        st.session_state["llm_answer"] += chunk
-        container.write(st.session_state["llm_answer"], unsafe_allow_html=True)
-
+        # initialize an llm response in case interruption during reasoning
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "reasoning"
+        ] += [st.session_state["reasoning"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "messages"
-        ][-1] = {
-            "role": "assistant",
-            "content": st.session_state["llm_answer"].split("<br> <sub>")[0],
-        }
+        ] += [
+            {
+                "role": "assistant",
+                "content": "",
+            }
+        ]  # don't include time in chat history
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "times"
+        ] += [
+            f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+        ]
 
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"][
-            -1
-        ] = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+        if st.session_state["is_reasoning_model"]:
+            with st.expander("Reasoning", expanded=True):
+                container = st.empty()
+                for chunk in stream:
+                    st.session_state["reasoning"] += chunk
+                    if "</think>" not in st.session_state["reasoning"]:
+                        container.write(
+                            f'<em>{st.session_state["reasoning"]}</em>',
+                            unsafe_allow_html=True,
+                        )
 
-    unlock_llm()
+                        # add to reasoning history
+                        st.session_state["chat_history"][
+                            st.session_state["selected_chat_id"]
+                        ]["reasoning"][-1] = st.session_state["reasoning"]
+                    else:
+                        break
+
+        # normal LLM output
+        container = st.empty()
+        for chunk in stream:
+            st.session_state["llm_answer"] += chunk
+            container.write(st.session_state["llm_answer"], unsafe_allow_html=True)
+
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "messages"
+            ][-1] = {
+                "role": "assistant",
+                "content": st.session_state["llm_answer"].split("<br> <sub>")[0],
+            }
+
+            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                "times"
+            ][
+                -1
+            ] = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+
+        unlock_llm()
