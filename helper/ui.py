@@ -146,53 +146,62 @@ def import_chat():
         ] += [""]
 
         ### queuing logic
-        # lock the model to perform requests sequentially
-        if "llm_generating" not in server_state:
-            unlock_llm()
-        if "last_used" not in server_state:
-            update_server_state("last_used", datetime.now())
+        if (
+            ".gguf"
+            in st.session_state["llm_info"]
+            .loc[lambda x: x["name"] == st.session_state["selected_llm"], "model_name"]
+            .values[0]
+        ):
+            # lock the model to perform requests sequentially
+            if "llm_generating" not in server_state:
+                unlock_llm()
+            if "last_used" not in server_state:
+                update_server_state("last_used", datetime.now())
 
-        if "exec_queue" not in server_state:
-            update_server_state("exec_queue", [st.session_state["user_name"]])
+            if "exec_queue" not in server_state:
+                update_server_state("exec_queue", [st.session_state["user_name"]])
 
-        if len(server_state["exec_queue"]) == 0:
-            update_server_state("exec_queue", [st.session_state["user_name"]])
-        else:
-            if st.session_state["user_name"] not in server_state["exec_queue"]:
-                # add to the queue
-                update_server_state(
-                    "exec_queue",
-                    server_state["exec_queue"] + [st.session_state["user_name"]],
-                )
+            if len(server_state["exec_queue"]) == 0:
+                update_server_state("exec_queue", [st.session_state["user_name"]])
+            else:
+                if st.session_state["user_name"] not in server_state["exec_queue"]:
+                    # add to the queue
+                    update_server_state(
+                        "exec_queue",
+                        server_state["exec_queue"] + [st.session_state["user_name"]],
+                    )
 
-        with st.spinner("Query queued..."):
-            t = st.empty()
-            while (
-                server_state["llm_generating"]
-                or server_state["exec_queue"][0] != st.session_state["user_name"]
-            ):
-                # check if it hasn't been used in a while, potentially interrupted while executing
-                if (datetime.now() - server_state["last_used"]).total_seconds() > 60:
+            with st.spinner("Query queued..."):
+                t = st.empty()
+                while (
+                    server_state["llm_generating"]
+                    or server_state["exec_queue"][0] != st.session_state["user_name"]
+                ):
+                    # check if it hasn't been used in a while, potentially interrupted while executing
                     if (
-                        server_state["exec_queue"][1] == st.session_state["user_name"]
-                    ):  # only perform if first in the queue
-                        unlock_llm()
-                        update_server_state(
-                            "exec_queue", server_state["exec_queue"][1:]
-                        )  # take the first person out of the queue
-                        update_server_state("last_used", datetime.now())
+                        datetime.now() - server_state["last_used"]
+                    ).total_seconds() > 60:
+                        if (
+                            server_state["exec_queue"][1]
+                            == st.session_state["user_name"]
+                        ):  # only perform if first in the queue
+                            unlock_llm()
+                            update_server_state(
+                                "exec_queue", server_state["exec_queue"][1:]
+                            )  # take the first person out of the queue
+                            update_server_state("last_used", datetime.now())
 
-                t.markdown(
-                    f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
-                )
-                time.sleep(1)
-            t.empty()
+                    t.markdown(
+                        f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
+                    )
+                    time.sleep(1)
+                t.empty()
 
-        check_reload_llama_cpp()  # load their chosen model
+            check_reload_llama_cpp()  # load their chosen model
 
-        # lock the model while generating
-        lock_llm()
-        update_server_state("last_used", datetime.now())
+            # lock the model while generating
+            lock_llm()
+            update_server_state("last_used", datetime.now())
 
         # stream the LLM's answer
         try:
