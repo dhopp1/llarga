@@ -83,3 +83,9 @@ def unlock_llm():
         with server_state_lock["llm_generating"]:
             server_state["llm_generating"] = False
         print("Unlocked LLM")
+
+
+def unlock_llm_release_queue():
+    unlock_llm()
+    if server_state["exec_queue"][0] == st.session_state["user_name"]:
+        update_server_state("exec_queue", server_state["exec_queue"][1:])

@@ -81,6 +81,8 @@ def check_reload_llama_cpp():
                                         llm_info_df=st.session_state["llm_info"],
                                     ),
                                 )
+                                with st.spinner("loading model..."):
+                                    time.sleep(10)  # give the model time to load
                             else:
                                 time.sleep(5)
                                 st.rerun()

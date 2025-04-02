@@ -3,10 +3,18 @@ from local_vector_search.misc import pickle_save
 import os
 import pandas as pd
 import streamlit as st
+from streamlit_server_state import server_state
+import time
 
+from helper.llamacpp_helper import check_reload_llama_cpp
 from helper.llm import gen_llm_response, write_stream
 from helper.sidebar import make_new_chat
-from helper.user_management import unlock_llm
+from helper.user_management import (
+    lock_llm,
+    unlock_llm,
+    unlock_llm_release_queue,
+    update_server_state,
+)
 
 
 def ui_title_icon():
@@ -123,7 +131,7 @@ def import_chat():
         # Display user message in chat message container
         prompt_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
         with st.chat_message("user", avatar=st.session_state["user_avatar"]):
-            st.button("◼ Stop generating", on_click=unlock_llm)
+            st.button("◼ Stop generating", on_click=unlock_llm_release_queue)
             st.markdown(prompt + prompt_time, unsafe_allow_html=True)
 
         # Add user message to chat history
@@ -137,16 +145,75 @@ def import_chat():
             "reasoning"
         ] += [""]
 
-        # stream the LLM's answer
-        with st.chat_message("assistant", avatar=st.session_state["assistant_avatar"]):
-            write_stream(
-                gen_llm_response(
-                    prompt,
-                    messages_input=st.session_state["chat_history"][
-                        st.session_state["selected_chat_id"]
-                    ]["messages"].copy(),
+        ### queuing logic
+        # lock the model to perform requests sequentially
+        if "llm_generating" not in server_state:
+            unlock_llm()
+        if "last_used" not in server_state:
+            update_server_state("last_used", datetime.now())
+
+        if "exec_queue" not in server_state:
+            update_server_state("exec_queue", [st.session_state["user_name"]])
+
+        if len(server_state["exec_queue"]) == 0:
+            update_server_state("exec_queue", [st.session_state["user_name"]])
+        else:
+            if st.session_state["user_name"] not in server_state["exec_queue"]:
+                # add to the queue
+                update_server_state(
+                    "exec_queue",
+                    server_state["exec_queue"] + [st.session_state["user_name"]],
                 )
+
+        with st.spinner("Query queued..."):
+            t = st.empty()
+            while (
+                server_state["llm_generating"]
+                or server_state["exec_queue"][0] != st.session_state["user_name"]
+            ):
+                # check if it hasn't been used in a while, potentially interrupted while executing
+                if (datetime.now() - server_state["last_used"]).total_seconds() > 60:
+                    if (
+                        server_state["exec_queue"][1] == st.session_state["user_name"]
+                    ):  # only perform if first in the queue
+                        unlock_llm()
+                        update_server_state(
+                            "exec_queue", server_state["exec_queue"][1:]
+                        )  # take the first person out of the queue
+                        update_server_state("last_used", datetime.now())
+
+                t.markdown(
+                    f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
+                )
+                time.sleep(1)
+            t.empty()
+
+        check_reload_llama_cpp()  # load their chosen model
+
+        # lock the model while generating
+        lock_llm()
+        update_server_state("last_used", datetime.now())
+
+        # stream the LLM's answer
+        try:
+            with st.chat_message(
+                "assistant", avatar=st.session_state["assistant_avatar"]
+            ):
+                write_stream(
+                    gen_llm_response(
+                        prompt,
+                        messages_input=st.session_state["chat_history"][
+                            st.session_state["selected_chat_id"]
+                        ]["messages"].copy(),
+                    )
+                )
+        except:
+            unlock_llm_release_queue()
+            st.error(
+                "An error was encountered, the model may not be finished loading, please try again in a few seconds."
             )
+            time.sleep(3)
+            st.rerun()
 
         # name this chat if haven't already
         if (
@@ -177,6 +244,9 @@ def import_chat():
             st.session_state["chat_history"][st.session_state["selected_chat_id"]][
                 "chat_name"
             ] = chat_name
+
+        # unlocking the queue
+        unlock_llm_release_queue()
 
         # saving chat history
         pickle_save(
