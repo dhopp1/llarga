@@ -1,6 +1,7 @@
 from local_vector_search.misc import pickle_load, pickle_save
 import os
 import pandas as pd
+import shutil
 import streamlit as st
 import time
 
@@ -328,4 +329,56 @@ Once you've uploaded your file, click `Process corpus`. The system prompt for th
         "Name for new corpus", value="Workspace"
     )
 
+    # show a warning if there is a corpus with this name
+    if st.session_state["new_corpus_name"] in list(
+        st.session_state["corpora_list"]["name"]
+    ):
+        st.error(
+            "There is already a corpus with this name. If you hit the `Process corpus` button, this corpus will be overwritten with the new one."
+        )
+
     st.session_state["process_corpus_button"] = st.button("Process corpus")
+
+
+def sidebar_delete_corpus():
+    st.session_state["delete_corpus_name"] = st.text_input("Name of corpus to delete")
+    st.session_state["delete_corpus_button"] = st.button(
+        "Delete corpus", help="This will delete the `Currently loaded corpus`"
+    )
+
+    if st.session_state["delete_corpus_button"]:
+        if st.session_state["delete_corpus_name"] not in ["No corpus", "Workspace"]:
+            try:
+                corpora_path = "corpora"
+                if st.session_state["delete_corpus_name"] == "Workspace":
+                    corpus_name = f'Workspace {st.session_state["user_name"]}'
+                else:
+                    corpus_name = st.session_state["delete_corpus_name"]
+
+                # delete metadata file
+                os.remove(f"{corpora_path}/metadata_{corpus_name}.csv")
+                # delete file directory
+                shutil.rmtree(f"{corpora_path}/{corpus_name}/")
+                # delete embeddings file
+                os.remove(f"{corpora_path}/embeddings_{corpus_name}.parquet")
+                # remove from corpora_list csv
+                st.session_state["corpora_list"] = (
+                    st.session_state["corpora_list"]
+                    .loc[lambda x: x["name"] != corpus_name, :]
+                    .reset_index(drop=True)
+                )
+                st.session_state["corpora_list"].to_csv(
+                    "metadata/corpora_list.csv", index=False
+                )
+
+                st.info("Corpus successfully deleted!")
+                if (
+                    st.session_state["delete_corpus_name"]
+                    == st.session_state["selected_corpus"]
+                ):
+                    st.session_state["selected_corpus"] = "Workspace"
+                st.session_state["delete_corpus_name"] = ""
+                time.sleep(3)
+                st.rerun()
+            except:
+                pass

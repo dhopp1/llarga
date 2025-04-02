@@ -68,7 +68,7 @@ def process_corpus():
         if st.session_state["new_corpus_name"] == "Workspace":
             corpus_name = f'Workspace {st.session_state["user_name"]}'
         else:
-            corpus_name = st.session_state["new_corpus_name"].copy()
+            corpus_name = st.session_state["new_corpus_name"]
 
         # make temporary directory to handle files
         if not os.path.exists(f"{temp_directory}"):

@@ -2,6 +2,7 @@ import streamlit as st
 
 from helper.sidebar import (
     sidebar_chats,
+    sidebar_delete_corpus,
     sidebar_llm_api_key,
     sidebar_llm_dropdown,
     sidebar_temperature_dropdown,
@@ -49,6 +50,8 @@ with st.sidebar:
 with st.sidebar.expander("Upload your own documents"):
     st.markdown("#### Upload a new corpus")
     sidebar_upload_file()
+    st.markdown("#### Delete a corpus")
+    sidebar_delete_corpus()
 
 if st.session_state["process_corpus_button"]:
     process_corpus()
