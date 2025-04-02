@@ -8,21 +8,6 @@ import time
 from helper.user_management import update_server_state
 
 
-def wait_for_output(process, target_text):
-    """Reads output line by line until target_text is found."""
-    print("hi")
-    while True:
-        line = process.stdout.readline()
-        if not line:
-            break  # Process terminated
-        # decoded_line = line.decode("utf-8").strip()
-        print("hi")  # Optionally print output
-
-
-#        if target_text in decoded_line:
-#            return
-
-
 def start_llama_cpp_server(name, llm_info_df):
     "start a llama cpp server of a given model. Returns pid of process"
     print("started server func")
@@ -44,7 +29,7 @@ def start_llama_cpp_server(name, llm_info_df):
         )
         print(f"pid of llama cpp model: {process.pid}")
 
-        # Monitor the output
+        # Monitor the output, don't proceed until text found
         target_string = "all slots are idle"
         while process.poll() is None:  # While process is running
             line = process.stdout.readline()
