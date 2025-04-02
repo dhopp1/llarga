@@ -53,7 +53,6 @@ def check_reload_llama_cpp():
     "check if a local LLM is loaded and load if not, change if it's a different one"
 
     if "selected_llm" in st.session_state:
-
         # if llm changed and its local and not already loaded, kill the old one and load it
         # first check if it's a local llm
         if (
@@ -62,7 +61,6 @@ def check_reload_llama_cpp():
             .loc[lambda x: x["name"] == st.session_state["selected_llm"], "model_name"]
             .values[0]
         ):
-
             # if no model loaded, load the selected one
             if "llama_cpp_pid" not in server_state:
                 update_server_state("llama_cpp_name", st.session_state["selected_llm"])

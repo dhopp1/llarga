@@ -6,6 +6,7 @@ from helper.sidebar import (
     sidebar_llm_dropdown,
     sidebar_temperature_dropdown,
     sidebar_system_prompt,
+    sidebar_upload_file,
     sidebar_which_corpus,
 )
 from helper.user_management import check_password, setup_local_files
@@ -16,6 +17,7 @@ from helper.ui import (
     ui_title_icon,
     user_specific_load,
 )
+from helper.lvs import process_corpus
 
 # load user list and llm list
 setup_local_files()
@@ -41,14 +43,23 @@ sidebar_chats()
 
 # corpus info
 st.sidebar.markdown("### Corpus")
-sidebar_which_corpus()
+with st.sidebar:
+    sidebar_which_corpus()
+
+with st.sidebar.expander("Upload your own documents"):
+    st.markdown("#### Upload a new corpus")
+    sidebar_upload_file()
+
+if st.session_state["process_corpus_button"]:
+    process_corpus()
 
 # llm info
-st.sidebar.markdown("### LLM parameters")
-sidebar_llm_dropdown()
-sidebar_llm_api_key()
-sidebar_temperature_dropdown()
-sidebar_system_prompt()
+st.sidebar.markdown("### LLM")
+with st.sidebar.expander("LLM parameters"):
+    sidebar_llm_dropdown()
+    sidebar_llm_api_key()
+    sidebar_temperature_dropdown()
+    sidebar_system_prompt()
 
 
 # user specific data load
