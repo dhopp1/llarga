@@ -1,8 +1,11 @@
 import psutil
 import re
 import streamlit as st
-from streamlit_server_state import no_rerun, server_state, server_state_lock
+from streamlit_server_state import server_state
 import subprocess
+import time
+
+from helper.user_management import update_server_state
 
 
 def start_llama_cpp_server(name, llm_info_df):
@@ -46,30 +49,38 @@ def check_reload_llama_cpp():
 
             # if no model loaded, load the selected one
             if "llama_cpp_pid" not in server_state:
-                with no_rerun:
-                    with server_state_lock["llama_cpp_name"]:
-                        server_state["llama_cpp_name"] = st.session_state[
-                            "selected_llm"
-                        ]
-                    with server_state_lock["llama_cpp_pid"]:
-                        server_state["llama_cpp_pid"] = start_llama_cpp_server(
-                            name=st.session_state["selected_llm"],
-                            llm_info_df=st.session_state["llm_info"],
-                        )
+                update_server_state("llama_cpp_name", st.session_state["selected_llm"])
+                update_server_state(
+                    "llama_cpp_pid",
+                    start_llama_cpp_server(
+                        name=st.session_state["selected_llm"],
+                        llm_info_df=st.session_state["llm_info"],
+                    ),
+                )
             else:  # if a model is loaded, unload the old one and load the new one if they're different
                 if "llama_cpp_name" in server_state:
                     if (
                         server_state["llama_cpp_name"]
                         != st.session_state["selected_llm"]
                     ):
-                        stop_llama_cpp_server(server_state["llama_cpp_pid"])
-                        with no_rerun:
-                            with server_state_lock["llama_cpp_pid"]:
-                                server_state["llama_cpp_name"] = st.session_state[
-                                    "selected_llm"
-                                ]
-                            with server_state_lock["llama_cpp_pid"]:
-                                server_state["llama_cpp_pid"] = start_llama_cpp_server(
-                                    name=st.session_state["selected_llm"],
-                                    llm_info_df=st.session_state["llm_info"],
+                        with st.spinner(
+                            "Waiting for generation to finish to switch model..."
+                        ):
+                            if "llm_generating" not in server_state:
+                                update_server_state("llm_generating", False)
+
+                            if not (server_state["llm_generating"]):
+                                stop_llama_cpp_server(server_state["llama_cpp_pid"])
+                                update_server_state(
+                                    "llama_cpp_name", st.session_state["selected_llm"]
                                 )
+                                update_server_state(
+                                    "llama_cpp_pid",
+                                    start_llama_cpp_server(
+                                        name=st.session_state["selected_llm"],
+                                        llm_info_df=st.session_state["llm_info"],
+                                    ),
+                                )
+                            else:
+                                time.sleep(5)
+                                st.rerun()

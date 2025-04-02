@@ -6,6 +6,7 @@ import streamlit as st
 
 from helper.llm import gen_llm_response, write_stream
 from helper.sidebar import make_new_chat
+from helper.user_management import unlock_llm
 
 
 def ui_title_icon():
@@ -122,7 +123,7 @@ def import_chat():
         # Display user message in chat message container
         prompt_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
         with st.chat_message("user", avatar=st.session_state["user_avatar"]):
-            st.session_state["stop_generation"] = st.button("◼ Stop generating")
+            st.button("◼ Stop generating", on_click=unlock_llm)
             st.markdown(prompt + prompt_time, unsafe_allow_html=True)
 
         # Add user message to chat history

@@ -4,11 +4,7 @@ import pandas as pd
 import streamlit as st
 import time
 
-from helper.llamacpp_helper import (
-    check_reload_llama_cpp,
-    start_llama_cpp_server,
-    stop_llama_cpp_server,
-)
+from helper.llamacpp_helper import check_reload_llama_cpp
 
 
 def make_new_chat():
@@ -171,7 +167,7 @@ def sidebar_llm_dropdown():
             options=st.session_state["llm_dropdown_options"],
             index=0,
             help="Which LLM to use. Those ending in `(private)` do not leave our local system, those ending in `(cloud)` will be sent to a cloud provider via API. The latter should not be used for sensitive information.",
-            on_change=check_reload_llama_cpp(),
+            on_change=check_reload_llama_cpp,
         )
     check_reload_llama_cpp()
 

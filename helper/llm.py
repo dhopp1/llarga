@@ -2,6 +2,8 @@ from datetime import datetime
 from openai import OpenAI
 import streamlit as st
 
+from helper.user_management import lock_llm, unlock_llm
+
 
 def gen_llm_response(query, messages_input=[]):
     """Create the data required for an LLM call"""
@@ -38,6 +40,8 @@ def gen_llm_response(query, messages_input=[]):
 
 def write_stream(stream):
     "write out the stream of the LLM's answer"
+    lock_llm()
+
     st.session_state["llm_answer"] = ""
     st.session_state["reasoning"] = ""
 
@@ -91,3 +95,5 @@ def write_stream(stream):
         st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"][
             -1
         ] = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+
+    unlock_llm()

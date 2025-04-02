@@ -1,6 +1,7 @@
 import hmac
 import pandas as pd
 import streamlit as st
+from streamlit_server_state import no_rerun, server_state, server_state_lock
 
 
 def check_password():
@@ -61,3 +62,24 @@ def setup_local_files():
             .loc[lambda x: x["field"] == "max_tokens", "value"]
             .values[0]
         )
+
+
+def update_server_state(key, value):
+    "update the server state variable"
+    with no_rerun:
+        with server_state_lock[key]:
+            server_state[key] = value
+
+
+def lock_llm():
+    with no_rerun:
+        with server_state_lock["llm_generating"]:
+            server_state["llm_generating"] = True
+        print("Locked LLM")
+
+
+def unlock_llm():
+    with no_rerun:
+        with server_state_lock["llm_generating"]:
+            server_state["llm_generating"] = False
+        print("Unlocked LLM")
