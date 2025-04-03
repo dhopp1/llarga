@@ -8,7 +8,41 @@ import streamlit as st
 import time
 import zipfile
 
-from helper.sidebar import make_new_chat
+
+def make_new_chat():
+    # don't want to allow multiple new chats
+    try:
+        last_num = max(
+            [
+                v["chat_name"]
+                for k, v in st.session_state["chat_history"].items()
+                if "New chat" in v["chat_name"]
+            ]
+        ).split(" ")[-1]
+        if last_num == "chat":
+            new_chat_name = "New chat 2"
+        else:
+            new_chat_name = "New chat " + str(int(last_num) + 1)
+    except:
+        new_chat_name = "New chat"
+
+    st.session_state["selected_chat_id"] = st.session_state["latest_chat_id"] + 1
+    st.session_state["latest_chat_id"] += 1
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]] = {}
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "messages"
+    ] = [{"role": "system", "content": st.session_state["system_prompt"]}]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] = [
+        None
+    ]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "reasoning"
+    ] = [""]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "chat_name"
+    ] = new_chat_name
+
+    del st.session_state["initialized"]
 
 
 # helper unzip function
@@ -304,7 +338,7 @@ def process_corpus():
 
     st.session_state["corpora_list"] = pd.concat(
         [st.session_state["corpora_list"], tmp_corpora_list], ignore_index=True
-    )
+    ).drop_duplicates()
     st.session_state["corpora_list"].to_csv("metadata/corpora_list.csv", index=False)
 
     # clean up and initiating new chat with the corpus loaded
@@ -314,4 +348,5 @@ def process_corpus():
         st.info("Corpus successfully embedded, ready for querying!")
         time.sleep(5)
         st.session_state["selected_corpus"] = st.session_state["new_corpus_name"]
+        st.session_state["new_corpus_name"] = "Workspace"
         make_new_chat()

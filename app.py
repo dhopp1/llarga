@@ -53,9 +53,6 @@ with st.sidebar.expander("Upload your own documents"):
     st.markdown("#### Delete a corpus")
     sidebar_delete_corpus()
 
-if st.session_state["process_corpus_button"]:
-    process_corpus()
-
 # llm info
 st.sidebar.markdown("### LLM")
 with st.sidebar.expander("LLM parameters"):

@@ -5,42 +5,7 @@ import shutil
 import streamlit as st
 import time
 
-
-def make_new_chat():
-    # don't want to allow multiple new chats
-    try:
-        last_num = max(
-            [
-                v["chat_name"]
-                for k, v in st.session_state["chat_history"].items()
-                if "New chat" in v["chat_name"]
-            ]
-        ).split(" ")[-1]
-        if last_num == "chat":
-            new_chat_name = "New chat 2"
-        else:
-            new_chat_name = "New chat " + str(int(last_num) + 1)
-    except:
-        new_chat_name = "New chat"
-
-    st.session_state["selected_chat_id"] = st.session_state["latest_chat_id"] + 1
-    st.session_state["latest_chat_id"] += 1
-    st.session_state["chat_history"][st.session_state["selected_chat_id"]] = {}
-    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-        "messages"
-    ] = [{"role": "system", "content": st.session_state["system_prompt"]}]
-    st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] = [
-        None
-    ]
-    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-        "reasoning"
-    ] = [""]
-    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-        "chat_name"
-    ] = new_chat_name
-
-    del st.session_state["initialized"]
-    st.rerun()
+from helper.lvs import make_new_chat, process_corpus
 
 
 def sidebar_chats():
@@ -110,6 +75,7 @@ def sidebar_chats():
                 # make a new chat
                 if st.session_state["new_chat"]:
                     make_new_chat()
+                    st.rerun()
 
             # Confirmation dialog
             if st.session_state.show_confirmation:
@@ -156,6 +122,7 @@ def sidebar_chats():
                     st.rerun()
                 else:
                     make_new_chat()
+                    st.rerun()
 
 
 def sidebar_llm_dropdown():
@@ -312,6 +279,7 @@ def sidebar_system_prompt():
 
     if st.session_state["chat_history"] == {}:
         make_new_chat()
+        st.rerun()
 
 
 def sidebar_upload_file():
@@ -330,9 +298,7 @@ Once you've uploaded your file, click `Process corpus`. The system prompt for th
 """,
     )
 
-    st.session_state["new_corpus_name"] = st.text_input(
-        "Name for new corpus", value="Workspace"
-    )
+    st.text_input("Name for new corpus", value="Workspace", key="new_corpus_name")
 
     # show a warning if there is a corpus with this name
     if st.session_state["new_corpus_name"] in list(
@@ -342,7 +308,7 @@ Once you've uploaded your file, click `Process corpus`. The system prompt for th
             "There is already a corpus with this name. If you hit the `Process corpus` button, this corpus will be overwritten with the new one."
         )
 
-    st.session_state["process_corpus_button"] = st.button("Process corpus")
+    st.button("Process corpus", on_click=process_corpus)
 
 
 def sidebar_delete_corpus():
