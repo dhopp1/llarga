@@ -34,7 +34,12 @@ def make_new_chat():
     st.session_state["chat_history"][st.session_state["selected_chat_id"]] = {}
     st.session_state["chat_history"][st.session_state["selected_chat_id"]][
         "messages"
-    ] = [{"role": "system", "content": st.session_state["system_prompt"]}]
+    ] = [
+        {
+            "role": "system",
+            "content": server_state[f"{st.session_state['user_name']}_system_prompt"],
+        }
+    ]
     st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] = [
         None
     ]
@@ -347,7 +352,9 @@ def process_corpus():
             "name": corpus_name,
             "text_path": f'{st.session_state["corpora_path"]}/{corpus_name}/',
             "metadata_path": f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv',
-            "system_prompt": st.session_state["system_prompt"],
+            "system_prompt": server_state[
+                f"{st.session_state['user_name']}_system_prompt"
+            ],
         },
         index=[0],
     )
@@ -371,7 +378,9 @@ def process_corpus():
     ):
         st.info("Corpus successfully embedded, ready for querying!")
         time.sleep(5)
-        st.session_state["selected_corpus"] = st.session_state["new_corpus_name"]
+        server_state[f"{st.session_state['user_name']}_selected_corpus"] = (
+            st.session_state["new_corpus_name"]
+        )
         st.session_state["new_corpus_name"] = "Workspace"
         make_new_chat()
 

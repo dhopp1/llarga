@@ -67,7 +67,9 @@ def check_reload_llama_cpp():
                 update_server_state(
                     "llama_cpp_pid",
                     start_llama_cpp_server(
-                        name=st.session_state["selected_llm"],
+                        name=server_state[
+                            f"{st.session_state['user_name']}_selected_llm"
+                        ],
                         llm_info_df=st.session_state["llm_info"],
                     ),
                 )
@@ -75,7 +77,7 @@ def check_reload_llama_cpp():
                 if "llama_cpp_name" in server_state:
                     if (
                         server_state["llama_cpp_name"]
-                        != st.session_state["selected_llm"]
+                        != server_state[f"{st.session_state['user_name']}_selected_llm"]
                     ):
                         if "llm_generating" not in server_state:
                             update_server_state("llm_generating", False)
@@ -83,12 +85,17 @@ def check_reload_llama_cpp():
                         if not (server_state["llm_generating"]):
                             stop_llama_cpp_server(server_state["llama_cpp_pid"])
                             update_server_state(
-                                "llama_cpp_name", st.session_state["selected_llm"]
+                                "llama_cpp_name",
+                                server_state[
+                                    f"{st.session_state['user_name']}_selected_llm"
+                                ],
                             )
                             update_server_state(
                                 "llama_cpp_pid",
                                 start_llama_cpp_server(
-                                    name=st.session_state["selected_llm"],
+                                    name=server_state[
+                                        f"{st.session_state['user_name']}_selected_llm"
+                                    ],
                                     llm_info_df=st.session_state["llm_info"],
                                 ),
                             )

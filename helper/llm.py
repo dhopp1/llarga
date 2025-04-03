@@ -14,14 +14,22 @@ def gen_llm_response(query, messages_input=[]):
     # llm model name
     llm_model_name = (
         st.session_state["llm_info"]
-        .loc[lambda x: x["name"] == st.session_state["selected_llm"], "model_name"]
+        .loc[
+            lambda x: x["name"]
+            == server_state[f"{st.session_state['user_name']}_selected_llm"],
+            "model_name",
+        ]
         .values[0]
     )
 
     client = OpenAI(
         api_key=st.session_state["llm_api_key"],
         base_url=st.session_state["llm_info"]
-        .loc[lambda x: x["name"] == st.session_state["selected_llm"], "llm_url"]
+        .loc[
+            lambda x: x["name"]
+            == server_state[f"{st.session_state['user_name']}_selected_llm"],
+            "llm_url",
+        ]
         .values[0],
     )
 
@@ -31,7 +39,11 @@ def gen_llm_response(query, messages_input=[]):
     # adding RAG if necessary
     context_length = int(
         st.session_state["llm_info"]
-        .loc[lambda x: x["name"] == st.session_state["selected_llm"], "context_length"]
+        .loc[
+            lambda x: x["name"]
+            == server_state[f"{st.session_state['user_name']}_selected_llm"],
+            "context_length",
+        ]
         .values[0]
     )
     chunk_size = int(
@@ -43,17 +55,22 @@ def gen_llm_response(query, messages_input=[]):
         context_length / chunk_size * 0.8
     )  # 0.8 to reserve some space for chat memory
 
-    if st.session_state["selected_corpus"] != "No corpus":
+    if server_state[f"{st.session_state['user_name']}_selected_corpus"] != "No corpus":
         if not (
             any(
                 sub in messages[-1]["content"]
                 for sub in ["Given this chat history", "Given this past exchange"]
             )
         ):  # don't run for naming the chat
-            if st.session_state["selected_corpus"] == "Workspace":
+            if (
+                server_state[f"{st.session_state['user_name']}_selected_corpus"]
+                == "Workspace"
+            ):
                 corpus_name = f'Workspace {st.session_state["user_name"]}'
             else:
-                corpus_name = st.session_state["selected_corpus"]
+                corpus_name = server_state[
+                    f"{st.session_state['user_name']}_selected_corpus"
+                ]
 
             # logic for a condensed standalone query
             if len(messages) > 2:  # 2 = 1 system, 1 user prompt

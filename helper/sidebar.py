@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import shutil
 import streamlit as st
+from streamlit_server_state import server_state
 import time
 
 from helper.lvs import make_new_chat, process_corpus
@@ -28,16 +29,28 @@ def sidebar_chats():
         chat_options = [
             v["chat_name"] for k, v in st.session_state["chat_history"].items()
         ][::-1]
-        st.session_state["selected_chat_name"] = st.sidebar.selectbox(
-            "Select chat",
-            options=chat_options,
-            index=0,
-            help="Which chat history to load",
+        server_state[f"{st.session_state['user_name']}_selected_chat_name"] = (
+            st.sidebar.selectbox(
+                "Select chat",
+                options=chat_options,
+                index=(
+                    0
+                    if f"{st.session_state['user_name']}_selected_chat_name"
+                    not in server_state
+                    else chat_options.index(
+                        server_state[
+                            f"{st.session_state['user_name']}_selected_chat_name"
+                        ]
+                    )
+                ),
+                help="Which chat history to load",
+            )
         )
         st.session_state["selected_chat_id"] = [
             key
             for key, value in st.session_state["chat_history"].items()
-            if value.get("chat_name") == st.session_state["selected_chat_name"]
+            if value.get("chat_name")
+            == server_state[f"{st.session_state['user_name']}_selected_chat_name"]
         ][0]
     except:
         pass
@@ -132,17 +145,24 @@ def sidebar_llm_dropdown():
             st.session_state["llm_info"].loc[lambda x: x["display"] == 1, "name"].values
         )
 
-    st.session_state["selected_llm"] = st.selectbox(
+    server_state[f"{st.session_state['user_name']}_selected_llm"] = st.selectbox(
         "Select LLM",
         options=st.session_state["llm_dropdown_options"],
-        index=0,
+        index=(
+            0
+            if f"{st.session_state['user_name']}_selected_llm" not in server_state
+            else st.session_state["llm_dropdown_options"].index(
+                server_state[f"{st.session_state['user_name']}_selected_llm"]
+            )
+        ),
         help="Which LLM to use. Those ending in `(private)` do not leave our local system, those ending in `(cloud)` will be sent to a cloud provider via API. The latter should not be used for sensitive information.",
     )
 
     st.session_state["is_reasoning_model"] = (
         st.session_state["llm_info"]
         .loc[
-            lambda x: x["name"] == st.session_state["selected_llm"],
+            lambda x: x["name"]
+            == server_state[f"{st.session_state['user_name']}_selected_llm"],
             "reasoning_model",
         ]
         .values[0]
@@ -150,25 +170,40 @@ def sidebar_llm_dropdown():
 
 
 def sidebar_llm_api_key():
-    st.session_state["llm_api_key_user"] = st.text_input(
+    server_state[f"{st.session_state['user_name']}_llm_api_key_user"] = st.text_input(
         "Paste API key here",
+        value=(
+            ""
+            if f"{st.session_state['user_name']}_llm_api_key_user" not in server_state
+            else server_state[f"{st.session_state['user_name']}_llm_api_key_user"]
+        ),
         help="Paste your API key for the cloud LLM provider if availalble.",
     )
 
     if "llm_api_key" not in st.session_state:
         st.session_state["llm_api_key"] = (
             st.session_state["llm_info"]
-            .loc[lambda x: x["name"] == st.session_state["selected_llm"], "api_key"]
+            .loc[
+                lambda x: x["name"]
+                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                "api_key",
+            ]
             .values[0]
         )
 
     # use the user's if provided
-    if st.session_state["llm_api_key_user"] != "":
-        st.session_state["llm_api_key"] = st.session_state["llm_api_key_user"]
+    if server_state[f"{st.session_state['user_name']}_llm_api_key_user"] != "":
+        st.session_state["llm_api_key"] = server_state[
+            f"{st.session_state['user_name']}_llm_api_key_user"
+        ]
     else:
         st.session_state["llm_api_key"] = (
             st.session_state["llm_info"]
-            .loc[lambda x: x["name"] == st.session_state["selected_llm"], "api_key"]
+            .loc[
+                lambda x: x["name"]
+                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                "api_key",
+            ]
             .values[0]
         )
 
@@ -181,13 +216,15 @@ def sidebar_temperature_dropdown():
         "Creative",
         "Most creative",
     ]
-    st.session_state["temperature_string"] = st.selectbox(
+    server_state[f"{st.session_state['user_name']}_temperature_string"] = st.selectbox(
         "Model style",
         options=temp_options,
         index=(
             0
-            if "temperature_string" not in st.session_state
-            else temp_options.index(st.session_state["temperature_string"])
+            if f"{st.session_state['user_name']}_temperature_string" not in server_state
+            else temp_options.index(
+                server_state[f"{st.session_state['user_name']}_temperature_string"]
+            )
         ),
         help="""
 ### Most precise
@@ -208,7 +245,7 @@ The LLM has maximum creativity and freedom.
             ["Most precise", "Precise", "Balanced", "Creative", "Most creative"],
             [0.0, 0.15, 0.4, 0.7, 1.0],
         )
-    )[st.session_state["temperature_string"]]
+    )[server_state[f"{st.session_state['user_name']}_temperature_string"]]
 
 
 def sidebar_which_corpus():
@@ -224,58 +261,75 @@ def sidebar_which_corpus():
         .values[0]
     )
 
-    st.session_state["selected_corpus"] = st.selectbox(
+    server_state[f"{st.session_state['user_name']}_selected_corpus"] = st.selectbox(
         "Currently loaded corpus",
         options=corpus_options,
         index=(
-            corpus_options.index(st.session_state["default_corpus"])
-            if "selected_corpus" not in st.session_state
-            else corpus_options.index(st.session_state["selected_corpus"])
+            0
+            if f"{st.session_state['user_name']}_selected_corpus" not in server_state
+            else corpus_options.index(
+                server_state[f"{st.session_state['user_name']}_selected_corpus"]
+            )
         ),
         help="Which corpus to query against. `Workspace` is your personal corpus only you can see. All others are visible to all users.",
     )
 
 
 def sidebar_system_prompt():
-    if "default_system_prompt" not in st.session_state:
-        try:
+    try:
+        if (
+            server_state[f"{st.session_state['user_name']}_selected_corpus"]
+            == "Workspace"
+        ):
+            corpus_name = f'Workspace {st.session_state["user_name"]}'
+        else:
+            corpus_name = server_state[
+                f"{st.session_state['user_name']}_selected_corpus"
+            ]
+
+        st.session_state["default_system_prompt"] = (
+            st.session_state["corpora_list"]
+            .loc[
+                lambda x: x["name"] == corpus_name,
+                "system_prompt",
+            ]
+            .values[0]
+        )
+    except:
+        if (
+            server_state[f"{st.session_state['user_name']}_selected_corpus"]
+            == "No corpus"
+        ):
             st.session_state["default_system_prompt"] = (
-                st.session_state["corpora_list"]
+                st.session_state["settings"]
                 .loc[
-                    lambda x: x["name"] == st.session_state["selected_corpus"],
-                    "system_prompt",
+                    lambda x: x["field"] == "default_no_corpus_system_prompt",
+                    "value",
                 ]
                 .values[0]
             )
-        except:
-            if st.session_state["selected_corpus"] == "No corpus":
-                st.session_state["default_system_prompt"] = (
-                    st.session_state["settings"]
-                    .loc[
-                        lambda x: x["field"] == "default_no_corpus_system_prompt",
-                        "value",
-                    ]
-                    .values[0]
-                )
-            else:
-                st.session_state["default_system_prompt"] = (
-                    st.session_state["settings"]
-                    .loc[
-                        lambda x: x["field"] == "default_corpus_system_prompt",
-                        "value",
-                    ]
-                    .values[0]
-                )
+        else:
+            st.session_state["default_system_prompt"] = (
+                st.session_state["settings"]
+                .loc[
+                    lambda x: x["field"] == "default_corpus_system_prompt",
+                    "value",
+                ]
+                .values[0]
+            )
 
-    st.session_state["system_prompt"] = st.text_input(
+    server_state[f"{st.session_state['user_name']}_system_prompt"] = st.text_input(
         "System prompt",
         value=(
             st.session_state["default_system_prompt"]
-            if "system_prompt" not in st.session_state
-            else st.session_state["system_prompt"]
+            if f"{st.session_state['user_name']}_system_prompt" not in server_state
+            else server_state[f"{st.session_state['user_name']}_system_prompt"]
         ),
         help="If you change the system prompt, start a new chat to have it take effect.",
     )
+
+    st.markdown("Default system prompt for this corpus")
+    st.markdown("```\n" + st.session_state["default_system_prompt"] + "\n```")
 
     if st.session_state["chat_history"] == {}:
         make_new_chat()
@@ -348,9 +402,11 @@ def sidebar_delete_corpus():
                 st.info("Corpus successfully deleted!")
                 if (
                     st.session_state["delete_corpus_name"]
-                    == st.session_state["selected_corpus"]
+                    == server_state[f"{st.session_state['user_name']}_selected_corpus"]
                 ):
-                    st.session_state["selected_corpus"] = "Workspace"
+                    server_state[f"{st.session_state['user_name']}_selected_corpus"] = (
+                        "Workspace"
+                    )
                 st.session_state["delete_corpus_name"] = ""
                 time.sleep(3)
                 st.rerun()

@@ -62,8 +62,8 @@ def initial_placeholder():
 
 def user_specific_load():
     "load various defaults for a user"
-    if "selected_corpus" not in st.session_state:
-        st.session_state["selected_corpus"] = (
+    if f"{st.session_state['user_name']}_selected_corpus" not in server_state:
+        server_state[f"{st.session_state['user_name']}_selected_corpus"] = (
             pd.read_csv("metadata/user_list.csv")
             .loc[lambda x: x["user"] == st.session_state["user_name"], "default_corpus"]
             .values[0]
@@ -153,7 +153,11 @@ def import_chat():
         if (
             ".gguf"
             in st.session_state["llm_info"]
-            .loc[lambda x: x["name"] == st.session_state["selected_llm"], "model_name"]
+            .loc[
+                lambda x: x["name"]
+                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                "model_name",
+            ]
             .values[0]
         ):
             # lock the model to perform requests sequentially

@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_server_state import server_state
 
 from helper.sidebar import (
     sidebar_chats,
@@ -18,7 +19,6 @@ from helper.ui import (
     ui_title_icon,
     user_specific_load,
 )
-from helper.lvs import process_corpus
 
 # load user list and llm list
 setup_local_files()
@@ -60,6 +60,16 @@ with st.sidebar.expander("LLM parameters"):
     sidebar_llm_api_key()
     sidebar_temperature_dropdown()
     sidebar_system_prompt()
+
+# warning if system prompt is different different
+with st.sidebar:
+    if (
+        st.session_state["default_system_prompt"]
+        != server_state[f"{st.session_state['user_name']}_system_prompt"]
+    ):
+        st.warning(
+            "The default system prompt for this corpus differs from what you have input in `System prompt` under the `LLM parameters` dropdown. Consider changing it."
+        )
 
 
 # user specific data load
