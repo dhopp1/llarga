@@ -7,7 +7,12 @@ from helper.user_management import lock_llm, unlock_llm
 
 def gen_llm_response(query, messages_input=[]):
     """Create the data required for an LLM call"""
-    messages = messages_input
+    messages = messages_input.copy()
+
+    # modifying prompt to remove time
+    messages[-1]["content"] = messages[-1]["content"].split("<br> <sub>")[0]
+
+    # adding RAG if necessary
 
     # llm model name
     llm_model_name = (

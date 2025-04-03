@@ -5,7 +5,7 @@ import pandas as pd
 import polars as pl
 import shutil
 import streamlit as st
-from streamlit_server_state import server_state
+from streamlit_server_state import no_rerun, server_state, server_state_lock
 import time
 import zipfile
 
@@ -136,7 +136,9 @@ def process_corpus():
                 pass
 
             try:
-                os.remove(f"{corpora_path}/embeddings_{corpus_name}.parquet")
+                os.remove(
+                    f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet'
+                )
             except:
                 pass
 
@@ -150,10 +152,10 @@ def process_corpus():
 
         ### process the uploaded file
         # convert documents to text
-        os.makedirs(f"{corpora_path}/{corpus_name}/tmp")
+        os.makedirs(f'{st.session_state["corpora_path"]}/{corpus_name}/tmp')
 
         processor = nlp_processor(
-            data_path=f"{corpora_path}/{corpus_name}/tmp",
+            data_path=f'{st.session_state["corpora_path"]}/{corpus_name}/tmp',
             metadata_addt_column_names=[],
         )
 
@@ -196,13 +198,15 @@ def process_corpus():
     elif st.session_state["uploaded_file"].name.split(".")[1] == "zip":
         unzip_file(
             f"""{temp_directory}/tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
-            f"{corpora_path}/{corpus_name}/zip_output/",
+            f'{st.session_state["corpora_path"]}/{corpus_name}/zip_output/',
         )
 
         # case 3: uploaded a zip file with only documents
         zip_files = [
             _
-            for _ in os.listdir(f"{corpora_path}/{corpus_name}/zip_output/")
+            for _ in os.listdir(
+                f'{st.session_state["corpora_path"]}/{corpus_name}/zip_output/'
+            )
             if (
                 any(
                     sub in _
@@ -229,7 +233,7 @@ def process_corpus():
                 {
                     "text_id": list(range(1, len(zip_files) + 1)),
                     "local_raw_filepath": [
-                        f"{corpora_path}/{corpus_name}/zip_output/{_}"
+                        f'{st.session_state["corpora_path"]}/{corpus_name}/zip_output/{_}'
                         for _ in zip_files
                     ],
                 },
@@ -238,11 +242,11 @@ def process_corpus():
         # case 4: uploaded a zip file with metadata + documents
         else:
             metadata = pd.read_csv(
-                f"{corpora_path}/{corpus_name}/zip_output/metadata.csv"
+                f'{st.session_state["corpora_path"]}/{corpus_name}/zip_output/metadata.csv'
             )
             metadata["text_id"] = list(range(1, len(metadata) + 1))
             metadata["local_raw_filepath"] = [
-                f"{corpora_path}/{corpus_name}/zip_output/{_}"
+                f'{st.session_state["corpora_path"]}/{corpus_name}/zip_output/{_}'
                 for _ in metadata["filepath"]
             ]
 
@@ -270,21 +274,25 @@ def process_corpus():
             "web_filepath",
         ],
         axis=1,
-    ).to_csv(f"{corpora_path}/metadata_{corpus_name}.csv", index=False)
+    ).to_csv(
+        f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv', index=False
+    )
 
     # move .txt files to appropriate place and clean up
-    for filename in os.listdir(f"{corpora_path}/{corpus_name}/tmp/txt_files/"):
+    for filename in os.listdir(
+        f'{st.session_state["corpora_path"]}/{corpus_name}/tmp/txt_files/'
+    ):
         shutil.move(
-            f"{corpora_path}/{corpus_name}/tmp/txt_files/{filename}",
-            f"{corpora_path}/{corpus_name}/{filename}",
+            f'{st.session_state["corpora_path"]}/{corpus_name}/tmp/txt_files/{filename}',
+            f'{st.session_state["corpora_path"]}/{corpus_name}/{filename}',
         )
 
     # remove tmp directory
-    shutil.rmtree(f"{corpora_path}/{corpus_name}/tmp/")
+    shutil.rmtree(f'{st.session_state["corpora_path"]}/{corpus_name}/tmp/')
 
     # remove zip directory
     try:
-        shutil.rmtree(f"{corpora_path}/{corpus_name}/zip_output/")
+        shutil.rmtree(f'{st.session_state["corpora_path"]}/{corpus_name}/zip_output/')
     except:
         pass
 
@@ -293,8 +301,8 @@ def process_corpus():
 
     # embed documents
     vs = local_vs(
-        metadata_path=f"{corpora_path}/metadata_{corpus_name}.csv",
-        files_path=f"{corpora_path}/{corpus_name}/",
+        metadata_path=f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv',
+        files_path=f'{st.session_state["corpora_path"]}/{corpus_name}/',
         model="all-MiniLM-L6-v2",
         tokenizer_name="meta-llama/Llama-2-7b-hf",
         clean_text_function=None,
@@ -331,14 +339,16 @@ def process_corpus():
                     ).drop_duplicates()
 
     vs.embeddings_df = final_embeddings
-    vs.embeddings_df.write_parquet(f"{corpora_path}/embeddings_{corpus_name}.parquet")
+    vs.embeddings_df.write_parquet(
+        f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet'
+    )
 
     # update the corpus list csv
     tmp_corpora_list = pd.DataFrame(
         {
             "name": corpus_name,
-            "text_path": f"{corpora_path}/{corpus_name}/",
-            "metadata_path": f"{corpora_path}/metadata_{corpus_name}.csv",
+            "text_path": f'{st.session_state["corpora_path"]}/{corpus_name}/',
+            "metadata_path": f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv',
             "system_prompt": st.session_state["system_prompt"],
         },
         index=[0],
@@ -348,6 +358,24 @@ def process_corpus():
         [st.session_state["corpora_list"], tmp_corpora_list], ignore_index=True
     ).drop_duplicates()
     st.session_state["corpora_list"].to_csv("metadata/corpora_list.csv", index=False)
+
+    # add the corpus to the server dict
+    with no_rerun:
+        with server_state_lock["lvs_corpora"]:
+            server_state["lvs_corpora"][
+                f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet'.split(
+                    "embeddings_"
+                )[
+                    1
+                ].split(
+                    ".parquet"
+                )[
+                    0
+                ]
+            ] = local_vs(
+                metadata_path=f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv',
+                embeddings_path=f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet',
+            )
 
     # clean up and initiating new chat with the corpus loaded
     with st.spinner(
@@ -360,9 +388,17 @@ def process_corpus():
         make_new_chat()
 
 
-# def load_lvs_corpora():
-#    if "lvs_corpora" not in server_state:
-#        lvs_corpora_dict = {}
-#
-#        for file in os.listdir()
-#            vs = local_vs(embeddings_path = "path_to_save_embeddings.parquet")
+def load_lvs_corpora():
+    if "lvs_corpora" not in server_state:
+        lvs_corpora_dict = {}
+
+        for file in os.listdir(st.session_state["corpora_path"]):
+            if "embeddings" in file:
+                lvs_corpora_dict[
+                    file.split("embeddings_")[1].split(".parquet")[0]
+                ] = local_vs(
+                    metadata_path=f'{st.session_state["corpora_path"]}/{file.replace(".parquet", ".csv").replace("embeddings", "metadata")}',
+                    embeddings_path=f'{st.session_state["corpora_path"]}/{file}',
+                )
+
+        update_server_state("lvs_corpora", lvs_corpora_dict)

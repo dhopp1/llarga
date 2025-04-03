@@ -8,6 +8,7 @@ import time
 
 from helper.llamacpp_helper import check_reload_llama_cpp
 from helper.llm import gen_llm_response, write_stream
+from helper.lvs import load_lvs_corpora
 from helper.sidebar import make_new_chat
 from helper.user_management import (
     lock_llm,
@@ -54,6 +55,9 @@ def initial_placeholder():
                 unsafe_allow_html=True,
             )
         st.session_state["initialized"] = True
+
+        # load corpora
+        load_lvs_corpora()
 
 
 def user_specific_load():
