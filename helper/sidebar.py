@@ -320,18 +320,21 @@ def sidebar_delete_corpus():
     if st.session_state["delete_corpus_button"]:
         if st.session_state["delete_corpus_name"] not in ["No corpus", "Workspace"]:
             try:
-                corpora_path = "corpora"
                 if st.session_state["delete_corpus_name"] == "Workspace":
                     corpus_name = f'Workspace {st.session_state["user_name"]}'
                 else:
                     corpus_name = st.session_state["delete_corpus_name"]
 
                 # delete metadata file
-                os.remove(f"{corpora_path}/metadata_{corpus_name}.csv")
+                os.remove(
+                    f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv'
+                )
                 # delete file directory
-                shutil.rmtree(f"{corpora_path}/{corpus_name}/")
+                shutil.rmtree(f'{st.session_state["corpora_path"]}/{corpus_name}/')
                 # delete embeddings file
-                os.remove(f"{corpora_path}/embeddings_{corpus_name}.parquet")
+                os.remove(
+                    f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet'
+                )
                 # remove from corpora_list csv
                 st.session_state["corpora_list"] = (
                     st.session_state["corpora_list"]

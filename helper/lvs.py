@@ -5,8 +5,11 @@ import pandas as pd
 import polars as pl
 import shutil
 import streamlit as st
+from streamlit_server_state import server_state
 import time
 import zipfile
+
+from helper.user_management import update_server_state
 
 
 def make_new_chat():
@@ -97,7 +100,6 @@ def process_corpus():
     "process a corpus into text and create the vector db"
     with st.spinner("Setting up...", show_time=True):
         temp_directory = f'corpora/tmp_helper_{st.session_state["user_name"]}/'
-        corpora_path = "corpora"
 
         if st.session_state["new_corpus_name"] == "Workspace":
             corpus_name = f'Workspace {st.session_state["user_name"]}'
@@ -113,17 +115,23 @@ def process_corpus():
 
         # if corpus name temporary, delete everything in the temporary files
         if corpus_name == f'Workspace {st.session_state["new_corpus_name"]}':
-            if os.path.exists(f"{corpora_path}/{corpus_name}/"):
-                shutil.rmtree(f"{corpora_path}/{corpus_name}/")
-            if os.path.exists(f"{corpora_path}/metadata_{corpus_name}.csv"):
-                os.remove(f"{corpora_path}/metadata_{corpus_name}.csv")
+            if os.path.exists(f'{st.session_state["corpora_path"]}/{corpus_name}/'):
+                shutil.rmtree(f'{st.session_state["corpora_path"]}/{corpus_name}/')
+            if os.path.exists(
+                f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv'
+            ):
+                os.remove(
+                    f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv'
+                )
 
         # if this corpus already exists, overwrite it
-        if os.path.exists(f"{corpora_path}/{corpus_name}"):
-            shutil.rmtree(f"{corpora_path}/{corpus_name}/")
+        if os.path.exists(f'{st.session_state["corpora_path"]}/{corpus_name}'):
+            shutil.rmtree(f'{st.session_state["corpora_path"]}/{corpus_name}/')
 
             try:
-                os.remove(f"{corpora_path}/metadata_{corpus_name}.csv")
+                os.remove(
+                    f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv'
+                )
             except:
                 pass
 
@@ -350,3 +358,11 @@ def process_corpus():
         st.session_state["selected_corpus"] = st.session_state["new_corpus_name"]
         st.session_state["new_corpus_name"] = "Workspace"
         make_new_chat()
+
+
+# def load_lvs_corpora():
+#    if "lvs_corpora" not in server_state:
+#        lvs_corpora_dict = {}
+#
+#        for file in os.listdir()
+#            vs = local_vs(embeddings_path = "path_to_save_embeddings.parquet")

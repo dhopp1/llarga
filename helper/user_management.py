@@ -63,6 +63,9 @@ def setup_local_files():
             .values[0]
         )
 
+    # defining location of corpora
+    st.session_state["corpora_path"] = "corpora"
+
 
 def update_server_state(key, value):
     "update the server state variable"
