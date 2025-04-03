@@ -284,7 +284,9 @@ def process_corpus():
                 if i == 0:
                     final_embeddings = embeddings
                 else:
-                    final_embeddings = pl.concat([final_embeddings, embeddings])
+                    final_embeddings = pl.concat(
+                        [final_embeddings, embeddings]
+                    ).drop_duplicates()
 
     vs.embeddings_df = final_embeddings
     vs.embeddings_df.write_parquet(f"{corpora_path}/embeddings_{corpus_name}.parquet")

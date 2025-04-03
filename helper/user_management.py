@@ -87,6 +87,7 @@ def unlock_llm():
 
 def unlock_llm_release_queue():
     unlock_llm()
-    if len(server_state["exec_queue"]) > 0:
-        if server_state["exec_queue"][0] == st.session_state["user_name"]:
-            update_server_state("exec_queue", server_state["exec_queue"][1:])
+    if "exec_queue" in server_state:
+        if len(server_state["exec_queue"]) > 0:
+            if server_state["exec_queue"][0] == st.session_state["user_name"]:
+                update_server_state("exec_queue", server_state["exec_queue"][1:])

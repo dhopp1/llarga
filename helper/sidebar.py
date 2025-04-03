@@ -9,33 +9,38 @@ import time
 def make_new_chat():
     # don't want to allow multiple new chats
     try:
-        make_new_condition = "New chat" not in [
-            v["chat_name"] for k, v in st.session_state["chat_history"].items()
-        ]
+        last_num = max(
+            [
+                v["chat_name"]
+                for k, v in st.session_state["chat_history"].items()
+                if "New chat" in v["chat_name"]
+            ]
+        ).split(" ")[-1]
+        if last_num == "chat":
+            new_chat_name = "New chat 2"
+        else:
+            new_chat_name = "New chat " + str(int(last_num) + 1)
     except:
-        make_new_condition = True
+        new_chat_name = "New chat"
 
-    if make_new_condition:
-        st.session_state["selected_chat_id"] = st.session_state["latest_chat_id"] + 1
-        st.session_state["latest_chat_id"] += 1
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]] = {}
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "messages"
-        ] = [{"role": "system", "content": st.session_state["system_prompt"]}]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "times"
-        ] = [None]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "reasoning"
-        ] = [""]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "chat_name"
-        ] = "New chat"
+    st.session_state["selected_chat_id"] = st.session_state["latest_chat_id"] + 1
+    st.session_state["latest_chat_id"] += 1
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]] = {}
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "messages"
+    ] = [{"role": "system", "content": st.session_state["system_prompt"]}]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] = [
+        None
+    ]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "reasoning"
+    ] = [""]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "chat_name"
+    ] = new_chat_name
 
-        del st.session_state["initialized"]
-        st.rerun()
-    else:
-        st.warning("There is already a new chat.")
+    del st.session_state["initialized"]
+    st.rerun()
 
 
 def sidebar_chats():
