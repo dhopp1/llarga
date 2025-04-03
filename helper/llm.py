@@ -1,6 +1,7 @@
 from datetime import datetime
 from openai import OpenAI
 import streamlit as st
+from streamlit_server_state import server_state
 
 from helper.user_management import lock_llm, unlock_llm
 
@@ -8,11 +9,7 @@ from helper.user_management import lock_llm, unlock_llm
 def gen_llm_response(query, messages_input=[]):
     """Create the data required for an LLM call"""
     messages = messages_input.copy()
-
-    # modifying prompt to remove time
-    messages[-1]["content"] = messages[-1]["content"].split("<br> <sub>")[0]
-
-    # adding RAG if necessary
+    initial_prompt = messages[-1]["content"]
 
     # llm model name
     llm_model_name = (
@@ -28,13 +25,76 @@ def gen_llm_response(query, messages_input=[]):
         .values[0],
     )
 
+    # modifying prompt to remove time
+    messages[-1]["content"] = messages[-1]["content"].split("<br> <sub>")[0]
+
+    # adding RAG if necessary
+    context_length = int(
+        st.session_state["llm_info"]
+        .loc[lambda x: x["name"] == st.session_state["selected_llm"], "context_length"]
+        .values[0]
+    )
+    chunk_size = int(
+        st.session_state["settings"]
+        .loc[lambda x: x["field"] == "chunk_size", "value"]
+        .values[0]
+    )
+    top_n = int(
+        context_length / chunk_size * 0.8
+    )  # 0.8 to reserve some space for chat memory
+
+    if st.session_state["selected_corpus"] != "No corpus":
+        if not (
+            any(
+                sub in messages[-1]["content"]
+                for sub in ["Given this chat history", "Given this past exchange"]
+            )
+        ):  # don't run for naming the chat
+            if st.session_state["selected_corpus"] == "Workspace":
+                corpus_name = f'Workspace {st.session_state["user_name"]}'
+            else:
+                corpus_name = st.session_state["selected_corpus"]
+
+            # logic for a condensed standalone query
+            if len(messages) > 2:  # 2 = 1 system, 1 user prompt
+                condensed_messages = messages.copy()
+                condensed_messages[-1][
+                    "content"
+                ] = f"Given this past exchange, edit this question so that it stands alone in terms of context. Return only the reformulated question, nothing else. Here is the question: '{condensed_messages[-1]['content']}'"
+
+                condense_response = client.chat.completions.create(
+                    model=llm_model_name,
+                    temperature=0.0,
+                    max_tokens=st.session_state["max_tokens"],
+                    messages=condensed_messages.copy(),
+                )
+                try:
+                    condensed_query = condense_response.choices[
+                        0
+                    ].message.content.split("</think>")[1]
+                except:
+                    condensed_query = condense_response.choices[0].message.content
+            else:
+                condensed_query = messages[-1]["content"]
+
+            lvs_context = server_state["lvs_corpora"][corpus_name].get_top_n(
+                condensed_query, top_n=top_n, distance_metric="cosine"
+            )
+            st.session_state["latest_chunk_ids"] = lvs_context["chunk_ids"]
+            messages[-1][
+                "content"
+            ] = f"""{initial_prompt} \n\n {lvs_context["response"]}"""
+
+    # final llm response
     response = client.chat.completions.create(
         model=llm_model_name,
         temperature=st.session_state["temperature"],
         max_tokens=st.session_state["max_tokens"],
-        messages=messages,
+        messages=messages.copy(),
         stream=True,
     )
+
+    messages[-1]["content"] = initial_prompt
 
     for chunk in response:
         if chunk.choices[0].delta.content is not None:

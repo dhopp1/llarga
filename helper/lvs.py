@@ -334,9 +334,7 @@ def process_corpus():
                 if i == 0:
                     final_embeddings = embeddings
                 else:
-                    final_embeddings = pl.concat(
-                        [final_embeddings, embeddings]
-                    ).drop_duplicates()
+                    final_embeddings = pl.concat([final_embeddings, embeddings])
 
     vs.embeddings_df = final_embeddings
     vs.embeddings_df.write_parquet(
@@ -362,17 +360,7 @@ def process_corpus():
     # add the corpus to the server dict
     with no_rerun:
         with server_state_lock["lvs_corpora"]:
-            server_state["lvs_corpora"][
-                f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet'.split(
-                    "embeddings_"
-                )[
-                    1
-                ].split(
-                    ".parquet"
-                )[
-                    0
-                ]
-            ] = local_vs(
+            server_state["lvs_corpora"][corpus_name] = local_vs(
                 metadata_path=f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv',
                 embeddings_path=f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet',
             )
@@ -394,11 +382,11 @@ def load_lvs_corpora():
 
         for file in os.listdir(st.session_state["corpora_path"]):
             if "embeddings" in file:
-                lvs_corpora_dict[
-                    file.split("embeddings_")[1].split(".parquet")[0]
-                ] = local_vs(
-                    metadata_path=f'{st.session_state["corpora_path"]}/{file.replace(".parquet", ".csv").replace("embeddings", "metadata")}',
-                    embeddings_path=f'{st.session_state["corpora_path"]}/{file}',
+                lvs_corpora_dict[file.split("embeddings_")[1].split(".parquet")[0]] = (
+                    local_vs(
+                        metadata_path=f'{st.session_state["corpora_path"]}/{file.replace(".parquet", ".csv").replace("embeddings", "metadata")}',
+                        embeddings_path=f'{st.session_state["corpora_path"]}/{file}',
+                    )
                 )
 
         update_server_state("lvs_corpora", lvs_corpora_dict)

@@ -32,9 +32,9 @@ def import_styles():
         st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
 
     st.session_state["user_avatar"] = "https://www.svgrepo.com/show/524211/user.svg"
-    st.session_state[
-        "assistant_avatar"
-    ] = "https://www.svgrepo.com/show/375527/ai-platform.svg"
+    st.session_state["assistant_avatar"] = (
+        "https://www.svgrepo.com/show/375527/ai-platform.svg"
+    )
 
 
 def initial_placeholder():
