@@ -61,6 +61,20 @@ def make_new_chat():
     st.session_state["chat_history"][st.session_state["selected_chat_id"]][
         "chat_name"
     ] = new_chat_name
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]]["corpus"] = [
+        ""
+    ]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "chunk_ids"
+    ] = [[]]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "selected_llm"
+    ] = [""]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "model_style"
+    ] = [""]
+
+    # change selected chat
     update_server_state(
         f"{st.session_state['user_name']}_selected_chat_name",
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][

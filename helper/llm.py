@@ -143,6 +143,18 @@ def write_stream(stream):
             "reasoning"
         ] += [st.session_state["reasoning"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "corpus"
+        ] += [server_state[f"{st.session_state['user_name']}_selected_corpus"]]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "chunk_ids"
+        ] += [[]]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "selected_llm"
+        ] += [server_state[f"{st.session_state['user_name']}_selected_llm"]]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "model_style"
+        ] += [server_state[f"{st.session_state['user_name']}_temperature_string"]]
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "messages"
         ] += [
             {
@@ -171,6 +183,24 @@ def write_stream(stream):
                         st.session_state["chat_history"][
                             st.session_state["selected_chat_id"]
                         ]["reasoning"][-1] = st.session_state["reasoning"]
+
+                        # add to chunk_ids history
+                        if (
+                            len(
+                                st.session_state["chat_history"][
+                                    st.session_state["selected_chat_id"]
+                                ]["chunk_ids"][-1]
+                            )
+                            == 0
+                        ) and (
+                            server_state[
+                                f"{st.session_state['user_name']}_selected_corpus"
+                            ]
+                            != "No corpus"
+                        ):
+                            st.session_state["chat_history"][
+                                st.session_state["selected_chat_id"]
+                            ]["chunk_ids"][-1] = st.session_state["latest_chunk_ids"]
                     else:
                         break
 
@@ -192,6 +222,22 @@ def write_stream(stream):
             ][
                 -1
             ] = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+
+            # add to chunk_ids history
+            if (
+                len(
+                    st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["chunk_ids"][-1]
+                )
+                == 0
+            ) and (
+                server_state[f"{st.session_state['user_name']}_selected_corpus"]
+                != "No corpus"
+            ):
+                st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                    "chunk_ids"
+                ][-1] = st.session_state["latest_chunk_ids"]
 
         if (
             ".gguf"
