@@ -225,7 +225,17 @@ def import_chat():
                     )
                 )
         except:
-            unlock_llm_release_queue()
+            if (
+                ".gguf"
+                in st.session_state["llm_info"]
+                .loc[
+                    lambda x: x["name"]
+                    == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                    "model_name",
+                ]
+                .values[0]
+            ):
+                unlock_llm_release_queue()
             st.error(
                 "An error was encountered, the model may not be finished loading, please try again in a few seconds."
             )

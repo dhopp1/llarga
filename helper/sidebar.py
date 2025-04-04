@@ -27,7 +27,7 @@ def sidebar_chats():
             make_new_chat()
 
     # chats dropdown
-    if True:  # try:
+    try:
         chat_options = [
             v["chat_name"] for k, v in st.session_state["chat_history"].items()
         ][::-1]
@@ -54,7 +54,7 @@ def sidebar_chats():
             if value.get("chat_name")
             == server_state[f"{st.session_state['user_name']}_selected_chat_name"]
         ][0]
-    else:  # except:
+    except:
         pass
 
     # chat buttons
