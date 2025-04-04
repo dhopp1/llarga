@@ -13,6 +13,18 @@ from helper.user_management import update_server_state
 
 
 def make_new_chat():
+    if f"{st.session_state['user_name']}_system_prompt" not in server_state:
+        sys_prompt = (
+            st.session_state["settings"]
+            .loc[
+                lambda x: x["field"] == "default_no_corpus_system_prompt",
+                "value",
+            ]
+            .values[0]
+        )
+    else:
+        sys_prompt = server_state[f"{st.session_state['user_name']}_system_prompt"]
+
     # don't want to allow multiple new chats
     try:
         last_num = max(
@@ -37,7 +49,7 @@ def make_new_chat():
     ] = [
         {
             "role": "system",
-            "content": server_state[f"{st.session_state['user_name']}_system_prompt"],
+            "content": sys_prompt,
         }
     ]
     st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] = [
@@ -49,6 +61,12 @@ def make_new_chat():
     st.session_state["chat_history"][st.session_state["selected_chat_id"]][
         "chat_name"
     ] = new_chat_name
+    update_server_state(
+        f"{st.session_state['user_name']}_selected_chat_name",
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "chat_name"
+        ],
+    )
 
     del st.session_state["initialized"]
 

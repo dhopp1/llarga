@@ -123,7 +123,17 @@ def gen_llm_response(query, messages_input=[]):
 def write_stream(stream):
     "write out the stream of the LLM's answer"
     with st.spinner("Thinking...", show_time=True):
-        lock_llm()
+        if (
+            ".gguf"
+            in st.session_state["llm_info"]
+            .loc[
+                lambda x: x["name"]
+                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                "model_name",
+            ]
+            .values[0]
+        ):
+            lock_llm()
 
         st.session_state["llm_answer"] = ""
         st.session_state["reasoning"] = ""
@@ -183,4 +193,14 @@ def write_stream(stream):
                 -1
             ] = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
 
-        unlock_llm()
+        if (
+            ".gguf"
+            in st.session_state["llm_info"]
+            .loc[
+                lambda x: x["name"]
+                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                "model_name",
+            ]
+            .values[0]
+        ):
+            unlock_llm()

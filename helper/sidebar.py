@@ -7,6 +7,7 @@ from streamlit_server_state import server_state
 import time
 
 from helper.lvs import make_new_chat, process_corpus
+from helper.user_management import update_server_state
 
 
 def sidebar_chats():
@@ -23,9 +24,10 @@ def sidebar_chats():
         else:
             st.session_state["chat_history"] = {}
             st.session_state["latest_chat_id"] = 0
+            make_new_chat()
 
     # chats dropdown
-    try:
+    if True:  # try:
         chat_options = [
             v["chat_name"] for k, v in st.session_state["chat_history"].items()
         ][::-1]
@@ -52,7 +54,7 @@ def sidebar_chats():
             if value.get("chat_name")
             == server_state[f"{st.session_state['user_name']}_selected_chat_name"]
         ][0]
-    except:
+    else:  # except:
         pass
 
     # chat buttons
@@ -131,6 +133,12 @@ def sidebar_chats():
                 if len(st.session_state["chat_history"]) > 0:
                     st.session_state["selected_chat_id"] = max(
                         [k for k, v in st.session_state["chat_history"].items()]
+                    )
+                    update_server_state(
+                        f"{st.session_state['user_name']}_selected_chat_name",
+                        st.session_state["chat_history"][
+                            st.session_state["selected_chat_id"]
+                        ]["chat_name"],
                     )
                     st.rerun()
                 else:

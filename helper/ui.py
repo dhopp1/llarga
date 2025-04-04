@@ -234,10 +234,10 @@ def import_chat():
 
         # name this chat if haven't already
         if (
-            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "New chat"
+            in st.session_state["chat_history"][st.session_state["selected_chat_id"]][
                 "chat_name"
             ]
-            == "New chat"
         ):
             if (
                 st.session_state["is_reasoning_model"] == 1
@@ -261,9 +261,22 @@ def import_chat():
             st.session_state["chat_history"][st.session_state["selected_chat_id"]][
                 "chat_name"
             ] = chat_name
+            update_server_state(
+                f"{st.session_state['user_name']}_selected_chat_name", chat_name
+            )
 
         # unlocking the queue
-        unlock_llm_release_queue()
+        if (
+            ".gguf"
+            in st.session_state["llm_info"]
+            .loc[
+                lambda x: x["name"]
+                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                "model_name",
+            ]
+            .values[0]
+        ):
+            unlock_llm_release_queue()
 
         # saving chat history
         pickle_save(

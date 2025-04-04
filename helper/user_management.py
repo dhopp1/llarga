@@ -1,4 +1,5 @@
 import hmac
+import os
 import pandas as pd
 import streamlit as st
 from streamlit_server_state import no_rerun, server_state, server_state_lock
@@ -65,6 +66,13 @@ def setup_local_files():
 
     # defining location of corpora
     st.session_state["corpora_path"] = "corpora"
+
+    # making required directories
+    if not (os.path.isdir(st.session_state["corpora_path"])):
+        os.makedirs(st.session_state["corpora_path"])
+
+    if not (os.path.isdir("metadata/chat_histories/")):
+        os.makedirs("metadata/chat_histories/")
 
 
 def update_server_state(key, value):
