@@ -373,6 +373,10 @@ def process_corpus():
                 else:
                     final_embeddings = pl.concat([final_embeddings, embeddings])
 
+    # remove duplicate chunk ids
+    final_embeddings = final_embeddings.with_columns(
+        pl.arange(0, final_embeddings.height).alias("chunk_id")
+    )
     vs.embeddings_df = final_embeddings
     vs.embeddings_df.write_parquet(
         f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet'

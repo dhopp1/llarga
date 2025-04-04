@@ -94,8 +94,16 @@ def gen_llm_response(query, messages_input=[]):
             else:
                 condensed_query = messages[-1]["content"]
 
+            text_ids = list(
+                server_state[f"{st.session_state['user_name']}_display_metadata"]
+                .loc[lambda x: x["Include in queries"] == True, "text_id"]
+                .values
+            )
             lvs_context = server_state["lvs_corpora"][corpus_name].get_top_n(
-                condensed_query, top_n=top_n, distance_metric="cosine"
+                condensed_query,
+                top_n=top_n,
+                distance_metric="cosine",
+                text_ids=text_ids,
             )
             st.session_state["latest_chunk_ids"] = lvs_context["chunk_ids"]
             messages[-1][

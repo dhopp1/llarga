@@ -80,32 +80,48 @@ def metadata_tab():
 
         if (
             server_state[f"{st.session_state['user_name']}_selected_corpus"]
-            != st.session_state["old_corpus"]
+            == "Workspace"
         ):
-            if (
-                server_state[f"{st.session_state['user_name']}_selected_corpus"]
-                == "Workspace"
-            ):
-                corpus_name = f'Workspace {st.session_state["user_name"]}'
-            else:
-                corpus_name = server_state[
-                    f"{st.session_state['user_name']}_selected_corpus"
-                ]
-
-            st.session_state["corpus_metadata"] = pd.read_csv(
-                f"""{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv"""
-            )
-            st.session_state["corpus_metadata"]["Include in queries"] = True
-
-            st.session_state["old_corpus"] = server_state[
+            corpus_name = f'Workspace {st.session_state["user_name"]}'
+        else:
+            corpus_name = server_state[
                 f"{st.session_state['user_name']}_selected_corpus"
             ]
+
+        st.session_state["corpus_metadata"] = pd.read_csv(
+            f"""{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv"""
+        )
+        st.session_state["corpus_metadata"] = st.session_state["corpus_metadata"].loc[
+            :,
+            [
+                _
+                for _ in st.session_state["corpus_metadata"].columns
+                if _ not in ["filepath"]
+            ],
+        ]
+
+        if (
+            f"{st.session_state['user_name']}_display_metadata" not in server_state
+            or server_state[f"{st.session_state['user_name']}_selected_corpus"]
+            != st.session_state["old_corpus"]
+        ):
+            st.session_state["corpus_metadata"]["Include in queries"] = True
+        else:
+            st.session_state["corpus_metadata"]["Include in queries"] = server_state[
+                f"{st.session_state['user_name']}_display_metadata"
+            ]["Include in queries"]
+
+        st.session_state["old_corpus"] = server_state[
+            f"{st.session_state['user_name']}_selected_corpus"
+        ]
 
         server_state[f"{st.session_state['user_name']}_display_metadata"] = (
             st.data_editor(
                 st.session_state["corpus_metadata"],
                 column_config={
-                    "Include in queries": st.column_config.CheckboxColumn("Select")
+                    "Include in queries": st.column_config.CheckboxColumn(
+                        "Include in queries"
+                    )
                 },
                 disabled=[
                     col
@@ -326,7 +342,7 @@ def import_chat():
             update_server_state("last_used", datetime.now())
 
         # stream the LLM's answer
-        if True:  # try:
+        try:
             with st.chat_message(
                 "assistant", avatar=st.session_state["assistant_avatar"]
             ):
@@ -338,7 +354,7 @@ def import_chat():
                         ]["messages"].copy(),
                     )
                 )
-        else:  # except:
+        except:
             if (
                 ".gguf"
                 in st.session_state["llm_info"]
