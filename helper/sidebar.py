@@ -277,10 +277,15 @@ def sidebar_which_corpus():
             0
             if f"{st.session_state['user_name']}_selected_corpus" not in server_state
             else corpus_options.index(
-                server_state[f"{st.session_state['user_name']}_selected_corpus"]
+                st.session_state["users_info"]
+                .loc[
+                    lambda x: x["user"] == st.session_state["user_name"],
+                    "default_corpus",
+                ]
+                .values[0]
             )
         ),
-        help="Which corpus to query against. `Workspace` is your personal corpus only you can see. All others are visible to all users.",
+        help="Which corpus to query against. `Workspace` is your personal corpus only you can see. All others are visible to all users. The `Corpus metadata` expander shows the metadata of the documents in the corpus. You can select/unselect documents in via the `Include in queries` column. Only documents checked in that column will be considered relevant for the LLM. You can hover over the table and click the full screen button (like a square) to view the table in a bigger format.",
     )
 
 

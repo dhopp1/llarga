@@ -50,6 +50,8 @@ st.sidebar.markdown("### Corpus")
 with st.sidebar:
     sidebar_which_corpus()
     gen_export_df()
+    with st.expander("Corpus metadata"):
+        metadata_tab()
 
 with st.sidebar.expander("Upload your own documents"):
     st.markdown("#### Upload a new corpus")
@@ -81,11 +83,7 @@ user_specific_load()
 
 
 ### chat logic
-tab1, tab2 = st.tabs(["Chat", "Metadata"])
-with tab1:
-    import_chat()
-with tab2:
-    metadata_tab()
+import_chat()
 
 
 # export chat button
