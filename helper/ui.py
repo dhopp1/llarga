@@ -70,6 +70,53 @@ def user_specific_load():
         )
 
 
+def metadata_tab():
+    if server_state[f"{st.session_state['user_name']}_selected_corpus"] != "No corpus":
+        if "new_corpus_loaded" not in st.session_state:
+            update_server_state(
+                f"{st.session_state['user_name']}_new_corpus_loaded", True
+            )
+            st.session_state["old_corpus"] = "No corpus"
+
+        if (
+            server_state[f"{st.session_state['user_name']}_selected_corpus"]
+            != st.session_state["old_corpus"]
+        ):
+            if (
+                server_state[f"{st.session_state['user_name']}_selected_corpus"]
+                == "Workspace"
+            ):
+                corpus_name = f'Workspace {st.session_state["user_name"]}'
+            else:
+                corpus_name = server_state[
+                    f"{st.session_state['user_name']}_selected_corpus"
+                ]
+
+            st.session_state["corpus_metadata"] = pd.read_csv(
+                f"""{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv"""
+            )
+            st.session_state["corpus_metadata"]["Include in queries"] = True
+
+            st.session_state["old_corpus"] = server_state[
+                f"{st.session_state['user_name']}_selected_corpus"
+            ]
+
+        server_state[f"{st.session_state['user_name']}_display_metadata"] = (
+            st.data_editor(
+                st.session_state["corpus_metadata"],
+                column_config={
+                    "Include in queries": st.column_config.CheckboxColumn("Select")
+                },
+                disabled=[
+                    col
+                    for col in st.session_state["corpus_metadata"].columns
+                    if col != "Include in queries"
+                ],
+                hide_index=True,
+            )
+        )
+
+
 def populate_chat():
     "Display chat messages from history on app rerun"
     st.session_state["message_box"] = st.empty()
@@ -116,53 +163,63 @@ def populate_chat():
 
                     # normal response
                     st.markdown(
-                        message["content"] + message_time, unsafe_allow_html=True
+                        message["content"]
+                        + (message_time if message["role"] == "user" else ""),
+                        unsafe_allow_html=True,
                     )
 
                     # sources
-                    if (
-                        message["role"] == "assistant"
-                        and st.session_state["chat_history"][
-                            st.session_state["selected_chat_id"]
-                        ]["corpus"][i]
-                        != "No corpus"
-                    ):
+                    if message["role"] == "assistant":
                         source_string = f"""
 ## General information
 - LLM: `{st.session_state["export_df"].loc[i, "LLM"]}`
 - Corpus: `{st.session_state["export_df"].loc[i, "corpus"]}`
 - Model style: `{st.session_state["export_df"].loc[i, "model style"]}`
-
-
-## Sources
 """
-                        metadata = [
-                            _
-                            for _ in eval(
-                                st.session_state["export_df"].loc[i, "source_metadata"]
-                            )
-                        ]
-                        content = [
-                            _
-                            for _ in eval(
-                                st.session_state["export_df"].loc[i, "source_content"]
-                            )
-                        ]
-                        for j in range(len(metadata)):
-                            # metadata
-                            source_string += (
-                                f"\n**Chunk {j+1}**\n"
-                                + "```\nmetadata\n"
-                                + "\n".join(
-                                    [f"{_.strip()}" for _ in metadata[j].split("|")]
+                        # RAG
+                        if (
+                            st.session_state["chat_history"][
+                                st.session_state["selected_chat_id"]
+                            ]["corpus"][i]
+                            != "No corpus"
+                        ):
+                            source_string += "\n\n## Sources\n"
+
+                            metadata = [
+                                _
+                                for _ in eval(
+                                    st.session_state["export_df"].loc[
+                                        i, "source_metadata"
+                                    ]
                                 )
-                                + "\n```\n"
-                            )
+                            ]
+                            content = [
+                                _
+                                for _ in eval(
+                                    st.session_state["export_df"].loc[
+                                        i, "source_content"
+                                    ]
+                                )
+                            ]
+                            for j in range(len(metadata)):
+                                # metadata
+                                source_string += (
+                                    f"\n**Chunk {j+1}**\n"
+                                    + "```\nmetadata\n"
+                                    + "\n".join(
+                                        [f"{_.strip()}" for _ in metadata[j].split("|")]
+                                    )
+                                    + "\n```\n"
+                                )
 
-                            # content
-                            source_string += "```\n" + content[j] + "\n```"
+                                # content
+                                source_string += "```\n" + content[j] + "\n```"
 
-                        st.markdown("Sources: ", help=source_string)
+                        st.markdown(
+                            "Sources: " + message_time,
+                            unsafe_allow_html=True,
+                            help=source_string,
+                        )
 
 
 def import_chat():

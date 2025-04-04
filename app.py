@@ -18,6 +18,7 @@ from helper.ui import (
     import_chat,
     import_styles,
     initial_placeholder,
+    metadata_tab,
     ui_title_icon,
     user_specific_load,
 )
@@ -80,7 +81,12 @@ user_specific_load()
 
 
 ### chat logic
-import_chat()
+tab1, tab2 = st.tabs(["Chat", "Metadata"])
+with tab1:
+    import_chat()
+with tab2:
+    metadata_tab()
+
 
 # export chat button
 with st.sidebar:
