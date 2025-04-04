@@ -212,7 +212,7 @@ def import_chat():
             update_server_state("last_used", datetime.now())
 
         # stream the LLM's answer
-        try:
+        if True:  # try:
             with st.chat_message(
                 "assistant", avatar=st.session_state["assistant_avatar"]
             ):
@@ -224,7 +224,7 @@ def import_chat():
                         ]["messages"].copy(),
                     )
                 )
-        except:
+        else:  # except:
             if (
                 ".gguf"
                 in st.session_state["llm_info"]
