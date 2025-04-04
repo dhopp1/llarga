@@ -119,6 +119,51 @@ def populate_chat():
                         message["content"] + message_time, unsafe_allow_html=True
                     )
 
+                    # sources
+                    if (
+                        message["role"] == "assistant"
+                        and st.session_state["chat_history"][
+                            st.session_state["selected_chat_id"]
+                        ]["corpus"][i]
+                        != "No corpus"
+                    ):
+                        source_string = f"""
+## General information
+- LLM: `{st.session_state["export_df"].loc[i, "LLM"]}`
+- Corpus: `{st.session_state["export_df"].loc[i, "corpus"]}`
+- Model style: `{st.session_state["export_df"].loc[i, "model style"]}`
+
+
+## Sources
+"""
+                        metadata = [
+                            _
+                            for _ in eval(
+                                st.session_state["export_df"].loc[i, "source_metadata"]
+                            )
+                        ]
+                        content = [
+                            _
+                            for _ in eval(
+                                st.session_state["export_df"].loc[i, "source_content"]
+                            )
+                        ]
+                        for j in range(len(metadata)):
+                            # metadata
+                            source_string += (
+                                f"\n**Chunk {j+1}**\n"
+                                + "```\nmetadata\n"
+                                + "\n".join(
+                                    [f"{_.strip()}" for _ in metadata[j].split("|")]
+                                )
+                                + "\n```\n"
+                            )
+
+                            # content
+                            source_string += "```\n" + content[j] + "\n```"
+
+                        st.markdown("Sources: ", help=source_string)
+
 
 def import_chat():
     "logic for user chat"
