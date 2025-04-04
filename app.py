@@ -4,6 +4,8 @@ from streamlit_server_state import server_state
 from helper.sidebar import (
     sidebar_chats,
     sidebar_delete_corpus,
+    sidebar_export_chat,
+    gen_export_df,
     sidebar_llm_api_key,
     sidebar_llm_dropdown,
     sidebar_temperature_dropdown,
@@ -46,6 +48,7 @@ sidebar_chats()
 st.sidebar.markdown("### Corpus")
 with st.sidebar:
     sidebar_which_corpus()
+    gen_export_df()
 
 with st.sidebar.expander("Upload your own documents"):
     st.markdown("#### Upload a new corpus")
@@ -78,3 +81,7 @@ user_specific_load()
 
 ### chat logic
 import_chat()
+
+# export chat button
+with st.sidebar:
+    sidebar_export_chat()

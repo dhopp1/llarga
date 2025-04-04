@@ -1,3 +1,4 @@
+from io import BytesIO
 from local_vector_search.misc import pickle_load, pickle_save
 import os
 import pandas as pd
@@ -344,6 +345,92 @@ def sidebar_system_prompt():
         st.rerun()
 
 
+def gen_export_df():
+    # create DF of the chat
+    # getting chunk sources
+    corpora_names = [
+        _ if _ != "Workspace" else _ + " " + st.session_state["user_name"]
+        for _ in st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "corpus"
+        ]
+    ]
+    st.session_state["source_metadata"] = [None] * len(corpora_names)
+    st.session_state["source_content"] = [None] * len(corpora_names)
+    for i in range(len(corpora_names)):
+        try:
+            info = server_state["lvs_corpora"][corpora_names[i]].retrieve_chunks(
+                chunk_ids=st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]["chunk_ids"][i]
+            )
+            st.session_state["source_metadata"][i] = info["metadata"]
+            st.session_state["source_content"][i] = info["chunks"]
+        except:
+            pass
+
+    st.session_state["export_df"] = pd.DataFrame(
+        {
+            "chat name": [
+                server_state[f"{st.session_state['user_name']}_selected_chat_name"]
+            ]
+            * len(
+                st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+                    "corpus"
+                ]
+            ),
+            "date": [""]
+            + [
+                _.replace("<br> <sub><sup>", "")
+                .replace("</sup></sub>", "")
+                .split(" ")[0]
+                for _ in st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]["times"]
+                if _ is not None
+            ],
+            "time": [""]
+            + [
+                _.replace("<br> <sub><sup>", "")
+                .replace("</sup></sub>", "")
+                .split(" ")[1]
+                for _ in st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]["times"]
+                if _ is not None
+            ],
+            "LLM": st.session_state["chat_history"][
+                st.session_state["selected_chat_id"]
+            ]["selected_llm"],
+            "corpus": st.session_state["chat_history"][
+                st.session_state["selected_chat_id"]
+            ]["corpus"],
+            "model style": st.session_state["chat_history"][
+                st.session_state["selected_chat_id"]
+            ]["model_style"],
+            "role": [
+                _["role"]
+                for _ in st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]["messages"]
+            ],
+            "content": [
+                _["content"]
+                for _ in st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]["messages"]
+            ],
+            "source_metadata": [
+                str(_) if _ is not None else ""
+                for _ in st.session_state["source_metadata"]
+            ],
+            "source_content": [
+                str(_) if _ is not None else ""
+                for _ in st.session_state["source_content"]
+            ],
+        }
+    )
+
+
 def sidebar_upload_file():
     st.session_state["uploaded_file"] = st.file_uploader(
         "Upload your own documents",
@@ -420,3 +507,20 @@ def sidebar_delete_corpus():
                 st.rerun()
             except:
                 pass
+
+
+def sidebar_export_chat():
+    # excel prep
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        st.session_state["export_df"].to_excel(writer, index=False, sheet_name="Sheet1")
+    st.session_state["export_df_excel"] = output.getvalue()
+    st.session_state["export_df_excel"]
+
+    # download button
+    st.download_button(
+        "Export chat history as Excel file",
+        data=st.session_state["export_df_excel"],
+        file_name="chat.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
