@@ -8,6 +8,7 @@ from streamlit_server_state import server_state
 import time
 
 from helper.lvs import make_new_chat, process_corpus
+from helper.ui import save_user_settings
 from helper.user_management import update_server_state
 
 
@@ -148,30 +149,27 @@ def sidebar_chats():
 
 
 def sidebar_llm_dropdown():
-    if "llm_info" not in st.session_state:
-        st.session_state["llm_info"] = pd.read_csv("metadata/llm_list.csv")
-        st.session_state["llm_dropdown_options"] = list(
-            st.session_state["llm_info"].loc[lambda x: x["display"] == 1, "name"].values
-        )
-
-    server_state[f"{st.session_state['user_name']}_selected_llm"] = st.selectbox(
+    st.selectbox(
         "Select LLM",
         options=st.session_state["llm_dropdown_options"],
         index=(
-            0
-            if f"{st.session_state['user_name']}_selected_llm" not in server_state
+            st.session_state["llm_dropdown_options"].index(
+                st.session_state["user_settings"]["selected_llm"]
+            )
+            if "selected_llm" not in st.session_state
             else st.session_state["llm_dropdown_options"].index(
-                server_state[f"{st.session_state['user_name']}_selected_llm"]
+                st.session_state["selected_llm"]
             )
         ),
         help="Which LLM to use. Those ending in `(private)` do not leave our local system, those ending in `(cloud)` will be sent to a cloud provider via API. The latter should not be used for sensitive information.",
+        key="selected_llm",
+        on_change=save_user_settings,
     )
 
     st.session_state["is_reasoning_model"] = (
         st.session_state["llm_info"]
         .loc[
-            lambda x: x["name"]
-            == server_state[f"{st.session_state['user_name']}_selected_llm"],
+            lambda x: x["name"] == st.session_state["selected_llm"],
             "reasoning_model",
         ]
         .values[0]
@@ -193,8 +191,7 @@ def sidebar_llm_api_key():
         st.session_state["llm_api_key"] = (
             st.session_state["llm_info"]
             .loc[
-                lambda x: x["name"]
-                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                lambda x: x["name"] == st.session_state["selected_llm"],
                 "api_key",
             ]
             .values[0]
@@ -209,8 +206,7 @@ def sidebar_llm_api_key():
         st.session_state["llm_api_key"] = (
             st.session_state["llm_info"]
             .loc[
-                lambda x: x["name"]
-                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                lambda x: x["name"] == st.session_state["selected_llm"],
                 "api_key",
             ]
             .values[0]

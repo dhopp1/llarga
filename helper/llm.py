@@ -15,8 +15,7 @@ def gen_llm_response(query, messages_input=[]):
     llm_model_name = (
         st.session_state["llm_info"]
         .loc[
-            lambda x: x["name"]
-            == server_state[f"{st.session_state['user_name']}_selected_llm"],
+            lambda x: x["name"] == st.session_state["selected_llm"],
             "model_name",
         ]
         .values[0]
@@ -26,8 +25,7 @@ def gen_llm_response(query, messages_input=[]):
         api_key=st.session_state["llm_api_key"],
         base_url=st.session_state["llm_info"]
         .loc[
-            lambda x: x["name"]
-            == server_state[f"{st.session_state['user_name']}_selected_llm"],
+            lambda x: x["name"] == st.session_state["selected_llm"],
             "llm_url",
         ]
         .values[0],
@@ -40,8 +38,7 @@ def gen_llm_response(query, messages_input=[]):
     context_length = int(
         st.session_state["llm_info"]
         .loc[
-            lambda x: x["name"]
-            == server_state[f"{st.session_state['user_name']}_selected_llm"],
+            lambda x: x["name"] == st.session_state["selected_llm"],
             "context_length",
         ]
         .values[0]
@@ -135,8 +132,7 @@ def write_stream(stream):
             ".gguf"
             in st.session_state["llm_info"]
             .loc[
-                lambda x: x["name"]
-                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                lambda x: x["name"] == st.session_state["selected_llm"],
                 "model_name",
             ]
             .values[0]
@@ -158,7 +154,7 @@ def write_stream(stream):
         ] += [[]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "selected_llm"
-        ] += [server_state[f"{st.session_state['user_name']}_selected_llm"]]
+        ] += [st.session_state["selected_llm"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "model_style"
         ] += [server_state[f"{st.session_state['user_name']}_temperature_string"]]
@@ -251,8 +247,7 @@ def write_stream(stream):
             ".gguf"
             in st.session_state["llm_info"]
             .loc[
-                lambda x: x["name"]
-                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                lambda x: x["name"] == st.session_state["selected_llm"],
                 "model_name",
             ]
             .values[0]

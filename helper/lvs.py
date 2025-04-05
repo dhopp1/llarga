@@ -427,6 +427,7 @@ def load_lvs_corpora():
 
         for file in os.listdir(st.session_state["corpora_path"]):
             if "embeddings" in file:
+                print(file)
                 lvs_corpora_dict[file.split("embeddings_")[1].split(".parquet")[0]] = (
                     local_vs(
                         metadata_path=f'{st.session_state["corpora_path"]}/{file.replace(".parquet", ".csv").replace("embeddings", "metadata")}',

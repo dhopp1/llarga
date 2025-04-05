@@ -1,5 +1,5 @@
 from datetime import datetime
-from local_vector_search.misc import pickle_save
+from local_vector_search.misc import pickle_load, pickle_save
 import os
 import pandas as pd
 import streamlit as st
@@ -58,6 +58,40 @@ def initial_placeholder():
 
         # load corpora
         load_lvs_corpora()
+
+    ### load user options !!! working here
+    if "llm_info" not in st.session_state:
+        st.session_state["llm_info"] = pd.read_csv("metadata/llm_list.csv")
+        st.session_state["llm_dropdown_options"] = list(
+            st.session_state["llm_info"].loc[lambda x: x["display"] == 1, "name"].values
+        )
+
+    if "user_settings" not in st.session_state:
+        try:
+            st.session_state["user_settings"] = pickle_load(
+                f'metadata/user_settings/{st.session_state["user_name"]}.pickle'
+            )
+        except:
+            st.session_state["user_settings"] = {}
+            st.session_state["user_settings"]["selected_llm"] = st.session_state[
+                "llm_dropdown_options"
+            ][
+                0
+            ]  # default LLM is first one
+
+
+def save_user_settings():
+    if not (os.path.isdir("metadata/user_settings/")):
+        os.makedirs("metadata/user_settings/")
+
+    # update values with the current ones
+    print(st.session_state["selected_llm"])
+    st.session_state["user_settings"]["selected_llm"] = st.session_state["selected_llm"]
+
+    pickle_save(
+        st.session_state["user_settings"],
+        f'metadata/user_settings/{st.session_state["user_name"]}.pickle',
+    )
 
 
 def user_specific_load():
@@ -274,7 +308,7 @@ def import_chat():
         ] += [[]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "selected_llm"
-        ] += [server_state[f"{st.session_state['user_name']}_selected_llm"]]
+        ] += [st.session_state["selected_llm"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "model_style"
         ] += [server_state[f"{st.session_state['user_name']}_temperature_string"]]
@@ -284,8 +318,7 @@ def import_chat():
             ".gguf"
             in st.session_state["llm_info"]
             .loc[
-                lambda x: x["name"]
-                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                lambda x: x["name"] == st.session_state["selected_llm"],
                 "model_name",
             ]
             .values[0]
@@ -359,8 +392,7 @@ def import_chat():
                 ".gguf"
                 in st.session_state["llm_info"]
                 .loc[
-                    lambda x: x["name"]
-                    == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                    lambda x: x["name"] == st.session_state["selected_llm"],
                     "model_name",
                 ]
                 .values[0]
@@ -410,8 +442,7 @@ def import_chat():
             ".gguf"
             in st.session_state["llm_info"]
             .loc[
-                lambda x: x["name"]
-                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                lambda x: x["name"] == st.session_state["selected_llm"],
                 "model_name",
             ]
             .values[0]
