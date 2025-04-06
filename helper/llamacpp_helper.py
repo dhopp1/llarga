@@ -52,15 +52,14 @@ def stop_llama_cpp_server(pid):
 def check_reload_llama_cpp():
     "check if a local LLM is loaded and load if not, change if it's a different one"
 
-    if f"{st.session_state['user_name']}_selected_llm" in server_state:
+    if "selected_llm" in st.session_state:
         # if llm changed and its local and not already loaded, kill the old one and load it
         # first check if it's a local llm
         if (
             ".gguf"
             in st.session_state["llm_info"]
             .loc[
-                lambda x: x["name"]
-                == server_state[f"{st.session_state['user_name']}_selected_llm"],
+                lambda x: x["name"] == st.session_state["selected_llm"],
                 "model_name",
             ]
             .values[0]
@@ -69,14 +68,12 @@ def check_reload_llama_cpp():
             if "llama_cpp_pid" not in server_state:
                 update_server_state(
                     "llama_cpp_name",
-                    server_state[f"{st.session_state['user_name']}_selected_llm"],
+                    st.session_state["selected_llm"],
                 )
                 update_server_state(
                     "llama_cpp_pid",
                     start_llama_cpp_server(
-                        name=server_state[
-                            f"{st.session_state['user_name']}_selected_llm"
-                        ],
+                        name=st.session_state["selected_llm"],
                         llm_info_df=st.session_state["llm_info"],
                     ),
                 )
@@ -84,7 +81,7 @@ def check_reload_llama_cpp():
                 if "llama_cpp_name" in server_state:
                     if (
                         server_state["llama_cpp_name"]
-                        != server_state[f"{st.session_state['user_name']}_selected_llm"]
+                        != st.session_state["selected_llm"]
                     ):
                         if "llm_generating" not in server_state:
                             update_server_state("llm_generating", False)
@@ -93,16 +90,12 @@ def check_reload_llama_cpp():
                             stop_llama_cpp_server(server_state["llama_cpp_pid"])
                             update_server_state(
                                 "llama_cpp_name",
-                                server_state[
-                                    f"{st.session_state['user_name']}_selected_llm"
-                                ],
+                                st.session_state["selected_llm"],
                             )
                             update_server_state(
                                 "llama_cpp_pid",
                                 start_llama_cpp_server(
-                                    name=server_state[
-                                        f"{st.session_state['user_name']}_selected_llm"
-                                    ],
+                                    name=st.session_state["selected_llm"],
                                     llm_info_df=st.session_state["llm_info"],
                                 ),
                             )
