@@ -8,7 +8,7 @@ import time
 
 from helper.llamacpp_helper import check_reload_llama_cpp
 from helper.llm import gen_llm_response, write_stream
-from helper.lvs import load_lvs_corpora
+from helper.lvs import load_lvs_corpora, save_user_settings
 from helper.sidebar import make_new_chat
 from helper.user_management import (
     lock_llm,
@@ -40,26 +40,42 @@ def import_styles():
 def initial_placeholder():
     "initial placeholder upon first login"
 
-    if "initialized" not in st.session_state:
-        if not (
-            os.path.isfile(
-                f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
-            )
-        ):
-            st.markdown(
-                """<div class="icon_text"><img width=50 src='https://www.svgrepo.com/show/375527/ai-platform.svg'></div>""",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                """<div class="icon_text"<h4>What would you like to know?</h4></div>""",
-                unsafe_allow_html=True,
-            )
+    if ("initialized" not in st.session_state) or (
+        "New chat" in st.session_state["selected_chat_name"]
+    ):  # show if new chat or first log in
+        st.markdown(
+            """<div class="icon_text"><img width=50 src='https://www.svgrepo.com/show/375527/ai-platform.svg'></div>""",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            """<div class="icon_text"<h4>What would you like to know?</h4></div>""",
+            unsafe_allow_html=True,
+        )
         st.session_state["initialized"] = True
 
         # load corpora
         load_lvs_corpora()
 
-    ### load user options !!! working here
+    ### load user options
+    if "chat_history" not in st.session_state:
+        if os.path.isfile(
+            f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
+        ):
+            st.session_state["chat_history"] = pickle_load(
+                f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
+            )
+            st.session_state["latest_chat_id"] = max(
+                [k for k, v in st.session_state["chat_history"].items()]
+            )
+        else:
+            st.session_state["chat_history"] = {}
+            st.session_state["latest_chat_id"] = 0
+            make_new_chat()
+
+    st.session_state["chat_options"] = [
+        v["chat_name"] for k, v in st.session_state["chat_history"].items()
+    ][::-1]
+
     if "llm_info" not in st.session_state:
         st.session_state["llm_info"] = pd.read_csv("metadata/llm_list.csv")
         st.session_state["llm_dropdown_options"] = list(
@@ -78,20 +94,15 @@ def initial_placeholder():
             ][
                 0
             ]  # default LLM is first one
-
-
-def save_user_settings():
-    if not (os.path.isdir("metadata/user_settings/")):
-        os.makedirs("metadata/user_settings/")
-
-    # update values with the current ones
-    print(st.session_state["selected_llm"])
-    st.session_state["user_settings"]["selected_llm"] = st.session_state["selected_llm"]
-
-    pickle_save(
-        st.session_state["user_settings"],
-        f'metadata/user_settings/{st.session_state["user_name"]}.pickle',
-    )
+            st.session_state["user_settings"]["selected_chat_name"] = st.session_state[
+                "chat_history"
+            ][st.session_state["latest_chat_id"]][
+                "chat_name"
+            ]  # default chat name is latest one
+    else:
+        st.session_state.selected_chat_name = st.session_state["user_settings"][
+            "selected_chat_name"
+        ]
 
 
 def user_specific_load():
@@ -433,9 +444,9 @@ def import_chat():
             st.session_state["chat_history"][st.session_state["selected_chat_id"]][
                 "chat_name"
             ] = chat_name
-            update_server_state(
-                f"{st.session_state['user_name']}_selected_chat_name", chat_name
-            )
+
+            # st.session_state["selected_chat_name"] = chat_name
+            save_user_settings(selected_chat_name=chat_name)
 
         # unlocking the queue
         if (

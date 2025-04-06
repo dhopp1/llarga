@@ -7,57 +7,33 @@ import streamlit as st
 from streamlit_server_state import server_state
 import time
 
-from helper.lvs import make_new_chat, process_corpus
-from helper.ui import save_user_settings
+from helper.lvs import make_new_chat, process_corpus, save_user_settings
 from helper.user_management import update_server_state
 
 
 def sidebar_chats():
-    if "chat_history" not in st.session_state:
-        if os.path.isfile(
-            f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
-        ):
-            st.session_state["chat_history"] = pickle_load(
-                f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
-            )
-            st.session_state["latest_chat_id"] = max(
-                [k for k, v in st.session_state["chat_history"].items()]
-            )
-        else:
-            st.session_state["chat_history"] = {}
-            st.session_state["latest_chat_id"] = 0
-            make_new_chat()
-
     # chats dropdown
-    try:
-        chat_options = [
-            v["chat_name"] for k, v in st.session_state["chat_history"].items()
-        ][::-1]
-        server_state[f"{st.session_state['user_name']}_selected_chat_name"] = (
-            st.sidebar.selectbox(
-                "Select chat",
-                options=chat_options,
-                index=(
-                    0
-                    if f"{st.session_state['user_name']}_selected_chat_name"
-                    not in server_state
-                    else chat_options.index(
-                        server_state[
-                            f"{st.session_state['user_name']}_selected_chat_name"
-                        ]
-                    )
-                ),
-                help="Which chat history to load",
+    st.sidebar.selectbox(
+        "Select chat",
+        options=st.session_state["chat_options"],
+        index=(
+            st.session_state["chat_options"].index(
+                st.session_state["user_settings"]["selected_chat_name"]
             )
-        )
-        st.session_state["selected_chat_id"] = [
-            key
-            for key, value in st.session_state["chat_history"].items()
-            if value.get("chat_name")
-            == server_state[f"{st.session_state['user_name']}_selected_chat_name"]
-        ][0]
-    except:
-        pass
+            if "selected_chat_name" not in st.session_state
+            else st.session_state["chat_options"].index(
+                st.session_state["selected_chat_name"]
+            )
+        ),
+        key="selected_chat_name",
+        help="Which chat history to load",
+        on_change=save_user_settings,
+    )
+    st.session_state["selected_chat_id"] = [
+        key
+        for key, value in st.session_state["chat_history"].items()
+        if value.get("chat_name") == st.session_state["selected_chat_name"]
+    ][0]
 
     # chat buttons
     if "selected_chat_id" in st.session_state:
@@ -78,6 +54,41 @@ def sidebar_chats():
                 st.session_state.confirmed = True
                 st.session_state.show_confirmation = False
 
+                # actual deletion
+                del st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]
+                pickle_save(
+                    st.session_state["chat_history"],
+                    f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle""",
+                )
+
+                if (
+                    len(st.session_state["chat_history"]) == 0
+                ):  # remove pickle if there are no chats
+                    os.remove(
+                        f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
+                    )
+
+                # Reset the confirmation if needed
+                # switching to latest chat, or making a new chat
+                if len(st.session_state["chat_history"]) > 0:
+                    st.session_state["selected_chat_id"] = max(
+                        [
+                            k
+                            for k, v in st.session_state["chat_history"].items()
+                            if k != st.session_state["selected_chat_id"]
+                        ]
+                    )
+                    save_user_settings(
+                        selected_chat_name=st.session_state["chat_history"][
+                            st.session_state["selected_chat_id"]
+                        ]["chat_name"]
+                    )
+                else:
+                    make_new_chat()
+                st.session_state.confirmed = False
+
             # Main button
             if (
                 not st.session_state.show_confirmation
@@ -85,14 +96,9 @@ def sidebar_chats():
             ):
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.session_state["new_chat"] = st.button("New chat ✎")
+                    st.button("New chat ✎", key="new_chat", on_click=make_new_chat)
                 with col2:
                     st.button("Delete chat ⌫", on_click=show_confirmation_dialog)
-
-                # make a new chat
-                if st.session_state["new_chat"]:
-                    make_new_chat()
-                    st.rerun()
 
             # Confirmation dialog
             if st.session_state.show_confirmation:
@@ -131,21 +137,16 @@ def sidebar_chats():
                 # Reset the confirmation if needed
                 st.session_state.confirmed = False
                 time.sleep(3)
-
-                if len(st.session_state["chat_history"]) > 0:
-                    st.session_state["selected_chat_id"] = max(
-                        [k for k, v in st.session_state["chat_history"].items()]
-                    )
-                    update_server_state(
-                        f"{st.session_state['user_name']}_selected_chat_name",
-                        st.session_state["chat_history"][
-                            st.session_state["selected_chat_id"]
-                        ]["chat_name"],
-                    )
-                    st.rerun()
-                else:
-                    make_new_chat()
-                    st.rerun()
+                st.rerun()
+                if False:
+                    if len(st.session_state["chat_history"]) > 0:
+                        st.session_state["selected_chat_id"] = max(
+                            [k for k, v in st.session_state["chat_history"].items()]
+                        )
+                        st.rerun()
+                    else:
+                        make_new_chat()
+                        st.rerun()
 
 
 def sidebar_llm_dropdown():
@@ -371,9 +372,7 @@ def gen_export_df():
 
     st.session_state["export_df"] = pd.DataFrame(
         {
-            "chat name": [
-                server_state[f"{st.session_state['user_name']}_selected_chat_name"]
-            ]
+            "chat name": [st.session_state["selected_chat_name"]]
             * len(
                 st.session_state["chat_history"][st.session_state["selected_chat_id"]][
                     "corpus"

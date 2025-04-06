@@ -1,4 +1,5 @@
 from local_vector_search.local_vector_search import local_vs
+from local_vector_search.misc import pickle_save
 from nlp_pipeline.nlp_pipeline import nlp_processor
 import os
 import pandas as pd
@@ -10,6 +11,33 @@ import time
 import zipfile
 
 from helper.user_management import update_server_state
+
+
+def save_user_settings(selected_chat_name=None):
+    if not (os.path.isdir("metadata/user_settings/")):
+        os.makedirs("metadata/user_settings/")
+
+    # update values with the current ones
+    if selected_chat_name is None:
+        st.session_state["user_settings"]["selected_chat_name"] = st.session_state[
+            "selected_chat_name"
+        ]
+    else:
+        st.session_state["user_settings"]["selected_chat_name"] = selected_chat_name
+
+    st.session_state["user_settings"]["selected_llm"] = st.session_state["selected_llm"]
+
+    # save user settings
+    pickle_save(
+        st.session_state["user_settings"],
+        f'metadata/user_settings/{st.session_state["user_name"]}.pickle',
+    )
+
+    # save chat history
+    pickle_save(
+        st.session_state["chat_history"],
+        f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle""",
+    )
 
 
 def make_new_chat():
@@ -75,11 +103,13 @@ def make_new_chat():
     ] = [""]
 
     # change selected chat
-    update_server_state(
-        f"{st.session_state['user_name']}_selected_chat_name",
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "chat_name"
-        ],
+    # st.session_state.selected_chat_name = st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+    #    "chat_name"
+    # ]
+    save_user_settings(
+        selected_chat_name=st.session_state["chat_history"][
+            st.session_state["selected_chat_id"]
+        ]["chat_name"]
     )
 
     del st.session_state["initialized"]
