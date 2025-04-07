@@ -124,6 +124,9 @@ def initial_placeholder():
                 ]
                 .values[0]
             )  # default loaded corpus is the one specified for the user
+            st.session_state["user_settings"][
+                "temperature_string"
+            ] = "Most precise"  # default is most precise
     else:
         st.session_state.selected_chat_name = st.session_state["user_settings"][
             "selected_chat_name"

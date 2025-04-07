@@ -29,6 +29,9 @@ def save_user_settings(selected_chat_name=None):
     st.session_state["user_settings"]["selected_corpus"] = st.session_state[
         "selected_corpus"
     ]
+    st.session_state["user_settings"]["temperature_string"] = st.session_state[
+        "temperature_string"
+    ]
 
     # save user settings
     pickle_save(

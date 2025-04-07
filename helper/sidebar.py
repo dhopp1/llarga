@@ -230,16 +230,16 @@ def sidebar_temperature_dropdown():
         "Creative",
         "Most creative",
     ]
-    server_state[f"{st.session_state['user_name']}_temperature_string"] = st.selectbox(
+    st.selectbox(
         "Model style",
         options=temp_options,
         index=(
-            0
-            if f"{st.session_state['user_name']}_temperature_string" not in server_state
-            else temp_options.index(
-                server_state[f"{st.session_state['user_name']}_temperature_string"]
-            )
+            temp_options.index(st.session_state["user_settings"]["temperature_string"])
+            if "temperature_string" not in st.session_state
+            else temp_options.index(st.session_state["temperature_string"])
         ),
+        key="temperature_string",
+        on_change=save_user_settings,
         help="""
 ### Most precise
 The LLM will be the most predictable and consistent. For anything fact-based, use this setting.
@@ -259,7 +259,7 @@ The LLM has maximum creativity and freedom.
             ["Most precise", "Precise", "Balanced", "Creative", "Most creative"],
             [0.0, 0.15, 0.4, 0.7, 1.0],
         )
-    )[server_state[f"{st.session_state['user_name']}_temperature_string"]]
+    )[st.session_state["temperature_string"]]
 
 
 def sidebar_which_corpus():
