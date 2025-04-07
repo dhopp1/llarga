@@ -8,6 +8,7 @@ from helper.sidebar import (
     sidebar_llm_api_key,
     sidebar_llm_dropdown,
     sidebar_temperature_dropdown,
+    sidebar_stop_llamacpp,
     sidebar_system_prompt,
     sidebar_upload_file,
     sidebar_which_corpus,
@@ -64,6 +65,7 @@ with st.sidebar.expander("LLM parameters"):
     sidebar_llm_api_key()
     sidebar_temperature_dropdown()
     sidebar_system_prompt()
+    sidebar_stop_llamacpp()
 
 # warning if system prompt is different different
 with st.sidebar:

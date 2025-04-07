@@ -7,6 +7,7 @@ import streamlit as st
 from streamlit_server_state import server_state
 import time
 
+from helper.llamacpp_helper import stop_llama_cpp_server
 from helper.lvs import make_new_chat, process_corpus, save_user_settings
 
 
@@ -504,6 +505,7 @@ def sidebar_delete_corpus():
 
 
 def sidebar_export_chat():
+
     # excel prep
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
@@ -518,3 +520,18 @@ def sidebar_export_chat():
         file_name="chat.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+def sidebar_stop_llamacpp():
+    st.button(
+        "Stop Llama CPP server",
+        key="stop_llamacpp_button",
+        help="Stop the locally running Llama CPP server.",
+    )
+    try:
+        if st.session_state["stop_llamacpp_button"]:
+            stop_llama_cpp_server(server_state["llama_cpp_pid"])
+            del server_state["llama_cpp_pid"]
+        st.info("Llama CPP server successfully stopped!")
+    except:
+        pass
