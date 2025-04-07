@@ -532,6 +532,6 @@ def sidebar_stop_llamacpp():
         if st.session_state["stop_llamacpp_button"]:
             stop_llama_cpp_server(server_state["llama_cpp_pid"])
             del server_state["llama_cpp_pid"]
-        st.info("Llama CPP server successfully stopped!")
+            st.info("Llama CPP server successfully stopped!")
     except:
         pass
