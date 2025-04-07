@@ -49,8 +49,14 @@ def gen_llm_response(query, messages_input=[]):
         .values[0]
     )
     top_n = int(
-        context_length / chunk_size * 0.5
-    )  # 0.5 to reserve some space for chat memory
+        context_length
+        / chunk_size
+        * float(
+            st.session_state["settings"]
+            .loc[lambda x: x["field"] == "context_window_rag_ratio", "value"]
+            .values[0]
+        )
+    )
 
     if st.session_state["selected_corpus"] != "No corpus":
         if not (

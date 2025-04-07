@@ -112,7 +112,13 @@ def initial_placeholder():
 
     # corpora
     st.session_state["corpora_list"] = pd.read_csv("metadata/corpora_list.csv")
-    st.session_state["corpus_options"] = ["No corpus", "Workspace"] + [
+    if os.path.isdir(
+        f"""{st.session_state["corpora_path"]}/Workspace {st.session_state["user_name"]}"""
+    ):
+        start_options = ["No corpus", "Workspace"]
+    else:
+        start_options = ["No corpus"]
+    st.session_state["corpus_options"] = start_options + [
         _
         for _ in list(st.session_state["corpora_list"]["name"])
         if "Workspace" not in _

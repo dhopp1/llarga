@@ -5,3 +5,4 @@ default_corpus_system_prompt,"You are a chatbot specialized in answering questio
 max_tokens,2048
 chunk_size,700
 chunk_overlap,150
+context_window_rag_ratio,0.5
