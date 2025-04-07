@@ -505,13 +505,11 @@ def sidebar_delete_corpus():
 
 
 def sidebar_export_chat():
-
     # excel prep
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         st.session_state["export_df"].to_excel(writer, index=False, sheet_name="Sheet1")
     st.session_state["export_df_excel"] = output.getvalue()
-    st.session_state["export_df_excel"]
 
     # download button
     st.download_button(
@@ -538,4 +536,43 @@ def sidebar_stop_llamacpp():
 
 
 def sidebar_batch_query():
+    st.markdown(
+        "Info",
+        help="""### Batch query the LLM
+You can upload an excel file to ask many questions without having to manually copy and paste the questions and answers. Download the template file and fill in your queries in the `query` column. Then reupload the file and hit the `Run batch query` button. Make sure you are in a new chat, you can make a new chat by hitting the `New chat` button at the top. Questions will be asked as one-offs without memory.
+
+Make sure you have selected the corpus you want to query against in the `Currently loaded corpus` dropdown. 
+
+You can optionally include a comma-separated list of text ids in the `text_ids` tab to limit that question to only be asked against those documents. If you leave the column blank, it will query against all documents in the corpus. You can view and download the metadata file of the corpus via the `Corpus metadata` dropdown above to determine which text ids are relevant to your question.
+
+You can interrupt the process by hitting the `Stop generation` button that will appear at the top of the chat. If the process gets interrupted intentionally or unintentionally, you can continue where you left off by hitting the `Run batch query` button again. It will automatically determine where to start again.
+
+You can then hit the `Export chat history as Excel file` to export your results.
+""",
+    )
+
+    ex_file = pd.DataFrame(
+        {
+            "query": ["example query 1", "example query 2"],
+            "text_ids": ["1,2,3", ""],
+        }
+    )
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        ex_file.to_excel(writer, index=False, sheet_name="Sheet1")
+    ex_file = output.getvalue()
+
+    st.download_button(
+        "Download a template excel file",
+        data=ex_file,
+        file_name="batch_query_template.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+    st.session_state["bulk_file"] = st.file_uploader(
+        "Upload bulk query file",
+        type=[".xlsx"],
+        help="An Excel file with the same columns as the template file.",
+    )
+
     st.button("Run batch query", key="batch_query_button", on_click=run_batch_query)

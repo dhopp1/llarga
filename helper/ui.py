@@ -288,9 +288,44 @@ def run_batch_query():
             status = st.empty()
             progress = st.progress(0)
 
-        prompts = ["Hello", "Hello again"]
-        text_ids = [[1, 2], [4]]
-        for i in range(len(prompts)):
+        # managing file
+        if not os.path.exists(f"""{st.session_state["corpora_path"]}/batch_queries/"""):
+            os.makedirs(f"""{st.session_state["corpora_path"]}/batch_queries/""")
+        with open(
+            f"""{st.session_state["corpora_path"]}/batch_queries/{st.session_state["user_name"]}.xlsx""",
+            "wb",
+        ) as new_file:
+            new_file.write(st.session_state["bulk_file"].getbuffer())
+            new_file.close()
+
+        bulk_file = pd.read_excel(
+            f"""{st.session_state["corpora_path"]}/batch_queries/{st.session_state["user_name"]}.xlsx""",
+            sheet_name=0,
+        )
+
+        # generating responses
+        prompts = list(bulk_file["query"].values)
+
+        def parse_text_ids(field):
+            try:
+                return [int(_) for _ in field.split(",")]
+            except:
+                return list(st.session_state["display_metadata"]["text_id"].values)
+
+        text_ids = [parse_text_ids(_) for _ in list(bulk_file["text_ids"].values)]
+
+        # starting point in case interrupted in the middle
+        starting_point = len(
+            [
+                _
+                for _ in st.session_state["chat_history"][
+                    st.session_state["selected_chat_id"]
+                ]["messages"]
+                if _["role"] == "user"
+            ]
+        )
+
+        for i in range(starting_point, len(prompts)):
             if st.session_state["selected_corpus"] != "No corpus":
                 st.session_state["display_metadata"]["Include in queries"] = False
                 st.session_state["display_metadata"].loc[
