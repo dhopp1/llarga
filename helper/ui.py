@@ -453,11 +453,20 @@ def import_chat():
                     if "<br> <sub><sup>" not in chunk:
                         chat_name += chunk
 
+                # no duplicate chat names
+                if (
+                    chat_name
+                    in [
+                        v["chat_name"]
+                        for k, v in st.session_state["chat_history"].items()
+                    ][::-1]
+                ):
+                    chat_name += " 2"
+
             st.session_state["chat_history"][st.session_state["selected_chat_id"]][
                 "chat_name"
             ] = chat_name
 
-            # st.session_state["selected_chat_name"] = chat_name
             save_user_settings(selected_chat_name=chat_name)
 
         # unlocking the queue
