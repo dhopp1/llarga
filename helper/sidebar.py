@@ -295,7 +295,6 @@ def sidebar_system_prompt():
         key="use_default_system_prompts",
         help="Check to use default system prompts for the corpora. If unchecked, it will take as system prmopt whatever you type in the field `System prompt` below.",
     )
-
     if st.session_state["selected_corpus"] == "No corpus":
         st.session_state["default_system_prompt"] = (
             st.session_state["settings"]

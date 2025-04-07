@@ -109,12 +109,15 @@ def make_new_chat(display_metadata_overwrite=True):
     ] = [""]
 
     # change selected chat
-    save_user_settings(
-        selected_chat_name=st.session_state["chat_history"][
-            st.session_state["selected_chat_id"]
-        ]["chat_name"],
-        display_metadata_overwrite=display_metadata_overwrite,
-    )
+    try:  # will fail if it's the users first load
+        save_user_settings(
+            selected_chat_name=st.session_state["chat_history"][
+                st.session_state["selected_chat_id"]
+            ]["chat_name"],
+            display_metadata_overwrite=display_metadata_overwrite,
+        )
+    except:
+        pass
 
     del st.session_state["initialized"]
 

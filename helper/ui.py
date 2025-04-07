@@ -63,6 +63,40 @@ def initial_placeholder():
         else:
             st.session_state["chat_history"] = {}
             st.session_state["latest_chat_id"] = 0
+
+            # first time for this user load default system prompt
+            if (
+                st.session_state["users_info"]
+                .loc[
+                    lambda x: x["user"] == st.session_state["user_name"],
+                    "default_corpus",
+                ]
+                .values[0]
+                == "No corpus"
+            ):
+                st.session_state["system_prompt"] = (
+                    st.session_state["settings"]
+                    .loc[
+                        lambda x: x["field"] == "default_no_corpus_system_prompt",
+                        "value",
+                    ]
+                    .values[0]
+                )
+            else:
+                st.session_state["system_prompt"] = (
+                    pd.read_csv("metadata/corpora_list.csv")
+                    .loc[
+                        lambda x: x["name"]
+                        == st.session_state["users_info"]
+                        .loc[
+                            lambda x: x["user"] == st.session_state["user_name"],
+                            "default_corpus",
+                        ]
+                        .values[0],
+                        "system_prompt",
+                    ]
+                    .values[0]
+                )
             make_new_chat()
 
     st.session_state["chat_options"] = [
