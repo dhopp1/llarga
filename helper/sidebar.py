@@ -9,6 +9,7 @@ import time
 
 from helper.llamacpp_helper import stop_llama_cpp_server
 from helper.lvs import make_new_chat, process_corpus, save_user_settings
+from helper.ui import run_batch_query
 
 
 def sidebar_chats():
@@ -535,3 +536,7 @@ def sidebar_stop_llamacpp():
             st.info("Llama CPP server successfully stopped!")
     except:
         pass
+
+
+def sidebar_batch_query():
+    st.button("Run batch query", key="batch_query_button", on_click=run_batch_query)

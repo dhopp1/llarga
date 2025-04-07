@@ -1,6 +1,7 @@
 import streamlit as st
 
 from helper.sidebar import (
+    sidebar_batch_query,
     sidebar_chats,
     sidebar_delete_corpus,
     sidebar_export_chat,
@@ -76,6 +77,11 @@ with st.sidebar:
             "The default system prompt for this corpus differs from what you have input in `System prompt` under the `LLM parameters` dropdown. Consider changing it. The default system prompt for this corpus is:"
         )
         st.markdown(f"""```\n{st.session_state["default_system_prompt"]}\n```""")
+
+
+# batch query
+with st.sidebar.expander("Batch query"):
+    sidebar_batch_query()
 
 
 ### chat logic

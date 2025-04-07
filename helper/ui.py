@@ -207,8 +207,8 @@ def metadata_tab():
             st.session_state["display_metadata"]["Include in queries"] = False
             save_user_settings()
 
-        st.button("Select all", on_click=select_all)
-        st.button("Unselect all", on_click=unselect_all)
+        st.button("Select all", key="select_all_button", on_click=select_all)
+        st.button("Unselect all", key="unselect_all_button", on_click=unselect_all)
         st.button(
             "Save selection",
             on_click=save_user_settings,
@@ -246,6 +246,25 @@ def metadata_tab():
         ] = True
         save_user_settings()
         st.rerun()
+
+
+def run_batch_query():
+    if st.session_state["batch_query_button"]:
+        with st.sidebar:
+            status = st.empty()
+            progress = st.progress(0)
+
+        prompts = ["Hello", "Hello again"]
+        counter = 0
+        for prompt in prompts:
+            progress.progress(counter / len(prompts))
+            status.text(f"Processing batch query: {counter}/{len(prompts)}")
+            chat_loop(prompt, use_memory=False)
+            counter += 1
+        progress.progress(counter / len(prompts))
+        status.info(
+            "Batch query complete! Download results by clicking the `Export chat history as Excel file` button."
+        )
 
 
 def populate_chat():
@@ -371,181 +390,130 @@ def populate_chat():
                         )
 
 
-def import_chat():
-    "logic for user chat"
+def chat_loop(prompt, use_memory=True):
+    # make a new chat if there is none
+    if "selected_chat_id" not in st.session_state:
+        make_new_chat()
 
-    # load user chat histories if available
-    if "chat_history" in st.session_state:
-        populate_chat()
+    # Display user message in chat message container
+    prompt_time = (
+        f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
+    )
+    with st.chat_message("user", avatar=st.session_state["user_avatar"]):
+        try:
+            st.button(
+                "◼ Stop generating",
+                key="stop_generating_button",
+                on_click=unlock_llm_release_queue,
+            )
+        except:
+            pass
+        st.markdown(prompt + prompt_time, unsafe_allow_html=True)
 
-    if prompt := st.chat_input("Enter question"):
-        # make a new chat if there is none
-        if "selected_chat_id" not in st.session_state:
-            make_new_chat()
+    # Add user message to chat history
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "messages"
+    ] += [{"role": "user", "content": prompt}]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] += [
+        prompt_time
+    ]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "reasoning"
+    ] += [""]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "corpus"
+    ] += [""]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "chunk_ids"
+    ] += [[]]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "selected_llm"
+    ] += [st.session_state["selected_llm"]]
+    st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+        "model_style"
+    ] += [st.session_state["temperature_string"]]
 
-        # Display user message in chat message container
-        prompt_time = f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
-        with st.chat_message("user", avatar=st.session_state["user_avatar"]):
-            st.button("◼ Stop generating", on_click=unlock_llm_release_queue)
-            st.markdown(prompt + prompt_time, unsafe_allow_html=True)
-
-        # Add user message to chat history
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "messages"
-        ] += [{"role": "user", "content": prompt}]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "times"
-        ] += [prompt_time]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "reasoning"
-        ] += [""]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "corpus"
-        ] += [""]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "chunk_ids"
-        ] += [[]]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "selected_llm"
-        ] += [st.session_state["selected_llm"]]
-        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-            "model_style"
-        ] += [st.session_state["temperature_string"]]
-
-        ### queuing logic
-        if (
-            ".gguf"
-            in st.session_state["llm_info"]
-            .loc[
-                lambda x: x["name"] == st.session_state["selected_llm"],
-                "model_name",
-            ]
-            .values[0]
-        ):
-            # lock the model to perform requests sequentially
-            if "llm_generating" not in server_state:
-                unlock_llm()
-            if "last_used" not in server_state:
-                update_server_state("last_used", datetime.now())
-
-            if "exec_queue" not in server_state:
-                update_server_state("exec_queue", [st.session_state["user_name"]])
-
-            if len(server_state["exec_queue"]) == 0:
-                update_server_state("exec_queue", [st.session_state["user_name"]])
-            else:
-                if st.session_state["user_name"] not in server_state["exec_queue"]:
-                    # add to the queue
-                    update_server_state(
-                        "exec_queue",
-                        server_state["exec_queue"] + [st.session_state["user_name"]],
-                    )
-
-            with st.spinner("Query queued..."):
-                t = st.empty()
-                while (
-                    server_state["llm_generating"]
-                    or server_state["exec_queue"][0] != st.session_state["user_name"]
-                ):
-                    # check if it hasn't been used in a while, potentially interrupted while executing
-                    if (
-                        datetime.now() - server_state["last_used"]
-                    ).total_seconds() > 60:
-                        if (
-                            server_state["exec_queue"][1]
-                            == st.session_state["user_name"]
-                        ):  # only perform if first in the queue
-                            unlock_llm()
-                            update_server_state(
-                                "exec_queue", server_state["exec_queue"][1:]
-                            )  # take the first person out of the queue
-                            update_server_state("last_used", datetime.now())
-
-                    t.markdown(
-                        f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
-                    )
-                    time.sleep(1)
-                t.empty()
-
-            check_reload_llama_cpp()  # load their chosen model
-
-            # lock the model while generating
-            lock_llm()
+    ### queuing logic
+    if (
+        ".gguf"
+        in st.session_state["llm_info"]
+        .loc[
+            lambda x: x["name"] == st.session_state["selected_llm"],
+            "model_name",
+        ]
+        .values[0]
+    ):
+        # lock the model to perform requests sequentially
+        if "llm_generating" not in server_state:
+            unlock_llm()
+        if "last_used" not in server_state:
             update_server_state("last_used", datetime.now())
 
-        # stream the LLM's answer
-        try:
-            with st.chat_message(
-                "assistant", avatar=st.session_state["assistant_avatar"]
-            ):
-                write_stream(
-                    gen_llm_response(
-                        prompt,
-                        messages_input=st.session_state["chat_history"][
-                            st.session_state["selected_chat_id"]
-                        ]["messages"].copy(),
-                    )
-                )
-        except:
-            if (
-                ".gguf"
-                in st.session_state["llm_info"]
-                .loc[
-                    lambda x: x["name"] == st.session_state["selected_llm"],
-                    "model_name",
-                ]
-                .values[0]
-            ):
-                unlock_llm_release_queue()
-            st.error(
-                "An error was encountered, the model may not be finished loading, please try again in a few seconds."
-            )
-            time.sleep(3)
-            st.rerun()
+        if "exec_queue" not in server_state:
+            update_server_state("exec_queue", [st.session_state["user_name"]])
 
-        # name this chat if haven't already
-        if (
-            "New chat"
-            in st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-                "chat_name"
-            ]
-        ):
-            if (
-                st.session_state["is_reasoning_model"] == 1
-            ):  # reasoning models take too long to name, just take the first user's question as the name
-                chat_name = prompt
-            else:
-                messages = st.session_state["chat_history"][
+        if len(server_state["exec_queue"]) == 0:
+            update_server_state("exec_queue", [st.session_state["user_name"]])
+        else:
+            if st.session_state["user_name"] not in server_state["exec_queue"]:
+                # add to the queue
+                update_server_state(
+                    "exec_queue",
+                    server_state["exec_queue"] + [st.session_state["user_name"]],
+                )
+
+        with st.spinner("Query queued..."):
+            t = st.empty()
+            while (
+                server_state["llm_generating"]
+                or server_state["exec_queue"][0] != st.session_state["user_name"]
+            ):
+                # check if it hasn't been used in a while, potentially interrupted while executing
+                if (datetime.now() - server_state["last_used"]).total_seconds() > 60:
+                    if (
+                        server_state["exec_queue"][1] == st.session_state["user_name"]
+                    ):  # only perform if first in the queue
+                        unlock_llm()
+                        update_server_state(
+                            "exec_queue", server_state["exec_queue"][1:]
+                        )  # take the first person out of the queue
+                        update_server_state("last_used", datetime.now())
+
+                t.markdown(
+                    f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
+                )
+                time.sleep(1)
+            t.empty()
+
+        check_reload_llama_cpp()  # load their chosen model
+
+        # lock the model while generating
+        lock_llm()
+        update_server_state("last_used", datetime.now())
+
+    # stream the LLM's answer
+    try:
+        with st.chat_message("assistant", avatar=st.session_state["assistant_avatar"]):
+            if use_memory:
+                messages_input = st.session_state["chat_history"][
                     st.session_state["selected_chat_id"]
                 ]["messages"].copy()
-                messages += [
-                    {
-                        "role": "user",
-                        "content": "Given this chat history, provide a 3-7 word name or phrase summarizing the chat's contents. Don't use quotes in the name.",
-                    }
+            else:
+                messages_input = [
+                    st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["messages"].copy()[0],
+                    st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["messages"].copy()[-1],
                 ]
-                chat_name = ""
-                for chunk in gen_llm_response(prompt, messages):
-                    if "<br> <sub><sup>" not in chunk:
-                        chat_name += chunk
-
-                # no duplicate chat names
-                if (
-                    chat_name
-                    in [
-                        v["chat_name"]
-                        for k, v in st.session_state["chat_history"].items()
-                    ][::-1]
-                ):
-                    chat_name += " 2"
-
-            st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-                "chat_name"
-            ] = chat_name
-
-            save_user_settings(selected_chat_name=chat_name)
-
-        # unlocking the queue
+            write_stream(
+                gen_llm_response(
+                    prompt,
+                    messages_input=messages_input,
+                )
+            )
+    except:
         if (
             ".gguf"
             in st.session_state["llm_info"]
@@ -556,10 +524,79 @@ def import_chat():
             .values[0]
         ):
             unlock_llm_release_queue()
-
-        # saving chat history
-        pickle_save(
-            st.session_state["chat_history"],
-            f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle""",
+        st.error(
+            "An error was encountered, the model may not be finished loading, please try again in a few seconds."
         )
+        time.sleep(3)
+        st.rerun()
+
+    # name this chat if haven't already
+    if (
+        "New chat"
+        in st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "chat_name"
+        ]
+    ):
+        if (
+            st.session_state["is_reasoning_model"] == 1
+        ):  # reasoning models take too long to name, just take the first user's question as the name
+            chat_name = prompt
+        else:
+            messages = st.session_state["chat_history"][
+                st.session_state["selected_chat_id"]
+            ]["messages"].copy()
+            messages += [
+                {
+                    "role": "user",
+                    "content": "Given this chat history, provide a 3-7 word name or phrase summarizing the chat's contents. Don't use quotes in the name.",
+                }
+            ]
+            chat_name = ""
+            for chunk in gen_llm_response(prompt, messages):
+                if "<br> <sub><sup>" not in chunk:
+                    chat_name += chunk
+
+            # no duplicate chat names
+            if (
+                chat_name
+                in [
+                    v["chat_name"] for k, v in st.session_state["chat_history"].items()
+                ][::-1]
+            ):
+                chat_name += " 2"
+
+        st.session_state["chat_history"][st.session_state["selected_chat_id"]][
+            "chat_name"
+        ] = chat_name
+
+        save_user_settings(selected_chat_name=chat_name)
+
+    # unlocking the queue
+    if (
+        ".gguf"
+        in st.session_state["llm_info"]
+        .loc[
+            lambda x: x["name"] == st.session_state["selected_llm"],
+            "model_name",
+        ]
+        .values[0]
+    ):
+        unlock_llm_release_queue()
+
+    # saving chat history
+    pickle_save(
+        st.session_state["chat_history"],
+        f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle""",
+    )
+
+
+def import_chat():
+    "logic for user chat"
+
+    # load user chat histories if available
+    if "chat_history" in st.session_state:
+        populate_chat()
+
+    if prompt := st.chat_input("Enter question"):
+        chat_loop(prompt)
         st.rerun()
