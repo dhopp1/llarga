@@ -178,14 +178,15 @@ def sidebar_llm_dropdown():
 
 
 def sidebar_llm_api_key():
-    server_state[f"{st.session_state['user_name']}_llm_api_key_user"] = st.text_input(
+    st.text_input(
         "Paste API key here",
         value=(
             ""
-            if f"{st.session_state['user_name']}_llm_api_key_user" not in server_state
-            else server_state[f"{st.session_state['user_name']}_llm_api_key_user"]
+            if "llm_api_key_user" not in st.session_state
+            else st.session_state["llm_api_key_user"]
         ),
-        help="Paste your API key for the cloud LLM provider if availalble.",
+        key="llm_api_key_user",
+        help="Paste your API key for the cloud LLM provider if availalable. This value will not be saved anywhere.",
     )
 
     if "llm_api_key" not in st.session_state:
@@ -199,10 +200,8 @@ def sidebar_llm_api_key():
         )
 
     # use the user's if provided
-    if server_state[f"{st.session_state['user_name']}_llm_api_key_user"] != "":
-        st.session_state["llm_api_key"] = server_state[
-            f"{st.session_state['user_name']}_llm_api_key_user"
-        ]
+    if st.session_state["llm_api_key_user"] != "":
+        st.session_state["llm_api_key"] = st.session_state["llm_api_key_user"]
     else:
         st.session_state["llm_api_key"] = (
             st.session_state["llm_info"]
@@ -211,6 +210,15 @@ def sidebar_llm_api_key():
                 "api_key",
             ]
             .values[0]
+        )
+
+    # warn them if the selected one has to provide their own
+    if (
+        st.session_state["llm_api_key_user"] == ""
+        and st.session_state["llm_api_key"] == "API_KEY"
+    ):
+        st.warning(
+            "You must provide your own API key to the selected LLM. Paste it in the `Paste API key here` field above. Its value will not be saved anywhere and will be deleted when you close your session."
         )
 
 
