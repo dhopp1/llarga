@@ -13,7 +13,7 @@ import zipfile
 from helper.user_management import update_server_state
 
 
-def save_user_settings(selected_chat_name=None):
+def save_user_settings(selected_chat_name=None, display_metadata_overwrite=True):
     if not (os.path.isdir("metadata/user_settings/")):
         os.makedirs("metadata/user_settings/")
 
@@ -35,6 +35,15 @@ def save_user_settings(selected_chat_name=None):
     st.session_state["user_settings"]["system_prompt"] = st.session_state[
         "system_prompt"
     ]
+    if (
+        display_metadata_overwrite
+    ):  # only overwrite if want to, not for delete corpus or process new corpus with same name
+        try:  # won't work if they're changing from no corpus
+            st.session_state["user_settings"]["display_metadata"][
+                st.session_state["selected_corpus_realname"]
+            ] = st.session_state["display_metadata"]
+        except:
+            pass
 
     # save user settings
     pickle_save(
@@ -49,7 +58,7 @@ def save_user_settings(selected_chat_name=None):
     )
 
 
-def make_new_chat():
+def make_new_chat(display_metadata_overwrite=True):
     # don't want to allow multiple new chats
     try:
         last_num = max(
@@ -100,13 +109,11 @@ def make_new_chat():
     ] = [""]
 
     # change selected chat
-    # st.session_state.selected_chat_name = st.session_state["chat_history"][st.session_state["selected_chat_id"]][
-    #    "chat_name"
-    # ]
     save_user_settings(
         selected_chat_name=st.session_state["chat_history"][
             st.session_state["selected_chat_id"]
-        ]["chat_name"]
+        ]["chat_name"],
+        display_metadata_overwrite=display_metadata_overwrite,
     )
 
     del st.session_state["initialized"]
@@ -297,8 +304,6 @@ def process_corpus():
             )
         ]
 
-        print(zip_files)
-
         if "metadata.csv" not in zip_files:
             # create metadata
             metadata = pd.DataFrame(
@@ -461,8 +466,18 @@ def process_corpus():
         st.info("Corpus successfully embedded, ready for querying!")
         time.sleep(5)
         st.session_state["selected_corpus"] = st.session_state["new_corpus_name"]
+        # delete an existing corpus with this metadata
+        try:
+            if st.session_state["new_corpus_name"] == "Workspace":
+                real_name = f"Workspace {st.session_state['user_name']}"
+            else:
+                real_name = st.session_state["new_corpus_name"]
+            print(real_name)
+            del st.session_state["user_settings"]["display_metadata"][real_name]
+        except:
+            pass
         st.session_state["new_corpus_name"] = "Workspace"
-        make_new_chat()
+        make_new_chat(display_metadata_overwrite=False)
 
 
 def load_lvs_corpora():

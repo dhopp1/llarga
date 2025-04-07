@@ -19,7 +19,6 @@ from helper.ui import (
     initial_placeholder,
     metadata_tab,
     ui_title_icon,
-    user_specific_load,
 )
 
 # load user list and llm list
@@ -75,10 +74,6 @@ with st.sidebar:
             "The default system prompt for this corpus differs from what you have input in `System prompt` under the `LLM parameters` dropdown. Consider changing it. The default system prompt for this corpus is:"
         )
         st.markdown(f"""```\n{st.session_state["default_system_prompt"]}\n```""")
-
-
-# user specific data load
-user_specific_load()
 
 
 ### chat logic

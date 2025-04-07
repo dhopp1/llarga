@@ -144,64 +144,56 @@ def initial_placeholder():
             "selected_chat_name"
         ]
 
-
-def user_specific_load():
-    "load various defaults for a user"
-    if "selected_corpus" not in st.session_state:
-        st.session_state["selected_corpus"] = (
-            pd.read_csv("metadata/user_list.csv")
-            .loc[lambda x: x["user"] == st.session_state["user_name"], "default_corpus"]
-            .values[0]
-        )
+    # initialize a display_metadata object
+    if "display_metadata" not in st.session_state["user_settings"]:
+        st.session_state["user_settings"]["display_metadata"] = {}
+    for name in st.session_state["corpora_list"]["name"]:
+        # add it if it's a new corpus
+        if name not in st.session_state["user_settings"]["display_metadata"]:
+            st.session_state["user_settings"]["display_metadata"][name] = pd.read_csv(
+                f"""{st.session_state["corpora_path"]}/metadata_{name}.csv"""
+            )
+            st.session_state["user_settings"]["display_metadata"][
+                name
+            ] = st.session_state["user_settings"]["display_metadata"][name].loc[
+                :,
+                [
+                    _
+                    for _ in st.session_state["user_settings"]["display_metadata"][
+                        name
+                    ].columns
+                    if _ not in ["filepath"]
+                ],
+            ]
+            st.session_state["user_settings"]["display_metadata"][name][
+                "Include in queries"
+            ] = True
 
 
 def metadata_tab():
     if st.session_state["selected_corpus"] != "No corpus":
-        if "new_corpus_loaded" not in st.session_state:
-            update_server_state(
-                f"{st.session_state['user_name']}_new_corpus_loaded", True
-            )
-            st.session_state["old_corpus"] = "No corpus"
-
-        st.session_state["corpus_metadata"] = pd.read_csv(
-            f"""{st.session_state["corpora_path"]}/metadata_{st.session_state["selected_corpus_realname"]}.csv"""
-        )
-        st.session_state["corpus_metadata"] = st.session_state["corpus_metadata"].loc[
-            :,
-            [
-                _
-                for _ in st.session_state["corpus_metadata"].columns
-                if _ not in ["filepath"]
+        st.session_state["display_metadata"] = st.data_editor(
+            st.session_state["user_settings"]["display_metadata"][
+                st.session_state["selected_corpus_realname"]
             ],
-        ]
-
-        if (
-            f"{st.session_state['user_name']}_display_metadata" not in server_state
-            or st.session_state["selected_corpus"] != st.session_state["old_corpus"]
-        ):
-            st.session_state["corpus_metadata"]["Include in queries"] = True
-        else:
-            st.session_state["corpus_metadata"]["Include in queries"] = server_state[
-                f"{st.session_state['user_name']}_display_metadata"
-            ]["Include in queries"]
-
-        st.session_state["old_corpus"] = st.session_state["selected_corpus"]
-
-        server_state[f"{st.session_state['user_name']}_display_metadata"] = (
-            st.data_editor(
-                st.session_state["corpus_metadata"],
-                column_config={
-                    "Include in queries": st.column_config.CheckboxColumn(
-                        "Include in queries"
-                    )
-                },
-                disabled=[
-                    col
-                    for col in st.session_state["corpus_metadata"].columns
-                    if col != "Include in queries"
-                ],
-                hide_index=True,
-            )
+            column_config={
+                "Include in queries": st.column_config.CheckboxColumn(
+                    "Include in queries"
+                )
+            },
+            disabled=[
+                col
+                for col in st.session_state["user_settings"]["display_metadata"][
+                    st.session_state["selected_corpus_realname"]
+                ].columns
+                if col != "Include in queries"
+            ],
+            hide_index=True,
+        )
+        st.button(
+            "Save selection",
+            on_click=save_user_settings,
+            help="Click to save your selection.",
         )
 
 

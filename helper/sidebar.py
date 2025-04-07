@@ -484,6 +484,11 @@ def sidebar_delete_corpus():
                 st.session_state["corpora_list"].to_csv(
                     "metadata/corpora_list.csv", index=False
                 )
+                # remove it from display_metadata
+                st.session_state["user_settings"]["display_metadata"][
+                    st.session_state["delete_corpus_name"]
+                ]
+                save_user_settings(display_metadata_overwrite=False)
 
                 st.info("Corpus successfully deleted!")
                 if (

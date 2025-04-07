@@ -82,7 +82,7 @@ def gen_llm_response(query, messages_input=[]):
                 condensed_query = messages[-1]["content"]
 
             text_ids = list(
-                server_state[f"{st.session_state['user_name']}_display_metadata"]
+                st.session_state["display_metadata"]
                 .loc[lambda x: x["Include in queries"] == True, "text_id"]
                 .values
             )
