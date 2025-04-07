@@ -5,3 +5,4 @@ pandas
 polars
 streamlit
 streamlit-server-state
+tabulate

@@ -171,6 +171,13 @@ def initial_placeholder():
 
 
 def metadata_tab():
+    st.text_input("", key="llm_select_metadata_prompt")
+    st.button(
+        "Select documents with LLM",
+        key="llm_select_metadata_button",
+        help="Ask for a subset of documents in natural language based off the metadata. A failure to parse the LLMs response will select all the documents.",
+    )
+
     if st.session_state["selected_corpus"] != "No corpus":
         st.session_state["display_metadata"] = st.data_editor(
             st.session_state["user_settings"]["display_metadata"][
@@ -190,11 +197,55 @@ def metadata_tab():
             ],
             hide_index=True,
         )
+
+        # select all or unselect all
+        def select_all():
+            st.session_state["display_metadata"]["Include in queries"] = True
+            save_user_settings()
+
+        def unselect_all():
+            st.session_state["display_metadata"]["Include in queries"] = False
+            save_user_settings()
+
+        st.button("Select all", on_click=select_all)
+        st.button("Unselect all", on_click=unselect_all)
         st.button(
             "Save selection",
             on_click=save_user_settings,
             help="Click to save your selection.",
         )
+
+    if st.session_state["llm_select_metadata_button"]:
+        metadata_button_messages = [
+            {
+                "role": "system",
+                "content": f"""Given this metadata file, determine which entries/documents the user is interested in and respond with a comma-separated list of those text_ids. Respond with only the list, no other commentary. Here is the metadata file: {st.session_state["display_metadata"].drop(["Include in queries"], axis=1).to_markdown(index=False)}""",
+            },
+            {
+                "role": "user",
+                "content": f"""Here is the user's query: '{st.session_state["llm_select_metadata_prompt"]}""",
+            },
+        ]
+        llm_selection = ""
+        with st.spinner("Thinking..."):
+            for chunk in gen_llm_response("", metadata_button_messages):
+                if "<br> <sub><sup>" not in chunk:
+                    llm_selection += chunk
+        try:
+            text_ids = [int(_) for _ in llm_selection.split(",")]
+        except:
+            try:
+                text_ids = [
+                    int(_) for _ in llm_selection.split("</think>")[1].split(",")
+                ]
+            except:
+                text_ids = list(st.session_state["display_metadata"]["text_id"].values)
+        st.session_state["display_metadata"]["Include in queries"] = False
+        st.session_state["display_metadata"].loc[
+            lambda x: x["text_id"].isin(text_ids), "Include in queries"
+        ] = True
+        save_user_settings()
+        st.rerun()
 
 
 def populate_chat():
