@@ -149,7 +149,7 @@ def write_stream(stream):
         ] += [st.session_state["selected_llm"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "model_style"
-        ] += [server_state[f"{st.session_state['user_name']}_temperature_string"]]
+        ] += [st.session_state["temperature_string"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "messages"
         ] += [

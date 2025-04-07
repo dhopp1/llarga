@@ -32,6 +32,9 @@ def save_user_settings(selected_chat_name=None):
     st.session_state["user_settings"]["temperature_string"] = st.session_state[
         "temperature_string"
     ]
+    st.session_state["user_settings"]["system_prompt"] = st.session_state[
+        "system_prompt"
+    ]
 
     # save user settings
     pickle_save(
@@ -47,18 +50,6 @@ def save_user_settings(selected_chat_name=None):
 
 
 def make_new_chat():
-    if f"{st.session_state['user_name']}_system_prompt" not in server_state:
-        sys_prompt = (
-            st.session_state["settings"]
-            .loc[
-                lambda x: x["field"] == "default_no_corpus_system_prompt",
-                "value",
-            ]
-            .values[0]
-        )
-    else:
-        sys_prompt = server_state[f"{st.session_state['user_name']}_system_prompt"]
-
     # don't want to allow multiple new chats
     try:
         last_num = max(
@@ -83,7 +74,7 @@ def make_new_chat():
     ] = [
         {
             "role": "system",
-            "content": sys_prompt,
+            "content": st.session_state["system_prompt"],
         }
     ]
     st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] = [
@@ -437,16 +428,20 @@ def process_corpus():
             "name": st.session_state["selected_corpus_realname"],
             "text_path": f'{st.session_state["corpora_path"]}/{st.session_state["selected_corpus_realname"]}/',
             "metadata_path": f'{st.session_state["corpora_path"]}/metadata_{st.session_state["selected_corpus_realname"]}.csv',
-            "system_prompt": server_state[
-                f"{st.session_state['user_name']}_system_prompt"
-            ],
+            "system_prompt": st.session_state["system_prompt"],
         },
         index=[0],
     )
 
     st.session_state["corpora_list"] = pd.concat(
-        [st.session_state["corpora_list"], tmp_corpora_list], ignore_index=True
-    ).drop_duplicates()
+        [
+            st.session_state["corpora_list"].loc[
+                lambda x: x["name"] != st.session_state["selected_corpus_realname"]
+            ],
+            tmp_corpora_list,
+        ],
+        ignore_index=True,
+    )
     st.session_state["corpora_list"].to_csv("metadata/corpora_list.csv", index=False)
 
     # add the corpus to the server dict

@@ -1,5 +1,5 @@
 from io import BytesIO
-from local_vector_search.misc import pickle_load, pickle_save
+from local_vector_search.misc import pickle_save
 import os
 import pandas as pd
 import shutil
@@ -8,7 +8,6 @@ from streamlit_server_state import server_state
 import time
 
 from helper.lvs import make_new_chat, process_corpus, save_user_settings
-from helper.user_management import update_server_state
 
 
 def sidebar_chats():
@@ -288,47 +287,50 @@ def sidebar_which_corpus():
 
 
 def sidebar_system_prompt():
-    try:
-        st.session_state["default_system_prompt"] = (
-            st.session_state["corpora_list"]
-            .loc[
-                lambda x: x["name"] == st.session_state["selected_corpus_realname"],
-                "system_prompt",
-            ]
-            .values[0]
-        )
-    except:
-        if st.session_state["selected_corpus"] == "No corpus":
-            st.session_state["default_system_prompt"] = (
-                st.session_state["settings"]
-                .loc[
-                    lambda x: x["field"] == "default_no_corpus_system_prompt",
-                    "value",
-                ]
-                .values[0]
-            )
-        else:
-            st.session_state["default_system_prompt"] = (
-                st.session_state["settings"]
-                .loc[
-                    lambda x: x["field"] == "default_corpus_system_prompt",
-                    "value",
-                ]
-                .values[0]
-            )
-
-    server_state[f"{st.session_state['user_name']}_system_prompt"] = st.text_input(
-        "System prompt",
-        value=(
-            st.session_state["default_system_prompt"]
-            if f"{st.session_state['user_name']}_system_prompt" not in server_state
-            else server_state[f"{st.session_state['user_name']}_system_prompt"]
-        ),
-        help="If you change the system prompt, start a new chat to have it take effect.",
+    st.checkbox(
+        "Use default system prompts",
+        value=True,
+        key="use_default_system_prompts",
+        help="Check to use default system prompts for the corpora. If unchecked, it will take as system prmopt whatever you type in the field `System prompt` below.",
     )
 
-    st.markdown("Default system prompt for this corpus")
-    st.markdown("```\n" + st.session_state["default_system_prompt"] + "\n```")
+    if st.session_state["selected_corpus"] == "No corpus":
+        st.session_state["default_system_prompt"] = (
+            st.session_state["settings"]
+            .loc[lambda x: x["field"] == "default_no_corpus_system_prompt", "value"]
+            .values[0]
+        )
+    else:
+        try:  # if an error then they selected workspace without having ever created it
+            st.session_state["default_system_prompt"] = (
+                st.session_state["corpora_list"]
+                .loc[
+                    lambda x: x["name"] == st.session_state["selected_corpus_realname"],
+                    "system_prompt",
+                ]
+                .values[0]
+            )
+        except:
+            st.session_state["default_system_prompt"] = (
+                st.session_state["settings"]
+                .loc[lambda x: x["field"] == "default_corpus_system_prompt", "value"]
+                .values[0]
+            )
+
+    if st.session_state["use_default_system_prompts"]:
+        value = st.session_state["default_system_prompt"]
+    elif "system_prompt" not in st.session_state:
+        value = st.session_state["user_settings"]["system_prompt"]
+    else:
+        value = st.session_state["system_prompt"]
+
+    st.text_input(
+        "System prompt",
+        value=value,
+        key="system_prompt",
+        on_change=save_user_settings,
+        help="If you change the system prompt, start a new chat to have it take effect.",
+    )
 
     if st.session_state["chat_history"] == {}:
         make_new_chat()

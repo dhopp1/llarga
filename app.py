@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_server_state import server_state
 
 from helper.sidebar import (
     sidebar_chats,
@@ -19,7 +18,6 @@ from helper.ui import (
     import_styles,
     initial_placeholder,
     metadata_tab,
-    save_user_settings,
     ui_title_icon,
     user_specific_load,
 )
@@ -71,12 +69,12 @@ with st.sidebar.expander("LLM parameters"):
 # warning if system prompt is different different
 with st.sidebar:
     if (
-        st.session_state["default_system_prompt"]
-        != server_state[f"{st.session_state['user_name']}_system_prompt"]
-    ):
+        st.session_state["default_system_prompt"] != st.session_state["system_prompt"]
+    ) and st.session_state["selected_corpus"] != "No corpus":
         st.warning(
-            "The default system prompt for this corpus differs from what you have input in `System prompt` under the `LLM parameters` dropdown. Consider changing it."
+            "The default system prompt for this corpus differs from what you have input in `System prompt` under the `LLM parameters` dropdown. Consider changing it. The default system prompt for this corpus is:"
         )
+        st.markdown(f"""```\n{st.session_state["default_system_prompt"]}\n```""")
 
 
 # user specific data load

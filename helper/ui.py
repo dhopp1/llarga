@@ -43,14 +43,6 @@ def initial_placeholder():
     if ("initialized" not in st.session_state) or (
         "New chat" in st.session_state["selected_chat_name"]
     ):  # show if new chat or first log in
-        st.markdown(
-            """<div class="icon_text"><img width=50 src='https://www.svgrepo.com/show/375527/ai-platform.svg'></div>""",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            """<div class="icon_text"<h4>What would you like to know?</h4></div>""",
-            unsafe_allow_html=True,
-        )
         st.session_state["initialized"] = True
 
         # load corpora
@@ -127,6 +119,26 @@ def initial_placeholder():
             st.session_state["user_settings"][
                 "temperature_string"
             ] = "Most precise"  # default is most precise
+            # default system prompt is the one for the corpus
+            if st.session_state["user_settings"]["selected_corpus"] == "No corpus":
+                st.session_state["user_settings"]["system_prompt"] = (
+                    st.session_state["settings"]
+                    .loc[
+                        lambda x: x["field"] == "default_no_corpus_system_prompt",
+                        "value",
+                    ]
+                    .values[0]
+                )
+            else:
+                st.session_state["user_settings"]["system_prompt"] = (
+                    st.session_state["corpora_list"]
+                    .loc[
+                        lambda x: x["name"]
+                        == st.session_state["user_settings"]["selected_corpus"],
+                        "system_prompt",
+                    ]
+                    .values[0]
+                )
     else:
         st.session_state.selected_chat_name = st.session_state["user_settings"][
             "selected_chat_name"
@@ -199,6 +211,24 @@ def populate_chat():
 
     if "initialized" and "selected_chat_id" in st.session_state:
         with st.session_state["message_box"].container():
+            # show initialized text if no messages
+            if (
+                len(
+                    st.session_state["chat_history"][
+                        st.session_state["selected_chat_id"]
+                    ]["messages"]
+                )
+                == 1
+            ):
+                st.markdown(
+                    """<div class="icon_text"><img width=50 src='https://www.svgrepo.com/show/375527/ai-platform.svg'></div>""",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    """<div class="icon_text"<h4>What would you like to know?</h4></div>""",
+                    unsafe_allow_html=True,
+                )
+
             for i in range(
                 1,
                 len(
@@ -337,7 +367,7 @@ def import_chat():
         ] += [st.session_state["selected_llm"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "model_style"
-        ] += [server_state[f"{st.session_state['user_name']}_temperature_string"]]
+        ] += [st.session_state["temperature_string"]]
 
         ### queuing logic
         if (
