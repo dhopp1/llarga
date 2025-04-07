@@ -52,23 +52,13 @@ def gen_llm_response(query, messages_input=[]):
         context_length / chunk_size * 0.8
     )  # 0.8 to reserve some space for chat memory
 
-    if server_state[f"{st.session_state['user_name']}_selected_corpus"] != "No corpus":
+    if st.session_state["selected_corpus"] != "No corpus":
         if not (
             any(
                 sub in messages[-1]["content"]
                 for sub in ["Given this chat history", "Given this past exchange"]
             )
         ):  # don't run for naming the chat
-            if (
-                server_state[f"{st.session_state['user_name']}_selected_corpus"]
-                == "Workspace"
-            ):
-                corpus_name = f'Workspace {st.session_state["user_name"]}'
-            else:
-                corpus_name = server_state[
-                    f"{st.session_state['user_name']}_selected_corpus"
-                ]
-
             # logic for a condensed standalone query
             if len(messages) > 2:  # 2 = 1 system, 1 user prompt
                 condensed_messages = messages.copy()
@@ -96,7 +86,9 @@ def gen_llm_response(query, messages_input=[]):
                 .loc[lambda x: x["Include in queries"] == True, "text_id"]
                 .values
             )
-            lvs_context = server_state["lvs_corpora"][corpus_name].get_top_n(
+            lvs_context = server_state["lvs_corpora"][
+                st.session_state["selected_corpus_realname"]
+            ].get_top_n(
                 condensed_query,
                 top_n=top_n,
                 distance_metric="cosine",
@@ -148,7 +140,7 @@ def write_stream(stream):
         ] += [st.session_state["reasoning"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "corpus"
-        ] += [server_state[f"{st.session_state['user_name']}_selected_corpus"]]
+        ] += [st.session_state["selected_corpus"]]
         st.session_state["chat_history"][st.session_state["selected_chat_id"]][
             "chunk_ids"
         ] += [[]]
@@ -196,12 +188,7 @@ def write_stream(stream):
                                 ]["chunk_ids"][-1]
                             )
                             == 0
-                        ) and (
-                            server_state[
-                                f"{st.session_state['user_name']}_selected_corpus"
-                            ]
-                            != "No corpus"
-                        ):
+                        ) and (st.session_state["selected_corpus"] != "No corpus"):
                             st.session_state["chat_history"][
                                 st.session_state["selected_chat_id"]
                             ]["chunk_ids"][-1] = st.session_state["latest_chunk_ids"]
@@ -235,10 +222,7 @@ def write_stream(stream):
                     ]["chunk_ids"][-1]
                 )
                 == 0
-            ) and (
-                server_state[f"{st.session_state['user_name']}_selected_corpus"]
-                != "No corpus"
-            ):
+            ) and (st.session_state["selected_corpus"] != "No corpus"):
                 st.session_state["chat_history"][st.session_state["selected_chat_id"]][
                     "chunk_ids"
                 ][-1] = st.session_state["latest_chunk_ids"]

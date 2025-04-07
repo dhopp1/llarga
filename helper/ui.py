@@ -57,6 +57,7 @@ def initial_placeholder():
         load_lvs_corpora()
 
     ### load user options
+    # chat history
     if "chat_history" not in st.session_state:
         if os.path.isfile(
             f"""metadata/chat_histories/{st.session_state["user_name"]}_chats.pickle"""
@@ -76,12 +77,28 @@ def initial_placeholder():
         v["chat_name"] for k, v in st.session_state["chat_history"].items()
     ][::-1]
 
+    # llm
     if "llm_info" not in st.session_state:
         st.session_state["llm_info"] = pd.read_csv("metadata/llm_list.csv")
         st.session_state["llm_dropdown_options"] = list(
             st.session_state["llm_info"].loc[lambda x: x["display"] == 1, "name"].values
         )
 
+    # corpora
+    st.session_state["corpora_list"] = pd.read_csv("metadata/corpora_list.csv")
+    st.session_state["corpus_options"] = ["No corpus", "Workspace"] + [
+        _
+        for _ in list(st.session_state["corpora_list"]["name"])
+        if "Workspace" not in _
+    ]
+
+    st.session_state["default_corpus"] = (
+        st.session_state["users_info"]
+        .loc[lambda x: x["user"] == st.session_state["user_name"], "default_corpus"]
+        .values[0]
+    )
+
+    # user settings pickle file
     if "user_settings" not in st.session_state:
         try:
             st.session_state["user_settings"] = pickle_load(
@@ -99,6 +116,14 @@ def initial_placeholder():
             ][st.session_state["latest_chat_id"]][
                 "chat_name"
             ]  # default chat name is latest one
+            st.session_state["user_settings"]["selected_corpus"] = (
+                st.session_state["users_info"]
+                .loc[
+                    lambda x: x["user"] == st.session_state["user_name"],
+                    "default_corpus",
+                ]
+                .values[0]
+            )  # default loaded corpus is the one specified for the user
     else:
         st.session_state.selected_chat_name = st.session_state["user_settings"][
             "selected_chat_name"
@@ -107,8 +132,8 @@ def initial_placeholder():
 
 def user_specific_load():
     "load various defaults for a user"
-    if f"{st.session_state['user_name']}_selected_corpus" not in server_state:
-        server_state[f"{st.session_state['user_name']}_selected_corpus"] = (
+    if "selected_corpus" not in st.session_state:
+        st.session_state["selected_corpus"] = (
             pd.read_csv("metadata/user_list.csv")
             .loc[lambda x: x["user"] == st.session_state["user_name"], "default_corpus"]
             .values[0]
@@ -116,25 +141,15 @@ def user_specific_load():
 
 
 def metadata_tab():
-    if server_state[f"{st.session_state['user_name']}_selected_corpus"] != "No corpus":
+    if st.session_state["selected_corpus"] != "No corpus":
         if "new_corpus_loaded" not in st.session_state:
             update_server_state(
                 f"{st.session_state['user_name']}_new_corpus_loaded", True
             )
             st.session_state["old_corpus"] = "No corpus"
 
-        if (
-            server_state[f"{st.session_state['user_name']}_selected_corpus"]
-            == "Workspace"
-        ):
-            corpus_name = f'Workspace {st.session_state["user_name"]}'
-        else:
-            corpus_name = server_state[
-                f"{st.session_state['user_name']}_selected_corpus"
-            ]
-
         st.session_state["corpus_metadata"] = pd.read_csv(
-            f"""{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv"""
+            f"""{st.session_state["corpora_path"]}/metadata_{st.session_state["selected_corpus_realname"]}.csv"""
         )
         st.session_state["corpus_metadata"] = st.session_state["corpus_metadata"].loc[
             :,
@@ -147,8 +162,7 @@ def metadata_tab():
 
         if (
             f"{st.session_state['user_name']}_display_metadata" not in server_state
-            or server_state[f"{st.session_state['user_name']}_selected_corpus"]
-            != st.session_state["old_corpus"]
+            or st.session_state["selected_corpus"] != st.session_state["old_corpus"]
         ):
             st.session_state["corpus_metadata"]["Include in queries"] = True
         else:
@@ -156,9 +170,7 @@ def metadata_tab():
                 f"{st.session_state['user_name']}_display_metadata"
             ]["Include in queries"]
 
-        st.session_state["old_corpus"] = server_state[
-            f"{st.session_state['user_name']}_selected_corpus"
-        ]
+        st.session_state["old_corpus"] = st.session_state["selected_corpus"]
 
         server_state[f"{st.session_state['user_name']}_display_metadata"] = (
             st.data_editor(

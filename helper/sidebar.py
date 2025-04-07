@@ -255,62 +255,42 @@ The LLM has maximum creativity and freedom.
 
 
 def sidebar_which_corpus():
-    st.session_state["corpora_list"] = pd.read_csv("metadata/corpora_list.csv")
-    corpus_options = ["No corpus", "Workspace"] + [
-        _
-        for _ in list(st.session_state["corpora_list"]["name"])
-        if "Workspace" not in _
-    ]
-    st.session_state["default_corpus"] = (
-        st.session_state["users_info"]
-        .loc[lambda x: x["user"] == st.session_state["user_name"], "default_corpus"]
-        .values[0]
-    )
-
-    server_state[f"{st.session_state['user_name']}_selected_corpus"] = st.selectbox(
+    st.selectbox(
         "Currently loaded corpus",
-        options=corpus_options,
+        options=st.session_state["corpus_options"],
         index=(
-            0
-            if f"{st.session_state['user_name']}_selected_corpus" not in server_state
-            else corpus_options.index(
-                st.session_state["users_info"]
-                .loc[
-                    lambda x: x["user"] == st.session_state["user_name"],
-                    "default_corpus",
-                ]
-                .values[0]
+            st.session_state["corpus_options"].index(
+                st.session_state["user_settings"]["selected_corpus"]
+            )
+            if "selected_corpus" not in st.session_state
+            else st.session_state["corpus_options"].index(
+                st.session_state["selected_corpus"]
             )
         ),
+        key="selected_corpus",
         help="Which corpus to query against. `Workspace` is your personal corpus only you can see. All others are visible to all users. The `Corpus metadata` expander shows the metadata of the documents in the corpus. You can select/unselect documents in via the `Include in queries` column. Only documents checked in that column will be considered relevant for the LLM. You can hover over the table and click the full screen button (like a square) to view the table in a bigger format.",
+        on_change=save_user_settings,
+    )
+
+    st.session_state["selected_corpus_realname"] = (
+        st.session_state["selected_corpus"]
+        if "Workspace" not in st.session_state["selected_corpus"]
+        else f'Workspace {st.session_state["user_name"]}'
     )
 
 
 def sidebar_system_prompt():
     try:
-        if (
-            server_state[f"{st.session_state['user_name']}_selected_corpus"]
-            == "Workspace"
-        ):
-            corpus_name = f'Workspace {st.session_state["user_name"]}'
-        else:
-            corpus_name = server_state[
-                f"{st.session_state['user_name']}_selected_corpus"
-            ]
-
         st.session_state["default_system_prompt"] = (
             st.session_state["corpora_list"]
             .loc[
-                lambda x: x["name"] == corpus_name,
+                lambda x: x["name"] == st.session_state["selected_corpus_realname"],
                 "system_prompt",
             ]
             .values[0]
         )
     except:
-        if (
-            server_state[f"{st.session_state['user_name']}_selected_corpus"]
-            == "No corpus"
-        ):
+        if st.session_state["selected_corpus"] == "No corpus":
             st.session_state["default_system_prompt"] = (
                 st.session_state["settings"]
                 .loc[
@@ -469,25 +449,26 @@ def sidebar_delete_corpus():
     if st.session_state["delete_corpus_button"]:
         if st.session_state["delete_corpus_name"] not in ["No corpus", "Workspace"]:
             try:
-                if st.session_state["delete_corpus_name"] == "Workspace":
-                    corpus_name = f'Workspace {st.session_state["user_name"]}'
-                else:
-                    corpus_name = st.session_state["delete_corpus_name"]
-
                 # delete metadata file
                 os.remove(
-                    f'{st.session_state["corpora_path"]}/metadata_{corpus_name}.csv'
+                    f'{st.session_state["corpora_path"]}/metadata_{st.session_state["selected_corpus_realname"]}.csv'
                 )
                 # delete file directory
-                shutil.rmtree(f'{st.session_state["corpora_path"]}/{corpus_name}/')
+                shutil.rmtree(
+                    f'{st.session_state["corpora_path"]}/{st.session_state["selected_corpus_realname"]}/'
+                )
                 # delete embeddings file
                 os.remove(
-                    f'{st.session_state["corpora_path"]}/embeddings_{corpus_name}.parquet'
+                    f'{st.session_state["corpora_path"]}/embeddings_{st.session_state["selected_corpus_realname"]}.parquet'
                 )
                 # remove from corpora_list csv
                 st.session_state["corpora_list"] = (
                     st.session_state["corpora_list"]
-                    .loc[lambda x: x["name"] != corpus_name, :]
+                    .loc[
+                        lambda x: x["name"]
+                        != st.session_state["selected_corpus_realname"],
+                        :,
+                    ]
                     .reset_index(drop=True)
                 )
                 st.session_state["corpora_list"].to_csv(
@@ -497,11 +478,9 @@ def sidebar_delete_corpus():
                 st.info("Corpus successfully deleted!")
                 if (
                     st.session_state["delete_corpus_name"]
-                    == server_state[f"{st.session_state['user_name']}_selected_corpus"]
+                    == st.session_state["selected_corpus"]
                 ):
-                    server_state[f"{st.session_state['user_name']}_selected_corpus"] = (
-                        "Workspace"
-                    )
+                    st.session_state["selected_corpus"] = "Workspace"
                 st.session_state["delete_corpus_name"] = ""
                 time.sleep(3)
                 st.rerun()
