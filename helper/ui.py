@@ -255,13 +255,18 @@ def run_batch_query():
             progress = st.progress(0)
 
         prompts = ["Hello", "Hello again"]
-        counter = 0
-        for prompt in prompts:
-            progress.progress(counter / len(prompts))
-            status.text(f"Processing batch query: {counter}/{len(prompts)}")
-            chat_loop(prompt, use_memory=False)
-            counter += 1
-        progress.progress(counter / len(prompts))
+        text_ids = [[1, 2], [4]]
+        for i in range(len(prompts)):
+            if st.session_state["selected_corpus"] != "No corpus":
+                st.session_state["display_metadata"]["Include in queries"] = False
+                st.session_state["display_metadata"].loc[
+                    lambda x: x["text_id"].isin(text_ids[i]), "Include in queries"
+                ] = True  # setting selected text_ids
+
+            progress.progress(i / len(prompts))
+            status.text(f"Processing batch query: {i}/{len(prompts)}")
+            chat_loop(prompts[i], use_memory=False)
+        progress.progress((i + 1) / len(prompts))
         status.info(
             "Batch query complete! Download results by clicking the `Export chat history as Excel file` button."
         )
