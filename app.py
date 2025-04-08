@@ -41,6 +41,7 @@ import_styles()
 initial_placeholder()
 
 ### sidebar
+st.sidebar.markdown(f'# {st.session_state["user_name"]}')
 # previous chats
 st.sidebar.markdown("### Chats")
 sidebar_chats()
