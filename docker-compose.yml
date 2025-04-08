@@ -1,0 +1,14 @@
+services:
+  llarga:
+    build:
+      dockerfile: Dockerfile
+    environment:
+      HF_TOKEN: <HF_TOKEN>
+    working_dir: /app/llarga
+    ports:
+      - 8800:8800
+    volumes:
+      - <local_path_corpora>:/app/llarga/corpora
+      - <local_path_metadata>:/app/llarga/metadata
+      - <local_path_secrets.toml>:/app/llarga/.streamlit/secrets.toml
+    command: ["streamlit", "run", "app.py", "--server.port=8800", "--server.address=0.0.0.0"]
