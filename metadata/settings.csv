@@ -6,3 +6,4 @@ max_tokens,2048
 chunk_size,700
 chunk_overlap,150
 context_window_rag_ratio,0.5
+manage_llama_cpp,0

@@ -522,6 +522,11 @@ def chat_loop(prompt, use_memory=True):
             "model_name",
         ]
         .values[0]
+    ) and (
+        st.session_state["settings"]
+        .loc[lambda x: x["field"] == "manage_llama_cpp", "value"]
+        .values[0]
+        == "1"
     ):
         # lock the model to perform requests sequentially
         if "llm_generating" not in server_state:
@@ -602,6 +607,11 @@ def chat_loop(prompt, use_memory=True):
                 "model_name",
             ]
             .values[0]
+        ) and (
+            st.session_state["settings"]
+            .loc[lambda x: x["field"] == "manage_llama_cpp", "value"]
+            .values[0]
+            == "1"
         ):
             unlock_llm_release_queue()
         st.error(
@@ -660,6 +670,11 @@ def chat_loop(prompt, use_memory=True):
             "model_name",
         ]
         .values[0]
+    ) and (
+        st.session_state["settings"]
+        .loc[lambda x: x["field"] == "manage_llama_cpp", "value"]
+        .values[0]
+        == "1"
     ):
         unlock_llm_release_queue()
 

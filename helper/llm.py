@@ -134,6 +134,11 @@ def write_stream(stream):
                 "model_name",
             ]
             .values[0]
+        ) and (
+            st.session_state["settings"]
+            .loc[lambda x: x["field"] == "manage_llama_cpp", "value"]
+            .values[0]
+            == "1"
         ):
             lock_llm()
 
@@ -241,5 +246,10 @@ def write_stream(stream):
                 "model_name",
             ]
             .values[0]
+        ) and (
+            st.session_state["settings"]
+            .loc[lambda x: x["field"] == "manage_llama_cpp", "value"]
+            .values[0]
+            == "1"
         ):
             unlock_llm()

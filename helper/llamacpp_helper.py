@@ -63,6 +63,11 @@ def check_reload_llama_cpp():
                 "model_name",
             ]
             .values[0]
+        ) and (
+            st.session_state["settings"]
+            .loc[lambda x: x["field"] == "manage_llama_cpp", "value"]
+            .values[0]
+            == "1"
         ):
             # if no model loaded, load the selected one
             if "llama_cpp_pid" not in server_state:
