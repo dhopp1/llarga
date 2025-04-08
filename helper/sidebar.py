@@ -425,10 +425,21 @@ def gen_export_df():
 def sidebar_upload_file():
     st.session_state["uploaded_file"] = st.file_uploader(
         "Upload your own documents",
-        type=[".zip", ".docx", ".doc", ".txt", ".pdf", ".csv", ".mp3", ".mp4"],
+        type=[
+            ".zip",
+            ".docx",
+            ".doc",
+            ".txt",
+            ".pdf",
+            ".csv",
+            ".xlsx",
+            ".xls",
+            ".mp3",
+            ".mp4",
+        ],
         help="""Any of: \n\n
 - a single metadata.csv file (named exactly `metadata.csv`), with at least one column named `web_filepath` with the web addresses of the .html or .pdf documents
-- a single .docx, .doc, .txt., .pdf, .mp3, .mp4, or .wav file
+- a single .docx, .doc, .txt., .pdf, .csv, .xlsx, .xls, .mp3, .mp4, or .wav file
 - a .zip file that contains documents zipped inside
 - a .zip file that also includes a metadata.csv file in it (named exactly `metadata.csv`), with at least a column named `filename` with the names of the files \n\n
     

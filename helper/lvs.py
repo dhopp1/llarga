@@ -170,6 +170,21 @@ def unzip_file(zip_path, output_dir="zip_output"):
                 shutil.copyfileobj(source, target)
 
 
+if False:
+
+    def convert_to_text(processor, text_id):
+        "handle normal pdf/other conversion as well as CSV and xlsx"
+        file_ending = (
+            processor.metadata[lambda x: x["text_id"] == text_id, "filepath"]
+            .values[0]
+            .split(".")[-1]
+        )
+        if file_ending in ["csv", "xlsx", "xls"]:
+            pass
+
+        processor.convert_to_text(text_id)
+
+
 def process_corpus():
     "process a corpus into text and create the vector db"
     if st.session_state["new_corpus_name"] != "Workspace":
@@ -289,6 +304,8 @@ def process_corpus():
                         ".mp4",
                         ".wav",
                         ".csv",
+                        ".xlsx",
+                        ".xls",
                     ]
                 )
                 and "._" not in _
