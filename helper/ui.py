@@ -316,7 +316,10 @@ def run_batch_query():
             try:
                 return [int(_) for _ in field.split(",")]
             except:
-                return list(st.session_state["display_metadata"]["text_id"].values)
+                try:  # just a single text id
+                    return [int(field)]
+                except:
+                    return list(st.session_state["display_metadata"]["text_id"].values)
 
         text_ids = [parse_text_ids(_) for _ in list(bulk_file["text_ids"].values)]
 
