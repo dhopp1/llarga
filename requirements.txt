@@ -3,6 +3,7 @@ local-vector-search
 openai
 pandas
 polars
+psutil
 streamlit
 streamlit-server-state
 tabulate
