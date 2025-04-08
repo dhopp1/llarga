@@ -66,7 +66,12 @@ def gen_llm_response(query, messages_input=[]):
             )
         ):  # don't run for naming the chat
             # logic for a condensed standalone query
-            if len(messages) > 2:  # 2 = 1 system, 1 user prompt
+            if (len(messages) > 2) and (
+                st.session_state["settings"]
+                .loc[lambda x: x["field"] == "use_condensed_lvs_query", "value"]
+                .values[0]
+                == "1"
+            ):  # 2 = 1 system, 1 user prompt
                 condensed_messages = messages.copy()
                 condensed_messages[-1][
                     "content"

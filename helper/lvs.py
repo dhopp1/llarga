@@ -10,7 +10,12 @@ from streamlit_server_state import no_rerun, server_state, server_state_lock
 import time
 import zipfile
 
-from helper.user_management import update_server_state
+
+def update_server_state(key, value):
+    "update the server state variable"
+    with no_rerun:
+        with server_state_lock[key]:
+            server_state[key] = value
 
 
 def save_user_settings(selected_chat_name=None, display_metadata_overwrite=True):

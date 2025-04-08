@@ -5,7 +5,7 @@ from streamlit_server_state import server_state
 import subprocess
 import time
 
-from helper.user_management import update_server_state
+from helper.lvs import update_server_state
 
 
 def start_llama_cpp_server(name, llm_info_df):

@@ -4,6 +4,8 @@ import pandas as pd
 import streamlit as st
 from streamlit_server_state import no_rerun, server_state, server_state_lock
 
+from helper.lvs import save_user_settings, update_server_state
+
 
 def check_password():
     """Check if a user entered the password correctly"""
@@ -78,13 +80,6 @@ def setup_local_files():
         os.makedirs("metadata/chat_histories/")
 
 
-def update_server_state(key, value):
-    "update the server state variable"
-    with no_rerun:
-        with server_state_lock[key]:
-            server_state[key] = value
-
-
 def lock_llm():
     with no_rerun:
         with server_state_lock["llm_generating"]:
@@ -105,3 +100,4 @@ def unlock_llm_release_queue():
         if len(server_state["exec_queue"]) > 0:
             if server_state["exec_queue"][0] == st.session_state["user_name"]:
                 update_server_state("exec_queue", server_state["exec_queue"][1:])
+    save_user_settings()

@@ -8,13 +8,12 @@ import time
 
 from helper.llamacpp_helper import check_reload_llama_cpp
 from helper.llm import gen_llm_response, write_stream
-from helper.lvs import load_lvs_corpora, save_user_settings
+from helper.lvs import load_lvs_corpora, save_user_settings, update_server_state
 from helper.sidebar import make_new_chat
 from helper.user_management import (
     lock_llm,
     unlock_llm,
     unlock_llm_release_queue,
-    update_server_state,
 )
 
 
@@ -559,7 +558,7 @@ def chat_loop(prompt, use_memory=True):
                 # check if it hasn't been used in a while, potentially interrupted while executing
                 if (datetime.now() - server_state["last_used"]).total_seconds() > 60:
                     if (
-                        server_state["exec_queue"][1] == st.session_state["user_name"]
+                        server_state["exec_queue"][0] == st.session_state["user_name"]
                     ):  # only perform if first in the queue
                         unlock_llm()
                         update_server_state(
@@ -567,9 +566,12 @@ def chat_loop(prompt, use_memory=True):
                         )  # take the first person out of the queue
                         update_server_state("last_used", datetime.now())
 
-                t.markdown(
-                    f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
-                )
+                try:
+                    t.markdown(
+                        f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
+                    )
+                except:
+                    pass
                 time.sleep(1)
             t.empty()
 
