@@ -437,12 +437,21 @@ def process_corpus():
     )
 
     # update the corpus list csv
+    if st.session_state["use_default_system_prompts"]:
+        sys_prompt = (
+            st.session_state["settings"]
+            .loc[lambda x: x["field"] == "default_corpus_system_prompt", "value"]
+            .values[0]
+        )
+    else:
+        sys_prompt = st.session_state["system_prompt"]
+
     tmp_corpora_list = pd.DataFrame(
         {
             "name": new_name,
             "text_path": f'{st.session_state["corpora_path"]}/{new_name}/',
             "metadata_path": f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
-            "system_prompt": st.session_state["system_prompt"],
+            "system_prompt": sys_prompt,
         },
         index=[0],
     )
