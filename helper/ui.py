@@ -111,6 +111,22 @@ def initial_placeholder():
 
     # corpora
     st.session_state["corpora_list"] = pd.read_csv("metadata/corpora_list.csv")
+
+    # filter for only those visible to this user
+    try:  # if fails, no corpora with a specific user list
+        st.session_state["corpora_list"] = (
+            st.session_state["corpora_list"]
+            .loc[
+                lambda x: (x["user_list"].str.contains(st.session_state["user_name"]))
+                | (x["user_list"] == "")
+                | (pd.isna(x["user_list"])),
+                :,
+            ]
+            .reset_index(drop=True)
+        )
+    except:
+        pass
+
     if os.path.isdir(
         f"""{st.session_state["corpora_path"]}/Workspace {st.session_state["user_name"]}"""
     ):
