@@ -94,10 +94,10 @@ def unlock_llm():
         print("Unlocked LLM")
 
 
-def unlock_llm_release_queue():
+def unlock_llm_release_queue(selected_chat_name=None):
     unlock_llm()
     if "exec_queue" in server_state:
         if len(server_state["exec_queue"]) > 0:
             if server_state["exec_queue"][0] == st.session_state["user_name"]:
                 update_server_state("exec_queue", server_state["exec_queue"][1:])
-    save_user_settings()
+    save_user_settings(selected_chat_name=selected_chat_name)

@@ -697,7 +697,10 @@ def chat_loop(prompt, use_memory=True):
         .values[0]
         == "1"
     ):
-        unlock_llm_release_queue()
+        try:
+            unlock_llm_release_queue(selected_chat_name=chat_name)
+        except:
+            unlock_llm_release_queue()
 
     # saving chat history
     pickle_save(
