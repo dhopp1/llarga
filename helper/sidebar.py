@@ -264,13 +264,20 @@ The LLM has maximum creativity and freedom.
 
 
 def sidebar_which_corpus():
+    # robust to user deleted the currently selected corpus
+    def robust_corpus():
+        try:
+            return st.session_state["corpus_options"].index(
+                st.session_state["user_settings"]["selected_corpus"]
+            )
+        except:
+            return 0
+
     st.selectbox(
         "Currently loaded corpus",
         options=st.session_state["corpus_options"],
         index=(
-            st.session_state["corpus_options"].index(
-                st.session_state["user_settings"]["selected_corpus"]
-            )
+            robust_corpus()
             if "selected_corpus" not in st.session_state
             else st.session_state["corpus_options"].index(
                 st.session_state["selected_corpus"]
@@ -450,6 +457,18 @@ Once you've uploaded your file, click `Process corpus`. The system prompt for th
     )
 
     st.text_input("Name for new corpus", value="Workspace", key="new_corpus_name")
+
+    st.session_state["visible_corpus_names"] = st.multiselect(
+        "Who should corpus be accessible by?",
+        options=st.session_state["users_list"],
+        help="""
+If you leave this field blank, the corpus will be accessible by all users. If you put your user name, it will be available only to you. 
+
+You can make it available to multiple users by entering their user names.
+
+Names of the corpora are shared across users (except for the name `Workspace`, which is unique to each user), so if you get a warning that a corpora with this name already exists, it may be that someone else has already used this name, so you will overwrite their data. If you know you are the one who created the corpus with that name then you can proceed and overwrite it if you like.
+""",
+    )
 
     # show a warning if there is a corpus with this name
     if st.session_state["new_corpus_name"] in list(
