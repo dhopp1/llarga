@@ -448,7 +448,7 @@ def sidebar_upload_file():
 - a single metadata.csv file (named exactly `metadata.csv`), with at least one column named `web_filepath` with the web addresses of the .html or .pdf documents
 - a single .docx, .doc, .txt., .pdf, .csv, .xlsx, .xls, .mp3, .mp4, or .wav file
 - a .zip file that contains documents zipped inside
-- a .zip file that also includes a metadata.csv file in it (named exactly `metadata.csv`), with at least a column named `filename` with the names of the files \n\n
+- a .zip file that also includes a metadata.csv file in it (named exactly `metadata.csv`), with at least a column named `filepath` with the names of the files \n\n
     
 If you upload a metadata file, you can include a column in it called `vector_weight`. 1 = normal weight, 0.98 = slightly harder to find this document, 0.5 = twice as hard to find this document, etc. \n\n
 

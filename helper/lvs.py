@@ -218,12 +218,15 @@ def process_corpus():
                 pass
 
         # write the uploaded file
-        with open(
-            f"""{temp_directory}tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
-            "wb",
-        ) as new_file:
-            new_file.write(st.session_state["uploaded_file"].getbuffer())
-            new_file.close()
+        try:
+            with open(
+                f"""{temp_directory}tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
+                "wb",
+            ) as new_file:
+                new_file.write(st.session_state["uploaded_file"].getbuffer())
+                new_file.close()
+        except:
+            st.error("Are you sure you uploaded a file?")
 
         ### process the uploaded file
         # convert documents to text
