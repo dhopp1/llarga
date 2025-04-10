@@ -1,4 +1,7 @@
 import streamlit as st
+import torch
+
+torch.classes.__path__ = []  # necessary for Docker
 
 from helper.sidebar import (
     sidebar_batch_query,

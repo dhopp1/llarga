@@ -1,0 +1,22 @@
+services:
+  llarga:
+    build:
+      dockerfile: Dockerfile-gpu
+    environment:
+      HF_TOKEN: <HF_TOKEN>
+    working_dir: /app/llarga
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: 'all'
+    ports:
+      - 8800:8800
+    volumes:
+      - <local corpora path>:/app/llarga/corpora
+      - <local metadata path>:/app/llarga/metadata
+      - <local models path>:/app/llarga/models
+      - <local secrets.toml path>:/app/llarga/.streamlit/secrets.toml
+    command: ["streamlit", "run", "app.py", "--server.port=8800", "--server.address=0.0.0.0"]

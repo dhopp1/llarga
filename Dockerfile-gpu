@@ -1,14 +1,9 @@
-FROM ubuntu:22.04
-
-WORKDIR /app
+FROM ghcr.io/ggerganov/llama.cpp:server-cuda
 
 ### install python
 RUN apt-get update
 RUN apt-get install -y curl git python3-pip python3-dev python-is-python3
 RUN rm -rf /var/lib/apt/lists/*
-#RUN apt-get install vim
-RUN apt-get update -y
-RUN apt-get install -y ninja-build
 
 ### nlp_pipeline requirements
 RUN apt-get update
@@ -32,3 +27,5 @@ RUN pip install -r https://raw.githubusercontent.com/dhopp1/local_vector_search/
 ### larga requirements
 RUN git clone https://github.com/dhopp1/llarga.git
 RUN pip install -r https://raw.githubusercontent.com/dhopp1/llarga/main/requirements.txt
+
+ENTRYPOINT []
