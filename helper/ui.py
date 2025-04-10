@@ -205,24 +205,29 @@ def initial_placeholder():
     for name in st.session_state["corpora_list"]["name"]:
         # add it if it's a new corpus
         if name not in st.session_state["user_settings"]["display_metadata"]:
-            st.session_state["user_settings"]["display_metadata"][name] = pd.read_csv(
-                f"""{st.session_state["corpora_path"]}/metadata_{name}.csv"""
-            )
-            st.session_state["user_settings"]["display_metadata"][
-                name
-            ] = st.session_state["user_settings"]["display_metadata"][name].loc[
-                :,
-                [
-                    _
-                    for _ in st.session_state["user_settings"]["display_metadata"][
-                        name
-                    ].columns
-                    if _ not in ["filepath"]
-                ],
-            ]
-            st.session_state["user_settings"]["display_metadata"][name][
-                "Include in queries"
-            ] = True
+            try:
+                st.session_state["user_settings"]["display_metadata"][name] = (
+                    pd.read_csv(
+                        f"""{st.session_state["corpora_path"]}/metadata_{name}.csv"""
+                    )
+                )
+                st.session_state["user_settings"]["display_metadata"][
+                    name
+                ] = st.session_state["user_settings"]["display_metadata"][name].loc[
+                    :,
+                    [
+                        _
+                        for _ in st.session_state["user_settings"]["display_metadata"][
+                            name
+                        ].columns
+                        if _ not in ["filepath"]
+                    ],
+                ]
+                st.session_state["user_settings"]["display_metadata"][name][
+                    "Include in queries"
+                ] = True
+            except:
+                pass
 
 
 def metadata_tab():
@@ -234,41 +239,44 @@ def metadata_tab():
     )
 
     if st.session_state["selected_corpus"] != "No corpus":
-        st.session_state["display_metadata"] = st.data_editor(
-            st.session_state["user_settings"]["display_metadata"][
-                st.session_state["selected_corpus_realname"]
-            ],
-            column_config={
-                "Include in queries": st.column_config.CheckboxColumn(
-                    "Include in queries"
-                )
-            },
-            disabled=[
-                col
-                for col in st.session_state["user_settings"]["display_metadata"][
+        try:
+            st.session_state["display_metadata"] = st.data_editor(
+                st.session_state["user_settings"]["display_metadata"][
                     st.session_state["selected_corpus_realname"]
-                ].columns
-                if col != "Include in queries"
-            ],
-            hide_index=True,
-        )
+                ],
+                column_config={
+                    "Include in queries": st.column_config.CheckboxColumn(
+                        "Include in queries"
+                    )
+                },
+                disabled=[
+                    col
+                    for col in st.session_state["user_settings"]["display_metadata"][
+                        st.session_state["selected_corpus_realname"]
+                    ].columns
+                    if col != "Include in queries"
+                ],
+                hide_index=True,
+            )
 
-        # select all or unselect all
-        def select_all():
-            st.session_state["display_metadata"]["Include in queries"] = True
-            save_user_settings()
+            # select all or unselect all
+            def select_all():
+                st.session_state["display_metadata"]["Include in queries"] = True
+                save_user_settings()
 
-        def unselect_all():
-            st.session_state["display_metadata"]["Include in queries"] = False
-            save_user_settings()
+            def unselect_all():
+                st.session_state["display_metadata"]["Include in queries"] = False
+                save_user_settings()
 
-        st.button("Select all", key="select_all_button", on_click=select_all)
-        st.button("Unselect all", key="unselect_all_button", on_click=unselect_all)
-        st.button(
-            "Save selection",
-            on_click=save_user_settings,
-            help="Click to save your selection.",
-        )
+            st.button("Select all", key="select_all_button", on_click=select_all)
+            st.button("Unselect all", key="unselect_all_button", on_click=unselect_all)
+            st.button(
+                "Save selection",
+                on_click=save_user_settings,
+                help="Click to save your selection.",
+            )
+        except:
+            pass
 
     if st.session_state["llm_select_metadata_button"]:
         metadata_button_messages = [
