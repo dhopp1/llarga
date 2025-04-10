@@ -31,6 +31,8 @@ This section contains information for users of the application. For reference, R
 		- _.pdf_
 		- _.csv_: for csv, xlsx, and xls, the data will be converted to markdown tables so the LLM can parse it more easily. Only the first sheet will be converted for Excel files
 		- _.xlsx_
+		- _.xls_
+		- _.pptx_: note, the older `.ppt` format is not supported. Convert these to `.pptx` in PowerPoint BEFORE zipping and uploading them to the system.
 		- _.mp3_: audio and video files will be automatically converted to text
 		- _.mp4_
 	- upload a single `metadata.csv` file with at least one column called `web_filepath` with the URLs of the documents you would like in the corpus. You can provide additional columns with more metadata. The URLs must lead directly to the content page you would like (e.g., the URL directly to the PDF file itself, not the landing page where it is linked). The file must be named **exactly** `metadata.csv` and the URL column must be named **exactly** `web_filepath` or the upload will not work.

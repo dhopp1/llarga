@@ -299,6 +299,7 @@ def process_corpus():
                         ".csv",
                         ".xlsx",
                         ".xls",
+                        ".pptx",
                     ]
                 )
                 and "._" not in _
