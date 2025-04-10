@@ -19,7 +19,23 @@ def start_llama_cpp_server(name, llm_info_df):
 
     with st.spinner("Loading LLM...", show_time=True):
         process = subprocess.Popen(
-            ["llama-server", "-m", llm_filepath, "--port", port, "--no-warmup"],
+            [
+                "llama-server",
+                "-m",
+                llm_filepath,
+                "--port",
+                port,
+                "--ctx-size",
+                str(
+                    st.session_state["llm_info"]
+                    .loc[
+                        lambda x: x["name"] == st.session_state["selected_llm"],
+                        "context_length",
+                    ]
+                    .values[0]
+                ),
+                "--no-warmup",
+            ],
             start_new_session=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
