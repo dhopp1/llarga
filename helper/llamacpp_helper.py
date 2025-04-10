@@ -20,7 +20,14 @@ def start_llama_cpp_server(name, llm_info_df):
     with st.spinner("Loading LLM...", show_time=True):
         process = subprocess.Popen(
             [
-                "llama-server",
+                (
+                    st.session_state["settings"]
+                    .loc[
+                        lambda x: x["field"] == "llama_server_command",
+                        "value",
+                    ]
+                    .values[0]
+                ),
                 "-m",
                 llm_filepath,
                 "--port",
@@ -34,8 +41,37 @@ def start_llama_cpp_server(name, llm_info_df):
                     ]
                     .values[0]
                 ),
+                "--gpu-layers",
+                str(
+                    st.session_state["settings"]
+                    .loc[
+                        lambda x: x["field"] == "llama_server_n_gpu_layers",
+                        "value",
+                    ]
+                    .values[0]
+                ),
                 "--no-warmup",
             ],
+            cwd=(
+                None
+                if (
+                    st.session_state["settings"]
+                    .loc[
+                        lambda x: x["field"] == "llama_server_cwd",
+                        "value",
+                    ]
+                    .values[0]
+                )
+                == "None"
+                else (
+                    st.session_state["settings"]
+                    .loc[
+                        lambda x: x["field"] == "llama_server_cwd",
+                        "value",
+                    ]
+                    .values[0]
+                )
+            ),
             start_new_session=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

@@ -90,8 +90,11 @@ Various settings of the app. Explanation of fields:
 - **chunk_size**: the number of tokens each chunk is when embedding and chunking the documents.
 - **chunk_overlap**: the number of tokens of overlap each chunk has, to avoid splitting sentences in the middle and not having the complete thought contained in any chunk.
 - **context\_window\_rag\_ratio**: number from 0 to 1. What percent of the context window of the LLM to use for the RAG context. This will dynamically determine the number of chunks based on the chunk size and the context window of the LLM. You would want to be less than 1 to have room for chat memory in the LLM's context window.
-- **manage_llama_cpp**: `1` if you want the app to dynamically manage your llamacpp servers, hot switching between different models, managing queue, etc. `0` if you will manage the llamacpp server outside of the app.
+- **manage\_llama\_cpp**: `1` if you want the app to dynamically manage your llamacpp servers, hot switching between different models, managing queue, etc. `0` if you will manage the llamacpp server outside of the app.
 - **use\_condensed\_lvs\_query**: `1` if you want the LLM to condense follow-up queries to standalone questions before querying the embeddings to ensure the retrieval of relevant documents. Takes a little bit more time. `0` if you just want to send the user question as is to the vector search.
+- **llama\_server\_command**: If llama-server isn't in your path, the full path to llama-server. Should be `/app/llama-server` for the GPU docker file.
+- **llama\_server\_cwd**: If llama-server isn't in your path, where the llama-server command needs to be run from. Should be `/app` for the GPU docker file.
+- **llama\_server\_n\_gpu\_layers**: Number of layers to offload to the GPU.
 
 ### metadata/user_list.csv
 A list of users for the application. Their display name in the `user` column, what their default corpus should be upon first loadup in the `default_corpus` column. Each user gets their own password, which can be set in the `.streamlit/secrets.toml` file. Each user on a new line with their own password. Replace spaces with underscores in the `secrets.toml` file. For instance, if the user's name is `Test User`, it should appear as `Test_User = "password"` in the `secrets.toml` file.

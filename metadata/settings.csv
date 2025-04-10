@@ -1,10 +1,13 @@
 field,value
 app_title,Llarga
-default_no_corpus_system_prompt,"You are a chatbot."
-default_corpus_system_prompt,"You are a chatbot specialized in answering questions based on a provided context. Do not provide answers that are not found within the context."
+default_no_corpus_system_prompt,You are a chatbot.
+default_corpus_system_prompt,You are a chatbot specialized in answering questions based on a provided context. Do not provide answers that are not found within the context.
 max_tokens,2048
 chunk_size,700
 chunk_overlap,150
 context_window_rag_ratio,0.5
 manage_llama_cpp,1
 use_condensed_lvs_query,1
+llama_server_command,llama-server
+llama_server_cwd,None
+llama_server_n_gpu_layers,100
