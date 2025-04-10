@@ -4,7 +4,7 @@ WORKDIR /app
 
 ### install python
 RUN apt-get update
-RUN apt-get install -y curl git python3-pip python3-dev python-is-python3
+RUN apt-get install -y curl ffmpeg git python3-pip python3-dev python-is-python3
 RUN rm -rf /var/lib/apt/lists/*
 #RUN apt-get install vim
 RUN apt-get update -y

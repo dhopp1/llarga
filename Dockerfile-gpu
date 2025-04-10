@@ -2,7 +2,7 @@ FROM ghcr.io/ggerganov/llama.cpp:server-cuda
 
 ### install python
 RUN apt-get update
-RUN apt-get install -y curl git python3-pip python3-dev python-is-python3
+RUN apt-get install -y curl ffmpeg git python3-pip python3-dev python-is-python3
 RUN rm -rf /var/lib/apt/lists/*
 
 ### nlp_pipeline requirements
