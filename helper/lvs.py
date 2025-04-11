@@ -451,6 +451,7 @@ def process_corpus():
             "metadata_path": f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
             "user_list": ",".join(st.session_state["visible_corpus_names"]),
             "system_prompt": sys_prompt,
+            "private": 1 if st.session_state["private_corpus"] else 0,
         },
         index=[0],
     )

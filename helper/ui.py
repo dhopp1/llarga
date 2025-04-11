@@ -733,6 +733,21 @@ def import_chat():
     if "chat_history" in st.session_state:
         populate_chat()
 
-    if prompt := st.chat_input("Enter question"):
-        chat_loop(prompt)
-        st.rerun()
+    # don't let them query a private corpus with a cloud llm
+    if st.session_state["selected_corpus"] == "No corpus":
+        allow_chat = True
+    elif st.session_state["corpora_list"].loc[
+        lambda x: x["name"] == st.session_state["selected_corpus_realname"], "private"
+    ].values[0] not in ["1", 1]:
+        allow_chat = True
+    elif "(private)" in st.session_state["selected_llm"]:
+        allow_chat = True
+    else:
+        allow_chat = False
+
+    if allow_chat:
+        if prompt := st.chat_input("Enter question"):
+            chat_loop(prompt)
+            st.rerun()
+    else:
+        st.error("The selected corpus can only be queried with a private LLM")

@@ -479,6 +479,13 @@ Names of the corpora are shared across users (except for the name `Workspace`, w
             "There is already a corpus with this name. If you hit the `Process corpus` button, this corpus will be overwritten with the new one."
         )
 
+    st.checkbox(
+        "Is this a confidential corpus?",
+        value=False,
+        key="private_corpus",
+        help="Check this box if this is a confidential corpus that should not be allowed to be queried from a cloud LLM. If you check this box the document contents will never leave the UNITAS server.",
+    )
+
     st.button("Process corpus", on_click=process_corpus)
 
 
