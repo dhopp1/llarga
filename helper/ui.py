@@ -151,6 +151,15 @@ def initial_placeholder():
             st.session_state["user_settings"] = pickle_load(
                 f'metadata/user_settings/{st.session_state["user_name"]}.pickle'
             )
+
+            # if selected chat not in options, default to top one
+            if (
+                st.session_state["user_settings"]["selected_chat_name"]
+                not in st.session_state["chat_options"]
+            ):
+                st.session_state["user_settings"]["selected_chat_name"] = (
+                    st.session_state["chat_options"][0]
+                )
         except:
             st.session_state["user_settings"] = {}
             st.session_state["user_settings"]["selected_llm"] = st.session_state[
@@ -644,7 +653,7 @@ def chat_loop(prompt, use_memory=True):
         ):
             unlock_llm_release_queue()
         st.error(
-            "An error was encountered, the model may not be finished loading, please try again in a few seconds."
+            "An error was encountered, the model may not be finished loading, or you may need to input your API key for this model. Please try again."
         )
         time.sleep(3)
         st.rerun()
