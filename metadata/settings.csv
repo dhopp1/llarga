@@ -11,3 +11,4 @@ use_condensed_lvs_query,1
 llama_server_command,llama-server
 llama_server_cwd,None
 llama_server_n_gpu_layers,100
+llama_server_show_stop_button,0

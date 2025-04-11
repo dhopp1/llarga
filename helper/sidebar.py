@@ -552,18 +552,24 @@ def sidebar_export_chat():
 
 
 def sidebar_stop_llamacpp():
-    st.button(
-        "Stop Llama CPP server",
-        key="stop_llamacpp_button",
-        help="Stop the locally running Llama CPP server.",
-    )
-    try:
-        if st.session_state["stop_llamacpp_button"]:
-            stop_llama_cpp_server(server_state["llama_cpp_pid"])
-            del server_state["llama_cpp_pid"]
-            st.info("Llama CPP server successfully stopped!")
-    except:
-        pass
+    if (
+        st.session_state["settings"]
+        .loc[lambda x: x["field"] == "llama_server_show_stop_button", "value"]
+        .values[0]
+        == "1"
+    ):
+        st.button(
+            "Stop Llama CPP server",
+            key="stop_llamacpp_button",
+            help="Stop the locally running Llama CPP server.",
+        )
+        try:
+            if st.session_state["stop_llamacpp_button"]:
+                stop_llama_cpp_server(server_state["llama_cpp_pid"])
+                del server_state["llama_cpp_pid"]
+                st.info("Llama CPP server successfully stopped!")
+        except:
+            pass
 
 
 def sidebar_batch_query():

@@ -95,6 +95,7 @@ Various settings of the app. Explanation of fields:
 - **llama\_server\_command**: If llama-server isn't in your path, the full path to llama-server. Should be `/app/llama-server` for the GPU docker file.
 - **llama\_server\_cwd**: If llama-server isn't in your path, where the llama-server command needs to be run from. Should be `/app` for the GPU docker file.
 - **llama\_server\_n\_gpu\_layers**: Number of layers to offload to the GPU.
+- **llama\_server\_show\_stop\_button**: `1` if you want the stop Llama CPP server button to show, `0` if not.
 
 ### metadata/user_list.csv
 A list of users for the application. Their display name in the `user` column, what their default corpus should be upon first loadup in the `default_corpus` column. Each user gets their own password, which can be set in the `.streamlit/secrets.toml` file. Each user on a new line with their own password. Replace spaces with underscores in the `secrets.toml` file. For instance, if the user's name is `Test User`, it should appear as `Test_User = "password"` in the `secrets.toml` file.
