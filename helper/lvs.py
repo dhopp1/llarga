@@ -177,6 +177,10 @@ def unzip_file(zip_path, output_dir="zip_output"):
 
 def process_corpus():
     "process a corpus into text and create the vector db"
+
+    # clear out the message history
+    st.session_state["message_box"].empty()
+
     if st.session_state["new_corpus_name"] != "Workspace":
         new_name = st.session_state["new_corpus_name"]
     else:
