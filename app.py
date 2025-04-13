@@ -26,6 +26,7 @@ from helper.ui import (
     ui_title_icon,
 )
 
+
 # load user list and llm list
 setup_local_files()
 ui_title_icon()
@@ -36,7 +37,6 @@ if not check_password():
 
 
 ### initial setup
-
 # styles sheets
 import_styles()
 
@@ -65,6 +65,12 @@ with st.sidebar.expander("Upload your own documents"):
 
 # llm info
 st.sidebar.markdown("### LLM")
+st.sidebar.checkbox(
+    "Search the web with your query?",
+    value=False,
+    key="web_search",
+    help="If checked, the LLM will be provided with the results of a web search of your question as well.",
+)
 with st.sidebar.expander("LLM parameters"):
     sidebar_llm_dropdown()
     sidebar_llm_api_key()

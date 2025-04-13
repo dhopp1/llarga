@@ -15,6 +15,50 @@ from helper.user_management import (
     unlock_llm,
     unlock_llm_release_queue,
 )
+from helper.web_search import gen_web_search
+
+
+# for sources hover
+tooltip_html = """<style>
+    .tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: max-content;
+        background-color: #ccc; /* lighter grey */
+        color: #000; /* darker text for contrast */
+        text-align: center;
+        padding: 4px 8px;
+        border-radius: 6px;
+
+        /* Positioning */
+        position: absolute;
+        z-index: 1;
+        bottom: 125%; /* above the text */
+        left: 50%;
+        transform: translateX(-50%);
+
+        /* Fade in */
+        opacity: 0;
+        transition: opacity 0.3s;
+        white-space: nowrap;
+    }
+
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .superscript-link {
+        color: #1f77b4; /* blue */
+        text-decoration: underline;
+        font-size: smaller;
+    }
+    </style>"""
 
 
 def ui_title_icon():
@@ -446,7 +490,10 @@ def populate_chat():
 
                     # normal response
                     st.markdown(
-                        message["content"]
+                        tooltip_html
+                        + message["content"].split(
+                            "\n\nHere is some contextual information from the web to help answer the question."
+                        )[0]
                         + (message_time if message["role"] == "user" else ""),
                         unsafe_allow_html=True,
                     )
@@ -523,7 +570,12 @@ def chat_loop(prompt, use_memory=True):
             )
         except:
             pass
-        st.markdown(prompt + prompt_time, unsafe_allow_html=True)
+        st.markdown(tooltip_html + prompt + prompt_time, unsafe_allow_html=True)
+
+    # web search
+    if st.session_state["web_search"]:
+        with st.spinner("Searching the web..."):
+            prompt = gen_web_search(prompt, news=False, max_results=10)
 
     # Add user message to chat history
     st.session_state["chat_history"][st.session_state["selected_chat_id"]][

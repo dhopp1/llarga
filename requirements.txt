@@ -1,9 +1,12 @@
-nlp_pipeline
+duckduckgo-search
 local-vector-search
+lxml
+nlp_pipeline
 openai
 pandas
 polars
 psutil
+readability-lxml
 streamlit
 streamlit-server-state
 tabulate
