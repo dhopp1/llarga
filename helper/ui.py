@@ -576,6 +576,7 @@ def chat_loop(prompt, use_memory=True):
     if st.session_state["web_search"]:
         with st.spinner("Searching the web..."):
             prompt = gen_web_search(prompt, news=False, max_results=10)
+            st.session_state["web_search"] = False
 
     # Add user message to chat history
     st.session_state["chat_history"][st.session_state["selected_chat_id"]][

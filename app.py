@@ -65,10 +65,13 @@ with st.sidebar.expander("Upload your own documents"):
 
 # llm info
 st.sidebar.markdown("### LLM")
-st.sidebar.checkbox(
+st.session_state["web_search"] = st.sidebar.checkbox(
     "Search the web with your query?",
-    value=False,
-    key="web_search",
+    value=(
+        False
+        if "web_search" not in st.session_state
+        else st.session_state["web_search"]
+    ),
     help="If checked, the LLM will be provided with the results of a web search of your question as well.",
 )
 with st.sidebar.expander("LLM parameters"):
