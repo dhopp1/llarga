@@ -513,37 +513,43 @@ def populate_chat():
                             ]["corpus"][i]
                             != "No corpus"
                         ):
-                            source_string += "\n\n## Sources\n"
+                            try:
+                                source_string += "\n\n## Sources\n"
 
-                            metadata = [
-                                _
-                                for _ in eval(
-                                    st.session_state["export_df"].loc[
-                                        i, "source_metadata"
-                                    ]
-                                )
-                            ]
-                            content = [
-                                _
-                                for _ in eval(
-                                    st.session_state["export_df"].loc[
-                                        i, "source_content"
-                                    ]
-                                )
-                            ]
-                            for j in range(len(metadata)):
-                                # metadata
-                                source_string += (
-                                    f"\n**Chunk {j+1}**\n"
-                                    + "```\nmetadata\n"
-                                    + "\n".join(
-                                        [f"{_.strip()}" for _ in metadata[j].split("|")]
+                                metadata = [
+                                    _
+                                    for _ in eval(
+                                        st.session_state["export_df"].loc[
+                                            i, "source_metadata"
+                                        ]
                                     )
-                                    + "\n```\n"
-                                )
+                                ]
+                                content = [
+                                    _
+                                    for _ in eval(
+                                        st.session_state["export_df"].loc[
+                                            i, "source_content"
+                                        ]
+                                    )
+                                ]
+                                for j in range(len(metadata)):
+                                    # metadata
+                                    source_string += (
+                                        f"\n**Chunk {j+1}**\n"
+                                        + "```\nmetadata\n"
+                                        + "\n".join(
+                                            [
+                                                f"{_.strip()}"
+                                                for _ in metadata[j].split("|")
+                                            ]
+                                        )
+                                        + "\n```\n"
+                                    )
 
-                                # content
-                                source_string += "```\n" + content[j] + "\n```"
+                                    # content
+                                    source_string += "```\n" + content[j] + "\n```"
+                            except:
+                                source_string = "Sources not found. This corpus may have been overwritten since this chat occurred."
 
                         st.markdown(
                             "Sources: " + message_time,
