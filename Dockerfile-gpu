@@ -27,5 +27,6 @@ RUN pip install -r https://raw.githubusercontent.com/dhopp1/local_vector_search/
 ### larga requirements
 RUN git clone https://github.com/dhopp1/llarga.git
 RUN pip install -r https://raw.githubusercontent.com/dhopp1/llarga/main/requirements.txt
+RUN pip install lxml-html-clean
 
 ENTRYPOINT []

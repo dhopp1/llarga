@@ -34,85 +34,66 @@ setup_local_files()
 ui_title_icon()
 
 # login screen
-check_password()
-if st.session_state.get("authentication_status") is False:
-    st.error("Username/password is incorrect")
+if not check_password():
+    st.stop()
 
-if "user_name" not in st.session_state:
-    if st.session_state["username"] is not None:
-        st.session_state["user_name"] = (
-            st.session_state["username"].replace("_", " ").title()
+### initial setup
+# styles sheets
+import_styles()
+
+# placeholder on initial load
+initial_placeholder()
+
+### sidebar
+st.sidebar.markdown(f'# {st.session_state["user_name"]}')
+# previous chats
+st.sidebar.markdown("### Chats")
+sidebar_chats()
+
+# corpus info
+st.sidebar.markdown("### Corpus")
+with st.sidebar:
+    sidebar_which_corpus()
+    gen_export_df()
+    with st.expander("Corpus metadata"):
+        metadata_tab()
+
+with st.sidebar.expander("Upload your own documents"):
+    st.markdown("#### Upload a new corpus")
+    sidebar_upload_file()
+    st.markdown("#### Delete a corpus")
+    sidebar_delete_corpus()
+
+# llm info
+st.sidebar.markdown("### LLM")
+with st.sidebar:
+    sidebar_web_search()
+    sidebar_cite_sources()
+
+with st.sidebar.expander("LLM parameters"):
+    sidebar_llm_dropdown()
+    sidebar_llm_api_key()
+    sidebar_temperature_dropdown()
+    sidebar_system_prompt()
+    sidebar_stop_llamacpp()
+
+# warning if system prompt is different different
+with st.sidebar:
+    if (
+        st.session_state["default_system_prompt"] != st.session_state["system_prompt"]
+    ) and st.session_state["selected_corpus"] != "No corpus":
+        st.warning(
+            "The default system prompt for this corpus differs from what you have input in `System prompt` under the `LLM parameters` dropdown. Consider changing it. The default system prompt for this corpus is:"
         )
-        st.session_state["authenticator"].login("unrendered")
+        st.markdown(f"""```\n{st.session_state["default_system_prompt"]}\n```""")
 
-if "user_name" in st.session_state:
-    if st.session_state["user_name"] is not None:
-        ### initial setup
-        # styles sheets
-        import_styles()
+# batch query
+with st.sidebar.expander("Batch query"):
+    sidebar_batch_query()
 
-        # placeholder on initial load
-        initial_placeholder()
+### chat logic
+import_chat()
 
-        ### sidebar
-        st.sidebar.markdown(f'# {st.session_state["user_name"]}')
-        # previous chats
-        st.sidebar.markdown("### Chats")
-        sidebar_chats()
-
-        # corpus info
-        st.sidebar.markdown("### Corpus")
-        with st.sidebar:
-            sidebar_which_corpus()
-            gen_export_df()
-            with st.expander("Corpus metadata"):
-                metadata_tab()
-
-        with st.sidebar.expander("Upload your own documents"):
-            st.markdown("#### Upload a new corpus")
-            sidebar_upload_file()
-            st.markdown("#### Delete a corpus")
-            sidebar_delete_corpus()
-
-        # llm info
-        st.sidebar.markdown("### LLM")
-        with st.sidebar:
-            sidebar_web_search()
-            sidebar_cite_sources()
-
-        with st.sidebar.expander("LLM parameters"):
-            sidebar_llm_dropdown()
-            sidebar_llm_api_key()
-            sidebar_temperature_dropdown()
-            sidebar_system_prompt()
-            sidebar_stop_llamacpp()
-
-        # warning if system prompt is different different
-        with st.sidebar:
-            if (
-                st.session_state["default_system_prompt"]
-                != st.session_state["system_prompt"]
-            ) and st.session_state["selected_corpus"] != "No corpus":
-                st.warning(
-                    "The default system prompt for this corpus differs from what you have input in `System prompt` under the `LLM parameters` dropdown. Consider changing it. The default system prompt for this corpus is:"
-                )
-                st.markdown(
-                    f"""```\n{st.session_state["default_system_prompt"]}\n```"""
-                )
-
-        # batch query
-        with st.sidebar.expander("Batch query"):
-            sidebar_batch_query()
-
-        ### chat logic
-        import_chat()
-
-        # export chat button
-        with st.sidebar:
-            sidebar_export_chat()
-
-        # logout button
-        def logout(x):
-            del st.session_state["user_name"]
-
-        st.session_state["authenticator"].logout("Logout", "sidebar", callback=logout)
+# export chat button
+with st.sidebar:
+    sidebar_export_chat()

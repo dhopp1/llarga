@@ -7,9 +7,7 @@ openpyxl
 pandas
 polars
 psutil
-PyYAML
 readability-lxml
 streamlit
-streamlit-authenticator
 streamlit-server-state
 tabulate

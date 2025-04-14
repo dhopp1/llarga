@@ -101,7 +101,7 @@ Various settings of the app. Explanation of fields:
 - **llama\_server\_show\_stop\_button**: `1` if you want the stop Llama CPP server button to show, `0` if not.
 
 ### metadata/user_list.csv
-A list of users for the application. Their display name in the `user` column, what their default corpus should be upon first loadup in the `default_corpus` column. Each user gets their own password, which can be set in the `.streamlit/config.yaml` file. Usernames in the config file must be the lower case and underscore (rather than space) equivalent of their name in the `user_list.csv`. E.g., if `Test User` is in the CSV, their name should be `test_user` in the `config.yaml`.
+A list of users for the application. Their display name in the `user` column, what their default corpus should be upon first loadup in the `default_corpus` column. Each user gets their own password, which can be set in the `.streamlit/secrets.toml` file. Each user on a new line with their own password. Replace spaces with underscores in the `secrets.toml` file. For instance, if the user's name is `Test User`, it should appear as `Test_User = "password"` in the `secrets.toml` file.
 
 ## Running the application
 From the cloned repo, run the application with `streamlit run app.py --server.headless=true --server.port=[desired port]`. You can then use the app by going to `http://localhost:[desired port]`
