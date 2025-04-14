@@ -11,6 +11,9 @@ import time
 import zipfile
 
 
+cite_source_instruction = """\n\nAt the end of any information that you support from the excerpts, place the following text: <span class="tooltip superscript-link">†<span class="tooltiptext">chunk_id</span></span>, where you replace 'chunk_id' with the chunk id number of the excerpt you are referencing. Repeat the whole tag if you are referencing multiple chunks in one sentence."""
+
+
 def update_server_state(key, value):
     "update the server state variable"
     with no_rerun:
@@ -30,6 +33,7 @@ def save_user_settings(selected_chat_name=None, display_metadata_overwrite=True)
     else:
         st.session_state["user_settings"]["selected_chat_name"] = selected_chat_name
 
+    st.session_state["user_settings"]["cite_sources"] = st.session_state["cite_sources"]
     st.session_state["user_settings"]["selected_llm"] = st.session_state["selected_llm"]
     st.session_state["user_settings"]["selected_corpus"] = st.session_state[
         "selected_corpus"
@@ -88,7 +92,8 @@ def make_new_chat(display_metadata_overwrite=True):
     ] = [
         {
             "role": "system",
-            "content": st.session_state["system_prompt"],
+            "content": st.session_state["system_prompt"]
+            + (cite_source_instruction if st.session_state["cite_sources"] else ""),
         }
     ]
     st.session_state["chat_history"][st.session_state["selected_chat_id"]]["times"] = [
@@ -413,6 +418,7 @@ def process_corpus():
         tokenizer_name="meta-llama/Llama-2-7b-hf",
         clean_text_function=None,
         include_metadata=False,
+        include_chunk_id_metadata_string=True,
     )
 
     progress_message = st.empty()
@@ -441,6 +447,24 @@ def process_corpus():
                     final_embeddings = embeddings
                 else:
                     final_embeddings = pl.concat([final_embeddings, embeddings])
+
+    # renaming chunk ids in metadata_string
+    final_embeddings = final_embeddings.with_columns(
+        [
+            pl.format("chunk id: {}", pl.arange(0, final_embeddings.height)).alias(
+                "row_num"
+            ),
+            pl.col("metadata_string")
+            .str.replace(r"chunk id: \d+", "row_placeholder")
+            .alias("temp_meta"),
+        ]
+    ).with_columns(
+        [
+            pl.col("temp_meta")
+            .str.replace("row_placeholder", pl.col("row_num").cast(pl.Utf8))
+            .alias("metadata_string")
+        ]
+    )
 
     # remove duplicate chunk ids
     final_embeddings = final_embeddings.with_columns(

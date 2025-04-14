@@ -2,6 +2,8 @@ from datetime import datetime
 from local_vector_search.misc import pickle_load, pickle_save
 import os
 import pandas as pd
+import polars as pl
+import re
 import streamlit as st
 from streamlit_server_state import server_state
 import time
@@ -59,6 +61,25 @@ tooltip_html = """<style>
         font-size: smaller;
     }
     </style>"""
+
+
+def fill_in_chunk_id(stringx):
+    embeddings_df = pl.read_parquet(
+        f'{st.session_state["corpora_path"]}/embeddings_{st.session_state["selected_corpus_realname"]}.parquet'
+    )
+    pattern = r'class="tooltiptext">(\d+)</span>'
+    replacements = dict(
+        zip(
+            [str(_) for _ in embeddings_df["chunk_id"]],
+            [embeddings_df["metadata_string"][i] for i in range(len(embeddings_df))],
+        )
+    )
+
+    def replacer(match):
+        key = match.group(1)
+        return f'class="tooltiptext">{replacements.get(key, key)}</span>'
+
+    return re.sub(pattern, replacer, stringx)
 
 
 def ui_title_icon():
@@ -206,6 +227,7 @@ def initial_placeholder():
                 )
         except:
             st.session_state["user_settings"] = {}
+            st.session_state["user_settings"]["cite_sources"] = False
             st.session_state["user_settings"]["selected_llm"] = st.session_state[
                 "llm_dropdown_options"
             ][
@@ -491,9 +513,11 @@ def populate_chat():
                     # normal response
                     st.markdown(
                         tooltip_html
-                        + message["content"].split(
-                            "\n\nHere is some contextual information from the web to help answer the question."
-                        )[0]
+                        + fill_in_chunk_id(
+                            message["content"].split(
+                                "\n\nHere is some contextual information from the web to help answer the question."
+                            )[0]
+                        )
                         + (message_time if message["role"] == "user" else ""),
                         unsafe_allow_html=True,
                     )

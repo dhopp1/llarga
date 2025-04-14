@@ -150,6 +150,32 @@ def sidebar_chats():
                         st.rerun()
 
 
+def sidebar_web_search():
+    st.session_state["web_search"] = st.checkbox(
+        "Search the web with your query?",
+        value=(
+            False
+            if "web_search" not in st.session_state
+            else st.session_state["web_search"]
+        ),
+        help="If checked, the LLM will be provided with the results of a web search of your question as well.",
+    )
+
+
+def sidebar_cite_sources():
+    st.checkbox(
+        "Cite sources?",
+        value=(
+            st.session_state["user_settings"]["cite_sources"]
+            if "cite_sources" not in st.session_state
+            else st.session_state["cite_sources"]
+        ),
+        key="cite_sources",
+        on_change=save_user_settings,
+        help="If checked and RAG is used (i.e., `Currently loaded corpus` != `No corpus`) the LLM will cite its sources in text. This feature may be buggy and generate HTML artifacts and depends on the quality of the selected LLM",
+    )
+
+
 def sidebar_llm_dropdown():
     st.selectbox(
         "Select LLM",

@@ -6,6 +6,7 @@ torch.classes.__path__ = []  # necessary for Docker
 from helper.sidebar import (
     sidebar_batch_query,
     sidebar_chats,
+    sidebar_cite_sources,
     sidebar_delete_corpus,
     sidebar_export_chat,
     gen_export_df,
@@ -15,6 +16,7 @@ from helper.sidebar import (
     sidebar_stop_llamacpp,
     sidebar_system_prompt,
     sidebar_upload_file,
+    sidebar_web_search,
     sidebar_which_corpus,
 )
 from helper.user_management import check_password, setup_local_files
@@ -65,15 +67,10 @@ with st.sidebar.expander("Upload your own documents"):
 
 # llm info
 st.sidebar.markdown("### LLM")
-st.session_state["web_search"] = st.sidebar.checkbox(
-    "Search the web with your query?",
-    value=(
-        False
-        if "web_search" not in st.session_state
-        else st.session_state["web_search"]
-    ),
-    help="If checked, the LLM will be provided with the results of a web search of your question as well.",
-)
+with st.sidebar:
+    sidebar_web_search()
+    sidebar_cite_sources()
+
 with st.sidebar.expander("LLM parameters"):
     sidebar_llm_dropdown()
     sidebar_llm_api_key()
