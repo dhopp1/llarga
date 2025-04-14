@@ -182,337 +182,345 @@ def unzip_file(zip_path, output_dir="zip_output"):
 
 def process_corpus():
     "process a corpus into text and create the vector db"
+    with st.spinner("Processing corpus..."):
+        # clear out the message history
+        st.session_state["message_box"].empty()
 
-    # clear out the message history
-    st.session_state["message_box"].empty()
+        if st.session_state["new_corpus_name"] != "Workspace":
+            new_name = st.session_state["new_corpus_name"]
+        else:
+            new_name = f'Workspace {st.session_state["user_name"]}'
 
-    if st.session_state["new_corpus_name"] != "Workspace":
-        new_name = st.session_state["new_corpus_name"]
-    else:
-        new_name = f'Workspace {st.session_state["user_name"]}'
+        with st.spinner("Setting up...", show_time=True):
+            temp_directory = f'corpora/tmp_helper_{st.session_state["user_name"]}/'
 
-    with st.spinner("Setting up...", show_time=True):
-        temp_directory = f'corpora/tmp_helper_{st.session_state["user_name"]}/'
+            # make temporary directory to handle files
+            if not os.path.exists(f"{temp_directory}"):
+                os.makedirs(f"{temp_directory}")
+            else:  # clear it out
+                shutil.rmtree(f"{temp_directory}")
+                os.makedirs(f"{temp_directory}")
 
-        # make temporary directory to handle files
-        if not os.path.exists(f"{temp_directory}"):
-            os.makedirs(f"{temp_directory}")
-        else:  # clear it out
-            shutil.rmtree(f"{temp_directory}")
-            os.makedirs(f"{temp_directory}")
+            # if corpus name temporary, delete everything in the temporary files
+            if new_name == f'Workspace {st.session_state["new_corpus_name"]}':
+                if os.path.exists(f'{st.session_state["corpora_path"]}/{new_name}/'):
+                    shutil.rmtree(f'{st.session_state["corpora_path"]}/{new_name}/')
+                if os.path.exists(
+                    f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv'
+                ):
+                    os.remove(
+                        f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv'
+                    )
 
-        # if corpus name temporary, delete everything in the temporary files
-        if new_name == f'Workspace {st.session_state["new_corpus_name"]}':
-            if os.path.exists(f'{st.session_state["corpora_path"]}/{new_name}/'):
+            # if this corpus already exists, overwrite it
+            if os.path.exists(f'{st.session_state["corpora_path"]}/{new_name}'):
                 shutil.rmtree(f'{st.session_state["corpora_path"]}/{new_name}/')
-            if os.path.exists(
-                f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv'
-            ):
-                os.remove(f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv')
 
-        # if this corpus already exists, overwrite it
-        if os.path.exists(f'{st.session_state["corpora_path"]}/{new_name}'):
-            shutil.rmtree(f'{st.session_state["corpora_path"]}/{new_name}/')
+                try:
+                    os.remove(
+                        f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv'
+                    )
+                except:
+                    pass
 
+                try:
+                    os.remove(
+                        f'{st.session_state["corpora_path"]}/embeddings_{new_name}.parquet'
+                    )
+                except:
+                    pass
+
+            # write the uploaded file
             try:
-                os.remove(f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv')
+                with open(
+                    f"""{temp_directory}tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
+                    "wb",
+                ) as new_file:
+                    new_file.write(st.session_state["uploaded_file"].getbuffer())
+                    new_file.close()
             except:
-                pass
+                st.error("Are you sure you uploaded a file?")
 
-            try:
-                os.remove(
-                    f'{st.session_state["corpora_path"]}/embeddings_{new_name}.parquet'
-                )
-            except:
-                pass
+            ### process the uploaded file
+            # convert documents to text
+            os.makedirs(f'{st.session_state["corpora_path"]}/{new_name}/tmp')
 
-        # write the uploaded file
-        try:
-            with open(
-                f"""{temp_directory}tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
-                "wb",
-            ) as new_file:
-                new_file.write(st.session_state["uploaded_file"].getbuffer())
-                new_file.close()
-        except:
-            st.error("Are you sure you uploaded a file?")
-
-        ### process the uploaded file
-        # convert documents to text
-        os.makedirs(f'{st.session_state["corpora_path"]}/{new_name}/tmp')
-
-        processor = nlp_processor(
-            data_path=f'{st.session_state["corpora_path"]}/{new_name}/tmp',
-            metadata_addt_column_names=[],
-        )
-
-    # case 1: uploaded a metadata.csv
-    if st.session_state["uploaded_file"].name == "metadata.csv":
-        metadata = pd.read_csv(
-            f"""{temp_directory}/tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}"""
-        )
-
-        # add text_id if not there
-        if "text_id" not in metadata.columns:
-            metadata["text_id"] = list(range(1, len(metadata) + 1))
-
-        for col in metadata.columns:
-            processor.metadata[col] = metadata[col]
-
-        # download the files
-        progress_message = st.empty()
-        for i in range(len(metadata)):
-            with progress_message.container():
-                with st.spinner(f"Downloading file {i+1}/{len(metadata)} (step 1 of 3"):
-                    processor.download_text_id(processor.metadata["text_id"][i])
-
-    # case 2: uploaded only a single document
-    elif st.session_state["uploaded_file"].name.split(".")[1] != "zip":
-        # create metadata
-        metadata = pd.DataFrame(
-            {
-                "text_id": 1,
-                "local_raw_filepath": f"""{temp_directory}/tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
-            },
-            index=[0],
-        )
-
-        # sync the object's metadata to the local file
-        for col in metadata.columns:
-            processor.metadata[col] = metadata[col]
-
-    # zip cases
-    elif st.session_state["uploaded_file"].name.split(".")[1] == "zip":
-        unzip_file(
-            f"""{temp_directory}/tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
-            f'{st.session_state["corpora_path"]}/{new_name}/zip_output/',
-        )
-
-        # case 3: uploaded a zip file with only documents
-        zip_files = [
-            _
-            for _ in os.listdir(
-                f'{st.session_state["corpora_path"]}/{new_name}/zip_output/'
+            processor = nlp_processor(
+                data_path=f'{st.session_state["corpora_path"]}/{new_name}/tmp',
+                metadata_addt_column_names=[],
             )
-            if (
-                any(
-                    sub in _
-                    for sub in [
-                        ".docx",
-                        ".doc",
-                        ".pdf",
-                        ".txt",
-                        ".mp3",
-                        ".mp4",
-                        ".wav",
-                        ".csv",
-                        ".xlsx",
-                        ".xls",
-                        ".pptx",
-                    ]
-                )
-                and "._" not in _
-            )
-        ]
 
-        if "metadata.csv" not in zip_files:
+        # case 1: uploaded a metadata.csv
+        if st.session_state["uploaded_file"].name == "metadata.csv":
+            metadata = pd.read_csv(
+                f"""{temp_directory}/tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}"""
+            )
+
+            # add text_id if not there
+            if "text_id" not in metadata.columns:
+                metadata["text_id"] = list(range(1, len(metadata) + 1))
+
+            for col in metadata.columns:
+                processor.metadata[col] = metadata[col]
+
+            # download the files
+            progress_message = st.empty()
+            for i in range(len(metadata)):
+                with progress_message.container():
+                    with st.spinner(
+                        f"Downloading file {i+1}/{len(metadata)} (step 1 of 3"
+                    ):
+                        processor.download_text_id(processor.metadata["text_id"][i])
+
+        # case 2: uploaded only a single document
+        elif st.session_state["uploaded_file"].name.split(".")[1] != "zip":
             # create metadata
             metadata = pd.DataFrame(
                 {
-                    "text_id": list(range(1, len(zip_files) + 1)),
-                    "local_raw_filepath": [
-                        f'{st.session_state["corpora_path"]}/{new_name}/zip_output/{_}'
-                        for _ in zip_files
-                    ],
+                    "text_id": 1,
+                    "local_raw_filepath": f"""{temp_directory}/tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
                 },
+                index=[0],
             )
 
-        # case 4: uploaded a zip file with metadata + documents
-        else:
-            metadata = pd.read_csv(
-                f'{st.session_state["corpora_path"]}/{new_name}/zip_output/metadata.csv'
+            # sync the object's metadata to the local file
+            for col in metadata.columns:
+                processor.metadata[col] = metadata[col]
+
+        # zip cases
+        elif st.session_state["uploaded_file"].name.split(".")[1] == "zip":
+            unzip_file(
+                f"""{temp_directory}/tmp.{st.session_state["uploaded_file"].name.split('.')[-1]}""",
+                f'{st.session_state["corpora_path"]}/{new_name}/zip_output/',
             )
-            metadata["text_id"] = list(range(1, len(metadata) + 1))
-            metadata["local_raw_filepath"] = [
-                f'{st.session_state["corpora_path"]}/{new_name}/zip_output/{_}'
-                for _ in metadata["filepath"]
+
+            # case 3: uploaded a zip file with only documents
+            zip_files = [
+                _
+                for _ in os.listdir(
+                    f'{st.session_state["corpora_path"]}/{new_name}/zip_output/'
+                )
+                if (
+                    any(
+                        sub in _
+                        for sub in [
+                            ".docx",
+                            ".doc",
+                            ".pdf",
+                            ".txt",
+                            ".mp3",
+                            ".mp4",
+                            ".wav",
+                            ".csv",
+                            ".xlsx",
+                            ".xls",
+                            ".pptx",
+                        ]
+                    )
+                    and "._" not in _
+                )
             ]
 
-        for col in metadata.columns:
-            processor.metadata[col] = metadata[col]
+            if "metadata.csv" not in zip_files:
+                # create metadata
+                metadata = pd.DataFrame(
+                    {
+                        "text_id": list(range(1, len(zip_files) + 1)),
+                        "local_raw_filepath": [
+                            f'{st.session_state["corpora_path"]}/{new_name}/zip_output/{_}'
+                            for _ in zip_files
+                        ],
+                    },
+                )
 
-    # convert to text
-    progress_message = st.empty()
-    for i in range(len(metadata)):
-        with progress_message.container():
-            with st.spinner(
-                f"Converting files to text: {i+1}/{len(metadata)} (step 2 of 3)"
+            # case 4: uploaded a zip file with metadata + documents
+            else:
+                metadata = pd.read_csv(
+                    f'{st.session_state["corpora_path"]}/{new_name}/zip_output/metadata.csv'
+                )
+                metadata["text_id"] = list(range(1, len(metadata) + 1))
+                metadata["local_raw_filepath"] = [
+                    f'{st.session_state["corpora_path"]}/{new_name}/zip_output/{_}'
+                    for _ in metadata["filepath"]
+                ]
+
+            for col in metadata.columns:
+                processor.metadata[col] = metadata[col]
+
+        # convert to text
+        progress_message = st.empty()
+        for i in range(len(metadata)):
+            with progress_message.container():
+                with st.spinner(
+                    f"Converting files to text: {i+1}/{len(metadata)} (step 2 of 3)"
+                ):
+                    processor.convert_to_text(processor.metadata["text_id"][i])
+
+        # write out metadata file
+        processor.metadata["filepath"] = [
+            f"{str(i)}.txt" for i in processor.metadata["text_id"]
+        ]
+
+        # add a new column for original file name
+        try:
+            # only do if there is no other metadata
+            if not (
+                set(processor.metadata.columns)
+                - {
+                    "text_id",
+                    "filepath",
+                    "vector_weight",
+                    "local_raw_filepath",
+                    "local_txt_filepath",
+                    "detected_language",
+                    "web_filepath",
+                }
             ):
-                processor.convert_to_text(processor.metadata["text_id"][i])
+                processor.metadata["filename"] = [
+                    _.split("/")[-1] for _ in processor.metadata["local_raw_filepath"]
+                ]
+        except:
+            pass
 
-    # write out metadata file
-    processor.metadata["filepath"] = [
-        f"{str(i)}.txt" for i in processor.metadata["text_id"]
-    ]
-
-    # add a new column for original file name
-    try:
-        # only do if there is no other metadata
-        if not (
-            set(processor.metadata.columns)
-            - {
-                "text_id",
-                "filepath",
-                "vector_weight",
+        processor.metadata.drop(
+            [
                 "local_raw_filepath",
                 "local_txt_filepath",
                 "detected_language",
                 "web_filepath",
-            }
+            ],
+            axis=1,
+        ).to_csv(
+            f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
+            index=False,
+        )
+
+        # move .txt files to appropriate place and clean up
+        for filename in os.listdir(
+            f'{st.session_state["corpora_path"]}/{new_name}/tmp/txt_files/'
         ):
-            processor.metadata["filename"] = [
-                _.split("/")[-1] for _ in processor.metadata["local_raw_filepath"]
-            ]
-    except:
-        pass
-
-    processor.metadata.drop(
-        [
-            "local_raw_filepath",
-            "local_txt_filepath",
-            "detected_language",
-            "web_filepath",
-        ],
-        axis=1,
-    ).to_csv(
-        f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
-        index=False,
-    )
-
-    # move .txt files to appropriate place and clean up
-    for filename in os.listdir(
-        f'{st.session_state["corpora_path"]}/{new_name}/tmp/txt_files/'
-    ):
-        shutil.move(
-            f'{st.session_state["corpora_path"]}/{new_name}/tmp/txt_files/{filename}',
-            f'{st.session_state["corpora_path"]}/{new_name}/{filename}',
-        )
-
-    # remove tmp directory
-    shutil.rmtree(f'{st.session_state["corpora_path"]}/{new_name}/tmp/')
-
-    # remove zip directory
-    try:
-        shutil.rmtree(f'{st.session_state["corpora_path"]}/{new_name}/zip_output/')
-    except:
-        pass
-
-    # remove original file
-    shutil.rmtree(temp_directory)
-
-    # embed documents
-    vs = local_vs(
-        metadata_path=f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
-        files_path=f'{st.session_state["corpora_path"]}/{new_name}/',
-        model="all-MiniLM-L6-v2",
-        tokenizer_name="meta-llama/Llama-2-7b-hf",
-        clean_text_function=None,
-        include_metadata=False,
-        include_chunk_id_metadata_string=True,
-    )
-
-    progress_message = st.empty()
-    for i in range(len(metadata)):
-        with progress_message.container():
-            with st.spinner(
-                f"Embedding documents: {i+1}/{len(metadata)} (step 3 of 3)"
-            ):
-                embeddings = vs.embed_docs(
-                    chunk_size=int(
-                        st.session_state["settings"]
-                        .loc[lambda x: x["field"] == "chunk_size", "value"]
-                        .values[0]
-                    ),
-                    chunk_overlap=int(
-                        st.session_state["settings"]
-                        .loc[lambda x: x["field"] == "chunk_overlap", "value"]
-                        .values[0]
-                    ),
-                    embeddings_path=None,
-                    quiet=True,
-                    text_ids=[metadata.loc[i, "text_id"]],
-                )
-
-                if i == 0:
-                    final_embeddings = embeddings
-                else:
-                    final_embeddings = pl.concat([final_embeddings, embeddings])
-
-    # renaming chunk ids in metadata_string
-    final_embeddings = final_embeddings.with_columns(
-        [
-            pl.format("chunk id: {}", pl.arange(0, final_embeddings.height)).alias(
-                "row_num"
-            ),
-            pl.col("metadata_string")
-            .str.replace(r"chunk id: \d+", "row_placeholder")
-            .alias("temp_meta"),
-        ]
-    ).with_columns(
-        [
-            pl.col("temp_meta")
-            .str.replace("row_placeholder", pl.col("row_num").cast(pl.Utf8))
-            .alias("metadata_string")
-        ]
-    )
-
-    # remove duplicate chunk ids
-    final_embeddings = final_embeddings.with_columns(
-        pl.arange(0, final_embeddings.height).alias("chunk_id")
-    )
-    vs.embeddings_df = final_embeddings
-    vs.embeddings_df.write_parquet(
-        f'{st.session_state["corpora_path"]}/embeddings_{new_name}.parquet'
-    )
-
-    # update the corpus list csv
-    if st.session_state["use_default_system_prompts"]:
-        sys_prompt = (
-            st.session_state["settings"]
-            .loc[lambda x: x["field"] == "default_corpus_system_prompt", "value"]
-            .values[0]
-        )
-    else:
-        sys_prompt = st.session_state["system_prompt"]
-
-    tmp_corpora_list = pd.DataFrame(
-        {
-            "name": new_name,
-            "text_path": f'{st.session_state["corpora_path"]}/{new_name}/',
-            "metadata_path": f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
-            "user_list": ",".join(st.session_state["visible_corpus_names"]),
-            "system_prompt": sys_prompt,
-            "private": 1 if st.session_state["private_corpus"] else 0,
-        },
-        index=[0],
-    )
-
-    st.session_state["corpora_list"] = pd.concat(
-        [
-            st.session_state["corpora_list"].loc[lambda x: x["name"] != new_name],
-            tmp_corpora_list,
-        ],
-        ignore_index=True,
-    )
-    st.session_state["corpora_list"].to_csv("metadata/corpora_list.csv", index=False)
-
-    # add the corpus to the server dict
-    with no_rerun:
-        with server_state_lock["lvs_corpora"]:
-            server_state["lvs_corpora"][new_name] = local_vs(
-                metadata_path=f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
-                embeddings_path=f'{st.session_state["corpora_path"]}/embeddings_{new_name}.parquet',
+            shutil.move(
+                f'{st.session_state["corpora_path"]}/{new_name}/tmp/txt_files/{filename}',
+                f'{st.session_state["corpora_path"]}/{new_name}/{filename}',
             )
+
+        # remove tmp directory
+        shutil.rmtree(f'{st.session_state["corpora_path"]}/{new_name}/tmp/')
+
+        # remove zip directory
+        try:
+            shutil.rmtree(f'{st.session_state["corpora_path"]}/{new_name}/zip_output/')
+        except:
+            pass
+
+        # remove original file
+        shutil.rmtree(temp_directory)
+
+        # embed documents
+        vs = local_vs(
+            metadata_path=f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
+            files_path=f'{st.session_state["corpora_path"]}/{new_name}/',
+            model="all-MiniLM-L6-v2",
+            tokenizer_name="meta-llama/Llama-2-7b-hf",
+            clean_text_function=None,
+            include_metadata=False,
+            include_chunk_id_metadata_string=True,
+        )
+
+        progress_message = st.empty()
+        for i in range(len(metadata)):
+            with progress_message.container():
+                with st.spinner(
+                    f"Embedding documents: {i+1}/{len(metadata)} (step 3 of 3)"
+                ):
+                    embeddings = vs.embed_docs(
+                        chunk_size=int(
+                            st.session_state["settings"]
+                            .loc[lambda x: x["field"] == "chunk_size", "value"]
+                            .values[0]
+                        ),
+                        chunk_overlap=int(
+                            st.session_state["settings"]
+                            .loc[lambda x: x["field"] == "chunk_overlap", "value"]
+                            .values[0]
+                        ),
+                        embeddings_path=None,
+                        quiet=True,
+                        text_ids=[metadata.loc[i, "text_id"]],
+                    )
+
+                    if i == 0:
+                        final_embeddings = embeddings
+                    else:
+                        final_embeddings = pl.concat([final_embeddings, embeddings])
+
+        # renaming chunk ids in metadata_string
+        final_embeddings = final_embeddings.with_columns(
+            [
+                pl.format("chunk id: {}", pl.arange(0, final_embeddings.height)).alias(
+                    "row_num"
+                ),
+                pl.col("metadata_string")
+                .str.replace(r"chunk id: \d+", "row_placeholder")
+                .alias("temp_meta"),
+            ]
+        ).with_columns(
+            [
+                pl.col("temp_meta")
+                .str.replace("row_placeholder", pl.col("row_num").cast(pl.Utf8))
+                .alias("metadata_string")
+            ]
+        )
+
+        # remove duplicate chunk ids
+        final_embeddings = final_embeddings.with_columns(
+            pl.arange(0, final_embeddings.height).alias("chunk_id")
+        )
+        vs.embeddings_df = final_embeddings
+        vs.embeddings_df.write_parquet(
+            f'{st.session_state["corpora_path"]}/embeddings_{new_name}.parquet'
+        )
+
+        # update the corpus list csv
+        if st.session_state["use_default_system_prompts"]:
+            sys_prompt = (
+                st.session_state["settings"]
+                .loc[lambda x: x["field"] == "default_corpus_system_prompt", "value"]
+                .values[0]
+            )
+        else:
+            sys_prompt = st.session_state["system_prompt"]
+
+        tmp_corpora_list = pd.DataFrame(
+            {
+                "name": new_name,
+                "text_path": f'{st.session_state["corpora_path"]}/{new_name}/',
+                "metadata_path": f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
+                "user_list": ",".join(st.session_state["visible_corpus_names"]),
+                "system_prompt": sys_prompt,
+                "private": 1 if st.session_state["private_corpus"] else 0,
+            },
+            index=[0],
+        )
+
+        st.session_state["corpora_list"] = pd.concat(
+            [
+                st.session_state["corpora_list"].loc[lambda x: x["name"] != new_name],
+                tmp_corpora_list,
+            ],
+            ignore_index=True,
+        )
+        st.session_state["corpora_list"].to_csv(
+            "metadata/corpora_list.csv", index=False
+        )
+
+        # add the corpus to the server dict
+        with no_rerun:
+            with server_state_lock["lvs_corpora"]:
+                server_state["lvs_corpora"][new_name] = local_vs(
+                    metadata_path=f'{st.session_state["corpora_path"]}/metadata_{new_name}.csv',
+                    embeddings_path=f'{st.session_state["corpora_path"]}/embeddings_{new_name}.parquet',
+                )
 
     # clean up and initiating new chat with the corpus loaded
     with st.spinner(
