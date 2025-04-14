@@ -513,25 +513,25 @@ def populate_chat():
                             ]["corpus"][i]
                             != "No corpus"
                         ):
-                            try:
-                                source_string += "\n\n## Sources\n"
+                            source_string += "\n\n## Sources\n"
 
-                                metadata = [
-                                    _
-                                    for _ in eval(
-                                        st.session_state["export_df"].loc[
-                                            i, "source_metadata"
-                                        ]
-                                    )
-                                ]
-                                content = [
-                                    _
-                                    for _ in eval(
-                                        st.session_state["export_df"].loc[
-                                            i, "source_content"
-                                        ]
-                                    )
-                                ]
+                            metadata = [
+                                _
+                                for _ in eval(
+                                    st.session_state["export_df"].loc[
+                                        i, "source_metadata"
+                                    ]
+                                )
+                            ]
+                            content = [
+                                _
+                                for _ in eval(
+                                    st.session_state["export_df"].loc[
+                                        i, "source_content"
+                                    ]
+                                )
+                            ]
+                            try:
                                 for j in range(len(metadata)):
                                     # metadata
                                     source_string += (
@@ -549,7 +549,7 @@ def populate_chat():
                                     # content
                                     source_string += "```\n" + content[j] + "\n```"
                             except:
-                                source_string = "Sources not found. This corpus may have been overwritten since this chat occurred."
+                                source_string = "\n\nSources not found. This corpus may have been overwritten since this chat occurred."
 
                         st.markdown(
                             "Sources: " + message_time,
