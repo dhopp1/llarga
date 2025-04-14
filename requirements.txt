@@ -3,10 +3,13 @@ local-vector-search
 lxml
 nlp_pipeline
 openai
+openpyxl
 pandas
 polars
 psutil
 readability-lxml
 streamlit
+streamlit-authenticator
 streamlit-server-state
 tabulate
+yaml
