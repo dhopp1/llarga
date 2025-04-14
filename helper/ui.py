@@ -111,17 +111,7 @@ def initial_placeholder():
     "initial placeholder upon first login"
 
     if "initialized" not in st.session_state:
-        condition = True
-    elif "selected_chat_name" in st.session_state:
-        if "New chat" in st.session_state["selected_chat_name"]:
-            condition = True
-    else:
-        condition = False
-
-    if condition:  # show if new chat or first log in
         st.session_state["initialized"] = True
-
-        # load corpora
         load_lvs_corpora()
 
     ### load user options
