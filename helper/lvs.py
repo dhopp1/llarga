@@ -537,15 +537,16 @@ def process_corpus():
 
 def load_lvs_corpora():
     if "lvs_corpora" not in server_state:
-        lvs_corpora_dict = {}
+        with st.spinner("Initial boot..."):
+            lvs_corpora_dict = {}
 
-        for file in os.listdir(st.session_state["corpora_path"]):
-            if "embeddings" in file:
-                lvs_corpora_dict[file.split("embeddings_")[1].split(".parquet")[0]] = (
-                    local_vs(
+            for file in os.listdir(st.session_state["corpora_path"]):
+                if "embeddings" in file:
+                    lvs_corpora_dict[
+                        file.split("embeddings_")[1].split(".parquet")[0]
+                    ] = local_vs(
                         metadata_path=f'{st.session_state["corpora_path"]}/{file.replace(".parquet", ".csv").replace("embeddings", "metadata")}',
                         embeddings_path=f'{st.session_state["corpora_path"]}/{file}',
                     )
-                )
 
-        update_server_state("lvs_corpora", lvs_corpora_dict)
+            update_server_state("lvs_corpora", lvs_corpora_dict)

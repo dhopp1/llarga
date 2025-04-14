@@ -64,22 +64,28 @@ tooltip_html = """<style>
 
 
 def fill_in_chunk_id(stringx):
-    embeddings_df = pl.read_parquet(
-        f'{st.session_state["corpora_path"]}/embeddings_{st.session_state["selected_corpus_realname"]}.parquet'
-    )
-    pattern = r'class="tooltiptext">(\d+)</span>'
-    replacements = dict(
-        zip(
-            [str(_) for _ in embeddings_df["chunk_id"]],
-            [embeddings_df["metadata_string"][i] for i in range(len(embeddings_df))],
+    try:
+        embeddings_df = pl.read_parquet(
+            f'{st.session_state["corpora_path"]}/embeddings_{st.session_state["selected_corpus_realname"]}.parquet'
         )
-    )
+        pattern = r'class="tooltiptext">(\d+)</span>'
+        replacements = dict(
+            zip(
+                [str(_) for _ in embeddings_df["chunk_id"]],
+                [
+                    embeddings_df["metadata_string"][i]
+                    for i in range(len(embeddings_df))
+                ],
+            )
+        )
 
-    def replacer(match):
-        key = match.group(1)
-        return f'class="tooltiptext">{replacements.get(key, key)}</span>'
+        def replacer(match):
+            key = match.group(1)
+            return f'class="tooltiptext">{replacements.get(key, key)}</span>'
 
-    return re.sub(pattern, replacer, stringx)
+        return re.sub(pattern, replacer, stringx)
+    except:
+        return stringx
 
 
 def ui_title_icon():
@@ -530,32 +536,32 @@ def populate_chat():
 - Corpus: `{st.session_state["export_df"].loc[i, "corpus"]}`
 - Model style: `{st.session_state["export_df"].loc[i, "model style"]}`
 """
-                        # RAG
-                        if (
-                            st.session_state["chat_history"][
-                                st.session_state["selected_chat_id"]
-                            ]["corpus"][i]
-                            != "No corpus"
-                        ):
-                            source_string += "\n\n## Sources\n"
+                        try:
+                            # RAG
+                            if (
+                                st.session_state["chat_history"][
+                                    st.session_state["selected_chat_id"]
+                                ]["corpus"][i]
+                                != "No corpus"
+                            ):
+                                source_string += "\n\n## Sources\n"
 
-                            metadata = [
-                                _
-                                for _ in eval(
-                                    st.session_state["export_df"].loc[
-                                        i, "source_metadata"
-                                    ]
-                                )
-                            ]
-                            content = [
-                                _
-                                for _ in eval(
-                                    st.session_state["export_df"].loc[
-                                        i, "source_content"
-                                    ]
-                                )
-                            ]
-                            try:
+                                metadata = [
+                                    _
+                                    for _ in eval(
+                                        st.session_state["export_df"].loc[
+                                            i, "source_metadata"
+                                        ]
+                                    )
+                                ]
+                                content = [
+                                    _
+                                    for _ in eval(
+                                        st.session_state["export_df"].loc[
+                                            i, "source_content"
+                                        ]
+                                    )
+                                ]
                                 for j in range(len(metadata)):
                                     # metadata
                                     source_string += (
@@ -572,8 +578,8 @@ def populate_chat():
 
                                     # content
                                     source_string += "```\n" + content[j] + "\n```"
-                            except:
-                                source_string = "\n\nSources not found. This corpus may have been overwritten since this chat occurred."
+                        except:
+                            source_string += "\n\nSources not found. This corpus may have been overwritten since this chat occurred."
 
                         st.markdown(
                             "Sources: " + message_time,
