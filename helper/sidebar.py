@@ -172,7 +172,7 @@ def sidebar_cite_sources():
         ),
         key="cite_sources",
         on_change=save_user_settings,
-        help="If checked and RAG is used (i.e., `Currently loaded corpus` != `No corpus`) the LLM will cite its sources in text. This feature may be buggy and generate HTML artifacts and depends on the quality of the selected LLM",
+        help="If checked and RAG is used (i.e., `Currently loaded corpus` != `No corpus`) the LLM will cite its sources in text. You must start a new chat for it to take effect. This feature may be buggy and generate HTML artifacts and depends on the quality of the selected LLM",
     )
 
 
