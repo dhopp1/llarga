@@ -1,47 +1,29 @@
-import hmac
 import os
 import pandas as pd
 import streamlit as st
 from streamlit_server_state import no_rerun, server_state, server_state_lock
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
 
 from helper.lvs import save_user_settings, update_server_state
 
 
 def check_password():
-    """Check if a user entered the password correctly"""
-    st.title(st.session_state["app_title"])
+    with open(".streamlit/config.yaml") as file:
+        config = yaml.load(file, Loader=SafeLoader)
 
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if hmac.compare_digest(
-            st.session_state["password"],
-            st.secrets[f"{st.session_state['user_name'].replace(' ', '_')}"],
-        ):
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]
-        else:
-            st.session_state["password_correct"] = False
-
-    # Return True if the password is validated.
-    if st.session_state.get("password_correct", False):
-        return True
-
-    # show input for user name
-    st.session_state["user_name"] = st.selectbox(
-        "User",
-        st.session_state["users_list"],
-        index=None,
-        placeholder="Select user...",
+    st.session_state["authenticator"] = stauth.Authenticate(
+        config["credentials"],
+        config["cookie"]["name"],
+        config["cookie"]["key"],
+        config["cookie"]["expiry_days"],
     )
 
-    # Show input for password.
-    st.text_input(
-        "Password", type="password", on_change=password_entered, key="password"
-    )
-    if "password_correct" in st.session_state:
-        st.error("Password incorrect")
-
-    return False
+    try:
+        st.session_state["authenticator"].login()
+    except Exception as e:
+        st.error(e)
 
 
 def setup_local_files():

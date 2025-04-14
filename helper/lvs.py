@@ -27,17 +27,23 @@ def save_user_settings(selected_chat_name=None, display_metadata_overwrite=True)
 
     # update values with the current ones
     if selected_chat_name is None:
-        st.session_state["user_settings"]["selected_chat_name"] = st.session_state[
-            "selected_chat_name"
-        ]
+        try:
+            st.session_state["user_settings"]["selected_chat_name"] = st.session_state[
+                "selected_chat_name"
+            ]
+        except:
+            pass
     else:
         st.session_state["user_settings"]["selected_chat_name"] = selected_chat_name
 
     st.session_state["user_settings"]["cite_sources"] = st.session_state["cite_sources"]
     st.session_state["user_settings"]["selected_llm"] = st.session_state["selected_llm"]
-    st.session_state["user_settings"]["selected_corpus"] = st.session_state[
-        "selected_corpus"
-    ]
+    try:
+        st.session_state["user_settings"]["selected_corpus"] = st.session_state[
+            "selected_corpus"
+        ]
+    except:
+        pass
     st.session_state["user_settings"]["temperature_string"] = st.session_state[
         "temperature_string"
     ]
@@ -130,6 +136,7 @@ def make_new_chat(display_metadata_overwrite=True):
         pass
 
     del st.session_state["initialized"]
+    del st.session_state["selected_chat_name"]
 
 
 # helper unzip function
@@ -528,18 +535,20 @@ def process_corpus():
     ):
         st.info("Corpus successfully embedded, ready for querying!")
         time.sleep(5)
-        st.session_state["selected_corpus"] = st.session_state["new_corpus_name"]
+        del st.session_state["selected_corpus"]
+        st.session_state["user_settings"]["selected_corpus"] = st.session_state[
+            "new_corpus_name"
+        ]
         # delete an existing corpus with this metadata
         try:
             if st.session_state["new_corpus_name"] == "Workspace":
                 real_name = f"Workspace {st.session_state['user_name']}"
             else:
                 real_name = st.session_state["new_corpus_name"]
-            print(real_name)
             del st.session_state["user_settings"]["display_metadata"][real_name]
         except:
             pass
-        st.session_state["new_corpus_name"] = "Workspace"
+        del st.session_state["new_corpus_name"]
         make_new_chat(display_metadata_overwrite=False)
 
 

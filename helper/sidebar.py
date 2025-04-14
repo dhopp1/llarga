@@ -482,7 +482,8 @@ If you upload a metadata file, you can include a column in it called `vector_wei
 Once you've uploaded your file, click `Process corpus`. The system prompt for this corpus will be whatever is currently in the `System prompt` text field under the `LLM parameters` dropdown.
 """,
     )
-
+    if "new_corpus_name" not in st.session_state:
+        st.session_state.new_corpus_name = "Workspace"
     st.text_input("Name for new corpus", value="Workspace", key="new_corpus_name")
 
     st.session_state["visible_corpus_names"] = st.multiselect(

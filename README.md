@@ -45,6 +45,8 @@ This section contains information for users of the application. For reference, R
 - **Delete a corpus**: Enter the name of a corpus you want to delete, then hit the `Delete corpus` button to remove it.
 
 ### LLM parameters
+- **Search the web with your query?**: check if you would like to search the web with your query for additional context information before sending it to the LLM.
+- **Cite sources?**: check if you would like to return in-text references to document metadata and page numbers. Performance depends on the power of the LLM.
 - **Select LLM**: choose which LLM you would like to use. Those ending in `(private)` are local LLMs. That means that any query you send does not leave the server where the application is running, so is safe for use for sensitive or confidential documents. Those ending in `(cloud)` are generally much more powerful and performant models, but your query will be sent to their servers for processing.
 - **Paste API key here**: if you choose a cloud model that requires an API key and your administrator hasn't provided a default one, you will be notified that you need to paste your own API key in this field in order to be able to use the LLM. The pasted API key is not stored or saved anywhere, even on the server where the application is running.
 - **Model style**: this dropdown determines the level of creativity/freedom given to the model. `Most precise` is the least creative and will stick closest to your prompts and the documents. `Most creative` is the most creative/unpredictable, useful for ideation, etc.
@@ -99,7 +101,7 @@ Various settings of the app. Explanation of fields:
 - **llama\_server\_show\_stop\_button**: `1` if you want the stop Llama CPP server button to show, `0` if not.
 
 ### metadata/user_list.csv
-A list of users for the application. Their display name in the `user` column, what their default corpus should be upon first loadup in the `default_corpus` column. Each user gets their own password, which can be set in the `.streamlit/secrets.toml` file. Each user on a new line with their own password. Replace spaces with underscores in the `secrets.toml` file. For instance, if the user's name is `Test User`, it should appear as `Test_User = "password"` in the `secrets.toml` file.
+A list of users for the application. Their display name in the `user` column, what their default corpus should be upon first loadup in the `default_corpus` column. Each user gets their own password, which can be set in the `.streamlit/config.yaml` file. Usernames in the config file must be the lower case and underscore (rather than space) equivalent of their name in the `user_list.csv`. E.g., if `Test User` is in the CSV, their name should be `test_user` in the `config.yaml`.
 
 ## Running the application
 From the cloned repo, run the application with `streamlit run app.py --server.headless=true --server.port=[desired port]`. You can then use the app by going to `http://localhost:[desired port]`
