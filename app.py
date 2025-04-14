@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 import torch
 
 torch.classes.__path__ = []  # necessary for Docker
@@ -97,3 +98,14 @@ import_chat()
 # export chat button
 with st.sidebar:
     sidebar_export_chat()
+
+    # logout
+    def logout():
+        st.sidebar.info(
+            "The next time you refresh the page you will need to sign in again."
+        )
+        time.sleep(3)
+        st.session_state["cookie_manager"].delete(cookie="logged_in")
+        st.session_state["cookie_manager"].delete(cookie="username")
+
+    st.button("Logout", on_click=logout)

@@ -1,4 +1,5 @@
 duckduckgo-search
+extra-streamlit-components
 local-vector-search
 lxml
 nlp_pipeline

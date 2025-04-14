@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+import extra_streamlit_components as stx
 import hmac
 import os
 import pandas as pd
@@ -7,16 +9,48 @@ from streamlit_server_state import no_rerun, server_state, server_state_lock
 from helper.lvs import save_user_settings, update_server_state
 
 
-def check_password():
+def get_cookie_manager():
+    return stx.CookieManager()
+
+
+def check_password(end=False):
     """Check if a user entered the password correctly"""
+    if end:
+        return False
+
     st.title(st.session_state["app_title"])
+
+    st.session_state["cookie_manager"] = get_cookie_manager()
+
+    if st.session_state["cookie_manager"].get(cookie="logged_in") == True:
+        st.session_state["user_name"] = st.session_state["cookie_manager"].get(
+            cookie="username"
+        )
+        st.session_state["password_correct"] = True
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
-        if hmac.compare_digest(
-            st.session_state["password"],
-            st.secrets[f"{st.session_state['user_name'].replace(' ', '_')}"],
-        ):
+        try:
+            condition = hmac.compare_digest(
+                st.session_state["password"],
+                st.secrets[f"{st.session_state['user_name'].replace(' ', '_')}"],
+            )
+        except:
+            condition = False
+
+        if condition:
+            # cookie
+            expires_at = datetime.now() + timedelta(days=30)
+            st.session_state["cookie_manager"].set(
+                cookie="logged_in", val="true", expires_at=expires_at, key="logged_in"
+            )
+            st.session_state["cookie_manager"].set(
+                cookie="username",
+                val=st.session_state["user_name"],
+                expires_at=expires_at,
+                key="user_cookie",
+            )
+
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
