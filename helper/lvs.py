@@ -352,9 +352,22 @@ def process_corpus():
 
     # add a new column for original file name
     try:
-        processor.metadata["filename"] = [
-            _.split("/")[-1] for _ in processor.metadata["local_raw_filepath"]
-        ]
+        # only do if there is no other metadata
+        if not (
+            set(processor.metadata.columns)
+            - {
+                "text_id",
+                "filepath",
+                "vector_weight",
+                "local_raw_filepath",
+                "local_txt_filepath",
+                "detected_language",
+                "web_filepath",
+            }
+        ):
+            processor.metadata["filename"] = [
+                _.split("/")[-1] for _ in processor.metadata["local_raw_filepath"]
+            ]
     except:
         pass
 
