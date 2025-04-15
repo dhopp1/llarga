@@ -93,6 +93,8 @@ def make_new_chat(display_metadata_overwrite=True):
     st.session_state["selected_chat_id"] = st.session_state["latest_chat_id"] + 1
     st.session_state["latest_chat_id"] += 1
     st.session_state["chat_history"][st.session_state["selected_chat_id"]] = {}
+    if "cite_sources" not in st.session_state:
+        st.session_state["cite_sources"] = False
     st.session_state["chat_history"][st.session_state["selected_chat_id"]][
         "messages"
     ] = [
@@ -136,7 +138,10 @@ def make_new_chat(display_metadata_overwrite=True):
         pass
 
     del st.session_state["initialized"]
-    del st.session_state["selected_chat_name"]
+    try:
+        del st.session_state["selected_chat_name"]
+    except:
+        pass
 
 
 # helper unzip function
