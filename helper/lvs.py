@@ -11,7 +11,7 @@ import time
 import zipfile
 
 
-cite_source_instruction = """\n\nAt the end of any information that you support from the excerpts, place the following text: <span class="tooltip superscript-link">†<span class="tooltiptext">chunk_id</span></span>, where you replace 'chunk_id' with the chunk id number of the excerpt you are referencing. Repeat the whole tag if you are referencing multiple chunks in one sentence."""
+cite_source_instruction = """\n\nAt the end of any information that you support from the excerpts, place the following text: <span class="tooltip superscript-link">†<span class="tooltiptext">chunk_id</span></span>, where you replace 'chunk_id' with the chunk id number of the excerpt you are referencing. Repeat the whole tag if you are referencing multiple chunks in one sentence, do not do a comma-separated list of chunk ids in one tag. Include only the actual chunk id number itself between the tag, not any prefix like 'chunk_id:'"""
 
 
 def update_server_state(key, value):
