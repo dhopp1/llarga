@@ -1,4 +1,5 @@
 from datetime import datetime
+import io
 from local_vector_search.misc import pickle_load, pickle_save
 import os
 import pandas as pd
@@ -7,6 +8,7 @@ import re
 import streamlit as st
 from streamlit_server_state import server_state
 import time
+import zipfile
 
 from helper.llamacpp_helper import check_reload_llama_cpp
 from helper.llm import gen_llm_response, write_stream
@@ -352,6 +354,39 @@ def metadata_tab():
                 on_click=save_user_settings,
                 help="Click to save your selection.",
             )
+
+            # download corpus button
+            def zip_directory(directory_path):
+                # Create a BytesIO buffer
+                zip_buffer = io.BytesIO()
+
+                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                    for root, _, files in os.walk(directory_path):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(file_path, directory_path)
+                            zip_file.write(file_path, arcname)
+
+                # Rewind buffer position to the beginning
+                zip_buffer.seek(0)
+                return zip_buffer
+
+            st.button(
+                "Download corpus converted to text",
+                key="download_corpus_button",
+                help="Click this button to generate a download of a zip file of your documents converted to .txt format.",
+            )
+            if st.session_state["download_corpus_button"]:
+                zip_buffer = zip_directory(
+                    f'{st.session_state["corpora_path"]}/{st.session_state["selected_corpus_realname"]}/'
+                )
+                st.info("Zip file ready, click `Download` button below.")
+                st.download_button(
+                    label="Download",
+                    data=zip_buffer,
+                    file_name="corpus.zip",
+                    mime="application/zip",
+                )
         except:
             pass
 

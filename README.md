@@ -21,6 +21,7 @@ This section contains information for users of the application. For reference, R
 	-  Click the `Unselect all` button to deselect all documents
 	-  Once you have checked/ticked which documents you would like to include in the search, click the `Save selection` button to persist the selection.
 	-  You can have the LLM choose which documents to include in your query based on the metadata and natural-langauge instructions. Put your instructions in the text box above the `Select documents with LLM` button, then hit the button to have the LLM choose which documents to select. For instance, if you have a `Year` column in your metadata, you could provide an instruction like, `select only documents after 2017`. You can then verify and alter the LLM's selection by interacting with the metadata table directly. Performance of this features will depend on the quality of LLM you have selected. Private/local LLMs will perform worse in this feature.
+	-  Click the `Download corpus converted to text` button to generate a .zip file with the .txt converted files of your corpus. After you click, the file will be generated, then click the `Download` button to download.
 
 ### Upload your own documents
 - **Upload a new corpus**: use this file uploader to upload your own custom corpus to the system. You can provide the new corpus in 4 ways:
