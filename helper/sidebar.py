@@ -469,11 +469,13 @@ def sidebar_upload_file():
             ".xls",
             ".pptx",
             ".mp3",
+            ".m4a",
+            ".wav",
             ".mp4",
         ],
         help="""Any of: \n\n
 - a single metadata.csv file (named exactly `metadata.csv`), with at least one column named `web_filepath` with the web addresses of the .html or .pdf documents
-- a single .docx, .doc, .txt., .pdf, .csv, .xlsx, .xls, .pptx, .mp3, .mp4, or .wav file
+- a single .docx, .doc, .txt., .pdf, .csv, .xlsx, .xls, .pptx, .mp3, .m4a, .wav, .mp4, or .wav file
 - a .zip file that contains documents zipped inside
 - a .zip file that also includes a metadata.csv file in it (named exactly `metadata.csv`), with at least a column named `filepath` with the names of the files \n\n
     

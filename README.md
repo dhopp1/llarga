@@ -35,6 +35,8 @@ This section contains information for users of the application. For reference, R
 		- _.xls_
 		- _.pptx_: note, the older `.ppt` format is not supported. Convert these to `.pptx` in PowerPoint BEFORE zipping and uploading them to the system.
 		- _.mp3_: audio and video files will be automatically converted to text
+		- _.m4a_
+		- _.wav_
 		- _.mp4_
 	- upload a single `metadata.csv` file with at least one column called `web_filepath` with the URLs of the documents you would like in the corpus. You can provide additional columns with more metadata. The URLs must lead directly to the content page you would like (e.g., the URL directly to the PDF file itself, not the landing page where it is linked). The file must be named **exactly** `metadata.csv` and the URL column must be named **exactly** `web_filepath` or the upload will not work.
 	- upload a zip file with multiple documents zipped together

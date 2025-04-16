@@ -321,6 +321,7 @@ def process_corpus():
                             ".pdf",
                             ".txt",
                             ".mp3",
+                            ".m4a",
                             ".mp4",
                             ".wav",
                             ".csv",
