@@ -192,6 +192,53 @@ def unzip_file(zip_path, output_dir="zip_output"):
                 shutil.copyfileobj(source, target)
 
 
+def smart_concat(dfs: list[pl.DataFrame]) -> pl.DataFrame:
+    "concatenate polars df even if column types differ"
+    if not dfs:
+        return pl.DataFrame()
+
+    # Use the first DataFrame's column order as the base
+    base_columns = dfs[0].columns
+    all_columns = list(
+        dict.fromkeys(col for df in dfs for col in df.columns)
+    )  # all seen columns in order
+
+    # Determine the unified schema
+    unified_schema = {}
+    for col in all_columns:
+        types = [df.schema.get(col) for df in dfs if col in df.schema]
+        if len(set(types)) == 1:
+            unified_schema[col] = types[0]
+        else:
+            if pl.Utf8 in types:
+                unified_schema[col] = pl.Utf8
+            elif any(t in (pl.Float64, pl.Float32) for t in types):
+                unified_schema[col] = pl.Float64
+            elif any(t in (pl.Int64, pl.Int32) for t in types):
+                unified_schema[col] = pl.Int64
+            else:
+                unified_schema[col] = pl.Utf8
+
+    # Cast and align each DataFrame
+    casted_dfs = []
+    for df in dfs:
+        casted = df
+        for col in unified_schema:
+            if col in df.columns:
+                casted = casted.with_columns(pl.col(col).cast(unified_schema[col]))
+            else:
+                casted = casted.with_columns(
+                    pl.lit(None).cast(unified_schema[col]).alias(col)
+                )
+        # Reorder columns: start with base order, then extras
+        ordered_cols = [col for col in base_columns if col in casted.columns]
+        extras = [col for col in all_columns if col not in ordered_cols]
+        casted = casted.select(ordered_cols + extras)
+        casted_dfs.append(casted)
+
+    return pl.concat(casted_dfs)
+
+
 def process_corpus():
     "process a corpus into text and create the vector db"
     with st.spinner("Processing corpus..."):
@@ -465,7 +512,13 @@ def process_corpus():
                     if i == 0:
                         final_embeddings = embeddings
                     else:
-                        final_embeddings = pl.concat([final_embeddings, embeddings])
+                        final_embeddings.write_parquet(
+                            "/Users/danhopp/Downloads/final_embeddings.parquet"
+                        )
+                        embeddings.write_parquet(
+                            "/Users/danhopp/Downloads/embeddings.parquet"
+                        )
+                        final_embeddings = smart_concat([final_embeddings, embeddings])
 
         # renaming chunk ids in metadata_string
         final_embeddings = final_embeddings.with_columns(
