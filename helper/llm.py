@@ -31,6 +31,18 @@ def gen_llm_response(query, messages_input=[]):
         .values[0],
     )
 
+    # is openrouter reasoning
+    st.session_state["openrouter_reasoning"] = st.session_state[
+        "is_reasoning_model"
+    ] and "openrouter" in (
+        st.session_state["llm_info"]
+        .loc[
+            lambda x: x["name"] == st.session_state["selected_llm"],
+            "llm_url",
+        ]
+        .values[0]
+    )
+
     # modifying prompt to remove time
     messages[-1]["content"] = messages[-1]["content"].split("<br> <sub>")[0]
 
@@ -111,19 +123,48 @@ def gen_llm_response(query, messages_input=[]):
             ] = f"""{initial_prompt} \n\n {lvs_context["response"]}"""
 
     # final llm response
-    response = client.chat.completions.create(
-        model=llm_model_name,
-        temperature=st.session_state["temperature"],
-        max_tokens=st.session_state["max_tokens"],
-        messages=messages.copy(),
-        stream=True,
-    )
+    if st.session_state["openrouter_reasoning"]:
+        response = client.chat.completions.create(
+            model=llm_model_name,
+            temperature=st.session_state["temperature"],
+            max_tokens=st.session_state["max_tokens"],
+            messages=messages.copy(),
+            reasoning_effort="medium",
+            stream=True,
+        )
+    else:
+        response = client.chat.completions.create(
+            model=llm_model_name,
+            temperature=st.session_state["temperature"],
+            max_tokens=st.session_state["max_tokens"],
+            messages=messages.copy(),
+            stream=True,
+        )
 
     messages[-1]["content"] = initial_prompt
 
+    n_fail = 0  # for openrouter reasoning
+    first_token = 0
     for chunk in response:
-        if chunk.choices[0].delta.content is not None:
-            yield chunk.choices[0].delta.content
+        first_token += 1
+        # openrouter reasoning
+        if st.session_state["openrouter_reasoning"]:
+            try:
+                if chunk.choices[0].delta.reasoning is not None:
+                    yield chunk.choices[0].delta.reasoning
+                else:
+                    if first_token != 1:
+                        n_fail += 1
+                        if n_fail == 1:
+                            yield "</think>" + chunk.choices[0].delta.content
+                        else:
+                            if chunk.choices[0].delta.content is not None:
+                                yield chunk.choices[0].delta.content
+            except:
+                pass
+        else:
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content
 
     yield f"""<br> <sub><sup>{datetime.now().strftime("%Y-%m-%d %H:%M")}</sup></sub>"""
 
@@ -209,6 +250,10 @@ def write_stream(stream):
                                 st.session_state["selected_chat_id"]
                             ]["chunk_ids"][-1] = st.session_state["latest_chunk_ids"]
                     else:
+                        if st.session_state[
+                            "openrouter_reasoning"
+                        ]:  # have to maintain first non-reasoning chunk
+                            st.session_state["llm_answer"] += chunk.split("</think>")[1]
                         break
 
         # normal LLM output

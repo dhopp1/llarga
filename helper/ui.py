@@ -789,6 +789,13 @@ def chat_loop(prompt, use_memory=True):
             st.session_state["is_reasoning_model"] == 1
         ):  # reasoning models take too long to name, just take the first user's question as the name
             chat_name = prompt
+            if (
+                chat_name
+                in [
+                    v["chat_name"] for k, v in st.session_state["chat_history"].items()
+                ][::-1]
+            ):
+                chat_name += " 2"
         else:
             messages = st.session_state["chat_history"][
                 st.session_state["selected_chat_id"]
