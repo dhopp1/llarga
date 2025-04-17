@@ -512,12 +512,6 @@ def process_corpus():
                     if i == 0:
                         final_embeddings = embeddings
                     else:
-                        final_embeddings.write_parquet(
-                            "/Users/danhopp/Downloads/final_embeddings.parquet"
-                        )
-                        embeddings.write_parquet(
-                            "/Users/danhopp/Downloads/embeddings.parquet"
-                        )
                         final_embeddings = smart_concat([final_embeddings, embeddings])
 
         # renaming chunk ids in metadata_string
