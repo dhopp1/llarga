@@ -62,7 +62,7 @@ tooltip_html = """<style>
         text-decoration: underline;
         font-size: smaller;
     }
-    </style>"""
+    </style>\n\n"""
 
 
 def fill_in_chunk_id(stringx):

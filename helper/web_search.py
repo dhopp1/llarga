@@ -66,7 +66,7 @@ def extract_main_content(url):
 def gen_url_content(urls):
     "return content of explicitly asked for urls"
 
-    final_text = f"{urls}. You will be provided with the content for this URL(s). List the URL, then summarize the content. If no useful content is provided for the URL, then say 'The content of this URL could not be fetched'.\n\n"
+    final_text = f"{urls}. You will be provided with the content for this URL(s). In a bulleted list, list the URL, then summarize the content. If no useful content is provided for the URL, then say 'The content of this URL could not be fetched'.\n\n"
     for i in range(len(urls.split(","))):
         body = extract_main_content(urls.split(",")[i]).replace("\n", "")
 
