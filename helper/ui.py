@@ -104,9 +104,9 @@ def import_styles():
         st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
 
     st.session_state["user_avatar"] = "https://www.svgrepo.com/show/524211/user.svg"
-    st.session_state["assistant_avatar"] = (
-        "https://www.svgrepo.com/show/375527/ai-platform.svg"
-    )
+    st.session_state[
+        "assistant_avatar"
+    ] = "https://www.svgrepo.com/show/375527/ai-platform.svg"
 
 
 def initial_placeholder():
@@ -226,9 +226,9 @@ def initial_placeholder():
                 st.session_state["user_settings"]["selected_chat_name"]
                 not in st.session_state["chat_options"]
             ):
-                st.session_state["user_settings"]["selected_chat_name"] = (
-                    st.session_state["chat_options"][0]
-                )
+                st.session_state["user_settings"][
+                    "selected_chat_name"
+                ] = st.session_state["chat_options"][0]
         except:
             st.session_state["user_settings"] = {}
             st.session_state["user_settings"]["cite_sources"] = False
@@ -285,10 +285,10 @@ def initial_placeholder():
         # add it if it's a new corpus
         if name not in st.session_state["user_settings"]["display_metadata"]:
             try:
-                st.session_state["user_settings"]["display_metadata"][name] = (
-                    pd.read_csv(
-                        f"""{st.session_state["corpora_path"]}/metadata_{name}.csv"""
-                    )
+                st.session_state["user_settings"]["display_metadata"][
+                    name
+                ] = pd.read_csv(
+                    f"""{st.session_state["corpora_path"]}/metadata_{name}.csv"""
                 )
                 st.session_state["user_settings"]["display_metadata"][
                     name
@@ -709,7 +709,7 @@ def chat_loop(prompt, use_memory=True):
                 or server_state["exec_queue"][0] != st.session_state["user_name"]
             ):
                 # check if it hasn't been used in a while, potentially interrupted while executing
-                if (datetime.now() - server_state["last_used"]).total_seconds() > 60:
+                if (datetime.now() - server_state["last_used"]).total_seconds() > 180:
                     if (
                         server_state["exec_queue"][0] == st.session_state["user_name"]
                     ):  # only perform if first in the queue
@@ -718,7 +718,13 @@ def chat_loop(prompt, use_memory=True):
                             "exec_queue", server_state["exec_queue"][1:]
                         )  # take the first person out of the queue
                         update_server_state("last_used", datetime.now())
-
+                elif (
+                    datetime.now() - server_state["last_used"]
+                ).total_seconds() > 300:  # if it's been more than 5 minutes, just reset the whole queue and throw errors for everyone
+                    update_server_state("exec_queue", [])
+                    st.error(
+                        "There was an error processing your request. Please refresh the page and try again"
+                    )
                 try:
                     t.markdown(
                         f'You are place {server_state["exec_queue"].index(st.session_state["user_name"])} of {len(server_state["exec_queue"]) - 1}'
