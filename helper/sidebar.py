@@ -438,7 +438,8 @@ def gen_export_df():
                 ]["messages"]
             ],
             "content": [
-                _["content"]
+                ("'" if _["content"][:5] == "https" else "")
+                + _["content"]  # necessary so excel doesn't format as URL
                 for _ in st.session_state["chat_history"][
                     st.session_state["selected_chat_id"]
                 ]["messages"]
