@@ -1,8 +1,26 @@
 from duckduckgo_search import DDGS
+import re
 import requests
 from readability import Document
 from lxml import html
 import pandas as pd
+
+
+def is_url(s):
+    """Check if the input is a single formatted URL or a comma-separated list of them."""
+    URL_REGEX = re.compile(
+        r"^(https?://)"  # scheme
+        r"([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})"  # domain
+        r"(:\d+)?"  # optional port
+        r"(/[^\s]*)?$"  # optional path/query
+    )
+
+    def is_formatted_url(url):
+        """Check if a single URL is in valid format (does not verify if it's live)."""
+        return bool(URL_REGEX.match(url.strip()))
+
+    urls = [url.strip() for url in s.split(",")]
+    return all(is_formatted_url(url) for url in urls)
 
 
 def search_web_duckduckgo(query, news=False, max_results=10):
@@ -43,6 +61,19 @@ def extract_main_content(url):
 
     except:
         return ""
+
+
+def gen_url_content(urls):
+    "return content of explicitly asked for urls"
+
+    final_text = f"{urls}. You will be provided with the content for this URL(s). List the URL, then summarize the content. If no useful content is provided for the URL, then say 'The content of this URL could not be fetched'.\n\n"
+    for i in range(len(urls.split(","))):
+        body = extract_main_content(urls.split(",")[i]).replace("\n", "")
+
+        final_text += f"\n\nURL: {urls.split(',')[i]}"
+        final_text += f"\n\nmain article: {body}"
+
+    return final_text
 
 
 def gen_web_search(query, news=False, max_results=5):

@@ -48,7 +48,7 @@ This section contains information for users of the application. For reference, R
 - **Delete a corpus**: Enter the name of a corpus you want to delete, then hit the `Delete corpus` button to remove it.
 
 ### LLM parameters
-- **Search the web with your query?**: check if you would like to search the web with your query for additional context information before sending it to the LLM.
+- **Search the web with your query?**: check if you would like to search the web with your query for additional context information before sending it to the LLM. Alternatively, you can enter just a complete URL (i.e., with `https://...`) or comma-separated list of URLs as your prompt to fetch their content and make it available to the LLM. The LLM will have an initial prompt to summarize the page(s), but you can ask follow up questions on the full content of the URLs.
 - **Cite sources?**: check if you would like to return in-text references to document metadata and page numbers. Performance depends on the power of the LLM.
 - **Select LLM**: choose which LLM you would like to use. Those ending in `(private)` are local LLMs. That means that any query you send does not leave the server where the application is running, so is safe for use for sensitive or confidential documents. Those ending in `(cloud)` are generally much more powerful and performant models, but your query will be sent to their servers for processing.
 - **Paste API key here**: if you choose a cloud model that requires an API key and your administrator hasn't provided a default one, you will be notified that you need to paste your own API key in this field in order to be able to use the LLM. The pasted API key is not stored or saved anywhere, even on the server where the application is running.

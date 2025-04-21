@@ -158,7 +158,7 @@ def sidebar_web_search():
             if "web_search" not in st.session_state
             else st.session_state["web_search"]
         ),
-        help="If checked, the LLM will be provided with the results of a web search of your question as well.",
+        help="If checked, the LLM will be provided with the results of a web search of your question as well. Alternatively, if you enter just a URL or comma-separated list of URLs as your prompt, the content will be fetched and given to the LLM with an initial instruction to summarize. Subsequent questions can be asked on the full text.",
     )
 
 
