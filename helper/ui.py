@@ -542,7 +542,7 @@ def populate_chat():
                                 "<em>"
                                 + st.session_state["chat_history"][
                                     st.session_state["selected_chat_id"]
-                                ]["reasoning"][i].replace("$", "\$")
+                                ]["reasoning"][i].replace("$", "\\$")
                                 + "</em>",
                                 unsafe_allow_html=True,
                             )
@@ -558,7 +558,7 @@ def populate_chat():
                             .split(
                                 ". You will be provided with the content for this URL(s)"
                             )[0]
-                            .replace("$", "\$")
+                            .replace("$", "\\$")
                         )
                         + (message_time if message["role"] == "user" else ""),
                         unsafe_allow_html=True,
@@ -620,7 +620,7 @@ def populate_chat():
                         st.markdown(
                             "Sources: " + message_time,
                             unsafe_allow_html=True,
-                            help=source_string.replace("$", "\$"),
+                            help=source_string.replace("$", "\\$"),
                         )
 
 
