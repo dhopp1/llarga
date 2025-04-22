@@ -104,9 +104,9 @@ def import_styles():
         st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
 
     st.session_state["user_avatar"] = "https://www.svgrepo.com/show/524211/user.svg"
-    st.session_state[
-        "assistant_avatar"
-    ] = "https://www.svgrepo.com/show/375527/ai-platform.svg"
+    st.session_state["assistant_avatar"] = (
+        "https://www.svgrepo.com/show/375527/ai-platform.svg"
+    )
 
 
 def initial_placeholder():
@@ -226,9 +226,9 @@ def initial_placeholder():
                 st.session_state["user_settings"]["selected_chat_name"]
                 not in st.session_state["chat_options"]
             ):
-                st.session_state["user_settings"][
-                    "selected_chat_name"
-                ] = st.session_state["chat_options"][0]
+                st.session_state["user_settings"]["selected_chat_name"] = (
+                    st.session_state["chat_options"][0]
+                )
         except:
             st.session_state["user_settings"] = {}
             st.session_state["user_settings"]["cite_sources"] = False
@@ -285,10 +285,10 @@ def initial_placeholder():
         # add it if it's a new corpus
         if name not in st.session_state["user_settings"]["display_metadata"]:
             try:
-                st.session_state["user_settings"]["display_metadata"][
-                    name
-                ] = pd.read_csv(
-                    f"""{st.session_state["corpora_path"]}/metadata_{name}.csv"""
+                st.session_state["user_settings"]["display_metadata"][name] = (
+                    pd.read_csv(
+                        f"""{st.session_state["corpora_path"]}/metadata_{name}.csv"""
+                    )
                 )
                 st.session_state["user_settings"]["display_metadata"][
                     name
@@ -542,7 +542,7 @@ def populate_chat():
                                 "<em>"
                                 + st.session_state["chat_history"][
                                     st.session_state["selected_chat_id"]
-                                ]["reasoning"][i]
+                                ]["reasoning"][i].replace("$", "\$")
                                 + "</em>",
                                 unsafe_allow_html=True,
                             )
@@ -558,6 +558,7 @@ def populate_chat():
                             .split(
                                 ". You will be provided with the content for this URL(s)"
                             )[0]
+                            .replace("$", "\$")
                         )
                         + (message_time if message["role"] == "user" else ""),
                         unsafe_allow_html=True,
@@ -619,7 +620,7 @@ def populate_chat():
                         st.markdown(
                             "Sources: " + message_time,
                             unsafe_allow_html=True,
-                            help=source_string,
+                            help=source_string.replace("$", "\$"),
                         )
 
 
