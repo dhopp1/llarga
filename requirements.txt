@@ -1,4 +1,4 @@
-duckduckgo-search
+duckduckgo_search==6.3.5
 extra-streamlit-components
 local-vector-search
 lxml
