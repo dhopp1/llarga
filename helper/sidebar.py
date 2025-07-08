@@ -189,7 +189,7 @@ def sidebar_llm_dropdown():
                 st.session_state["selected_llm"]
             )
         ),
-        help="Which LLM to use. Those ending in `(private)` do not leave our local system, those ending in `(cloud)` will be sent to a cloud provider via API. The latter should not be used for sensitive information.",
+        help="Which LLM to use. For public information, you can use any LLM. For unclassified and confidential information use only those LLMs ending in (private). Strictly confidential information should not be uploaded.",
         key="selected_llm",
         on_change=save_user_settings,
     )
@@ -510,10 +510,10 @@ Names of the corpora are shared across users (except for the name `Workspace`, w
         )
 
     st.checkbox(
-        "Is this a confidential corpus?",
+        "Is this a private (unclassified and confidential) corpus?",
         value=False,
         key="private_corpus",
-        help="Check this box if this is a confidential corpus that should not be allowed to be queried from a cloud LLM. If you check this box the document contents will never leave the UNITAS server.",
+        help="Check this box if this corpus contains unclassified and confidential information that should not be allowed to be queried from a cloud LLM. If you check this box the document contents will never leave the UNITAS server.",
     )
 
     st.button("Process corpus", on_click=process_corpus)
